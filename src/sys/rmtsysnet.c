@@ -9,6 +9,7 @@
 
 #include <afsconfig.h>
 #include <afs/param.h>
+#include <afs/afsutil.h>
 
 #include <roken.h>
 
@@ -65,13 +66,15 @@ struct Acl *
 RParseAcl(char *astr)
 {
     int nplus, nminus, i, trights;
-    char tname[MAXNAME];
+    char tname[MAXNAME + 1];
     struct AclEntry *first, *last, *tl;
     struct Acl *ta;
     sscanf(astr, "%d", &nplus);
     astr = RSkipLine(astr);
     sscanf(astr, "%d", &nminus);
     astr = RSkipLine(astr);
+
+    tname[MAXNAME] = '\0';
 
     ta = malloc(sizeof(struct Acl));
     ta->nplus = nplus;
@@ -80,7 +83,7 @@ RParseAcl(char *astr)
     last = 0;
     first = 0;
     for (i = 0; i < nplus; i++) {
-	sscanf(astr, "%100s %d", tname, &trights);
+	sscanf(astr, "%" AFS_STRINGIZE(MAXNAME) "s %d", tname, &trights);
 	astr = RSkipLine(astr);
 	tl = malloc(sizeof(struct AclEntry));
 	if (!first)
@@ -97,7 +100,7 @@ RParseAcl(char *astr)
     last = 0;
     first = 0;
     for (i = 0; i < nminus; i++) {
-	sscanf(astr, "%100s %d", tname, &trights);
+	sscanf(astr, "%" AFS_STRINGIZE(MAXNAME) "s %d", tname, &trights);
 	astr = RSkipLine(astr);
 	tl = malloc(sizeof(struct AclEntry));
 	if (!first)

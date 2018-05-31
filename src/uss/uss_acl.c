@@ -17,6 +17,7 @@
  */
 #include <afsconfig.h>
 #include <afs/param.h>
+#include <afs/afsutil.h>
 
 #include <roken.h>
 
@@ -404,9 +405,11 @@ ParseAcl(char *a_str)
 {				/*ParseAcl */
 
     int nplus, nminus, i, trights;
-    char tname[MAXNAME];
+    char tname[MAXNAME + 1];
     struct AclEntry *first, *last, *tl;
     struct Acl *ta;
+
+    tname[MAXNAME] = '\0';
 
     /*
      * Pull out the number of positive & negative entries in the externalized
@@ -430,7 +433,7 @@ ParseAcl(char *a_str)
     last = 0;
     first = 0;
     for (i = 0; i < nplus; i++) {
-	sscanf(a_str, "%100s %d", tname, &trights);
+	sscanf(a_str, "%" AFS_STRINGIZE(MAXNAME) "s %d", tname, &trights);
 	a_str = SkipLine(a_str);
 	tl = malloc(sizeof(struct AclEntry));
 	if (!first)
@@ -450,7 +453,7 @@ ParseAcl(char *a_str)
     last = 0;
     first = 0;
     for (i = 0; i < nminus; i++) {
-	sscanf(a_str, "%100s %d", tname, &trights);
+	sscanf(a_str, "%" AFS_STRINGIZE(MAXNAME) "s %d", tname, &trights);
 	a_str = SkipLine(a_str);
 	tl = malloc(sizeof(struct AclEntry));
 	if (!first)
