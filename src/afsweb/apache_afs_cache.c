@@ -113,7 +113,8 @@ transform(shaState * shaStateP, sha_int * chunk)
     sha_int TEMP = 0;
 
     int t;
-    sha_int W[SHA_ROUNDS];
+    sha_int W[SHA_ROUNDS + 1];
+    W[SHA_ROUNDS] = 0;
 
     for (t = 0; t < SHA_CHUNK_INTS; t++)
 	W[t] = chunk[t];
