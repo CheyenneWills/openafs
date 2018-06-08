@@ -534,11 +534,11 @@ FindDump(struct bc_config *aconfig, char *nodeString,
     *nodeptr = 0;
 
     /* ensure first char is correct separator */
-    if ((nodeString[0] != '/')
+    if ((nodeString == NULL) || (nodeString[0] != '/')
 	|| (strlen(&nodeString[0]) <= 1)
 	) {
 	printf("FindDump: %s, error in dump name specification\n",
-	       nodeString);
+	       nodeString != NULL ? nodeString : "NULL" );
 	return (-3);
     }
 

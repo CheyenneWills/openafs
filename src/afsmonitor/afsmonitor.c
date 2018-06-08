@@ -2527,7 +2527,7 @@ Print_CM_CB(void)
 	    j = 0;
 	    while (j < numCM) {
 	        for (k = 0; k < MAX_NUM_CM_COLLECTIONS; k++) {
-		    if (!cmlist->empty[k]) {
+		    if (cmlist && !cmlist->empty[k]) {
 			fprintf(debugFD,
 				"\t %d) probeNum = %d host = %s cn = %d",
 				j,
@@ -2541,7 +2541,8 @@ Print_CM_CB(void)
 		    } else
 		        fprintf(debugFD, "\t %d) -- empty --\n", j);
 		}
-		cmlist = cmlist->next;
+		if (cmlist && cmlist->next)
+		    cmlist = cmlist->next;
 		j++;
 	    }
 	    if (cmlist != (struct afsmon_cm_Results_list *)0)

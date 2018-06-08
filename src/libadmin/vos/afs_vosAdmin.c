@@ -2183,10 +2183,8 @@ vos_VLDBGetBegin(const void *cellHandle, const void *serverHandle,
 	if (iter != NULL) {
 	    free(iter);
 	}
-	if (entry->entries.nbulkentries_val != NULL) {
-	    free(entry->entries.nbulkentries_val);
-	}
 	if (entry != NULL) {
+	    free(entry->entries.nbulkentries_val);
 	    free(entry);
 	}
     }
