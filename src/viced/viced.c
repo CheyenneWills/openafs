@@ -1843,6 +1843,7 @@ main(int argc, char *argv[])
     int curLimit;
     time_t t;
     struct tm tm;
+    char hoststr[16];
     afs_uint32 rx_bindhost;
     VolumePackageOptions opts;
     struct afsconf_bsso_info bsso;
@@ -2011,6 +2012,8 @@ main(int argc, char *argv[])
 	rx_SetUdpBufSize(udpBufSize);	/* set the UDP buffer size for receive */
     rx_bindhost = SetupVL();
 
+    ViceLog(0, ("File server binding rx to %s:%d\n",
+            afs_inet_ntoa_r(rx_bindhost, hoststr), 7000));
     if (rx_InitHost(rx_bindhost, (int)htons(7000)) < 0) {
 	ViceLog(0, ("Cannot initialize RX\n"));
 	exit(1);
@@ -2217,7 +2220,6 @@ main(int argc, char *argv[])
     if (!he) {
 	ViceLog(0, ("Can't find address for FileServer '%s'\n", FS_HostName));
     } else {
-	char hoststr[16];
 	memcpy(&FS_HostAddr_NBO, he->h_addr, 4);
 	(void)afs_inet_ntoa_r(FS_HostAddr_NBO, hoststr);
 	FS_HostAddr_HBO = ntohl(FS_HostAddr_NBO);
