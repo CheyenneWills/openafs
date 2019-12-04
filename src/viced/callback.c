@@ -1387,7 +1387,7 @@ CleanupTimedOutCallBacks_r(void)
 		cbi = cb->tnext;
 		ViceLog(8,
 			("CCB: deleting timed out call back %x (%s), (%" AFS_VOLID_FMT ",%u,%u)\n",
-			 h_itoh(cb->hhead)->z.host,
+			 h_itoh(cb->hhead)->z.addr.u.in.sin_addr.s_addr,
 			 h_Host2str(h_itoh(cb->hhead), &hoststr),
 			 afs_printable_VolumeId_lu(itofe(cb->fhead)->volid),
 			 itofe(cb->fhead)->vnode, itofe(cb->fhead)->unique));
@@ -3020,14 +3020,14 @@ MultiBreakCallBackAlternateAddress_r(struct host *host,
     /* initialize alternate rx connections */
     for (i = 0, j = 0; i < host->z.interface->numberOfInterfaces; i++) {
 	/* this is the current primary address */
-	if (host->z.host == host->z.interface->interface[i].addr &&
-	    host->z.port == host->z.interface->interface[i].port)
+	if (host->z.addr.u.in.sin_addr.s_addr == host->z.interface->interface[i].addr.u.in.sin_addr.s_addr
+	   && host->z.addr.u.in.sin_port == host->z.interface->interface[i].addr.u.in.sin_port)
 	    continue;
 
 	interfaces[j] = host->z.interface->interface[i];
 	conns[j] =
-	    rx_NewConnection(interfaces[j].addr,
-			     interfaces[j].port, 1, sc, 0);
+	    rx_NewConnection(interfaces[j].addr.u.in.sin_addr.s_addr,
+			     interfaces[j].addr.u.in.sin_port, 1, sc, 0);
 	rx_SetConnDeadTime(conns[j], 2);
 	rx_SetConnHardDeadTime(conns[j], AFS_HARDDEADTIME);
 	j++;
@@ -3047,11 +3047,10 @@ MultiBreakCallBackAlternateAddress_r(struct host *host,
 		rx_DestroyConnection(host->z.callback_rxcon);
 	    host->z.callback_rxcon = conns[multi_i];
 	    /* add then remove */
-	    addInterfaceAddr_r(host, interfaces[multi_i].addr,
-	                             interfaces[multi_i].port);
-	    removeInterfaceAddr_r(host, host->z.host, host->z.port);
-	    host->z.host = interfaces[multi_i].addr;
-	    host->z.port = interfaces[multi_i].port;
+	    addInterfaceAddr_r(host, &interfaces[multi_i].addr);
+	    removeInterfaceAddr_r(host, &host->z.addr);
+	    host->z.addr.u.in.sin_addr.s_addr = interfaces[multi_i].addr.u.in.sin_addr.s_addr;
+	    host->z.addr.u.in.sin_port = interfaces[multi_i].addr.u.in.sin_port;
 	    connSuccess = conns[multi_i];
 	    rx_SetConnDeadTime(host->z.callback_rxcon, 50);
 	    rx_SetConnHardDeadTime(host->z.callback_rxcon, AFS_HARDDEADTIME);
@@ -3116,14 +3115,14 @@ MultiProbeAlternateAddress_r(struct host *host)
     /* initialize alternate rx connections */
     for (i = 0, j = 0; i < host->z.interface->numberOfInterfaces; i++) {
 	/* this is the current primary address */
-	if (host->z.host == host->z.interface->interface[i].addr &&
-	    host->z.port == host->z.interface->interface[i].port)
+	if (host->z.addr.u.in.sin_addr.s_addr == host->z.interface->interface[i].addr.u.in.sin_addr.s_addr
+	    && host->z.addr.u.in.sin_port == host->z.interface->interface[i].addr.u.in.sin_port)
 	    continue;
 
 	interfaces[j] = host->z.interface->interface[i];
 	conns[j] =
-	    rx_NewConnection(interfaces[j].addr,
-			     interfaces[j].port, 1, sc, 0);
+	    rx_NewConnection(interfaces[j].addr.u.in.sin_addr.s_addr,
+			     interfaces[j].addr.u.in.sin_port, 1, sc, 0);
 	rx_SetConnDeadTime(conns[j], 2);
 	rx_SetConnHardDeadTime(conns[j], AFS_HARDDEADTIME);
 	j++;
@@ -3143,11 +3142,10 @@ MultiProbeAlternateAddress_r(struct host *host)
 		rx_DestroyConnection(host->z.callback_rxcon);
 	    host->z.callback_rxcon = conns[multi_i];
 	    /* add then remove */
-	    addInterfaceAddr_r(host, interfaces[multi_i].addr,
-	                             interfaces[multi_i].port);
-	    removeInterfaceAddr_r(host, host->z.host, host->z.port);
-	    host->z.host = interfaces[multi_i].addr;
-	    host->z.port = interfaces[multi_i].port;
+	    addInterfaceAddr_r(host, &interfaces[multi_i].addr);
+	    removeInterfaceAddr_r(host, &host->z.addr);
+	    host->z.addr.u.in.sin_addr.s_addr = interfaces[multi_i].addr.u.in.sin_addr.s_addr;
+	    host->z.addr.u.in.sin_port = interfaces[multi_i].addr.u.in.sin_port;
 	    connSuccess = conns[multi_i];
 	    rx_SetConnDeadTime(host->z.callback_rxcon, 50);
 	    rx_SetConnHardDeadTime(host->z.callback_rxcon, AFS_HARDDEADTIME);
@@ -3171,7 +3169,7 @@ MultiProbeAlternateAddress_r(struct host *host)
             if (multi_error == 1) {
                 /* remove the current alternate address from this host */
                 H_LOCK;
-                removeInterfaceAddr_r(host, interfaces[multi_i].addr, interfaces[multi_i].port);
+                removeInterfaceAddr_r(host, &interfaces[multi_i].addr);
                 H_UNLOCK;
             }
         }

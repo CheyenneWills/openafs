@@ -74,7 +74,7 @@ struct rx_sockaddr {
     union {
 	struct sockaddr sa;
 	struct sockaddr_in in;
-	struct sockaddr_in6 in6;
+	/* struct sockaddr_in6 in6; */
 	struct sockaddr_storage ss;
     } u;
 };
