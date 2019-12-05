@@ -1048,6 +1048,23 @@ rx_NewConnection(afs_uint32 shost, u_short sport, u_short sservice,
 		 struct rx_securityClass *securityObject,
 		 int serviceSecurityIndex)
 {
+    struct rx_sockaddr sa;
+    sa.u.in.sin_family = AF_INET;
+    sa.u.in.sin_addr.s_addr = shost;
+    sa.u.in.sin_port = sport;
+    return rx_NewConnection2(&sa, sservice, securityObject, serviceSecurityIndex);
+}
+
+/**
+ * Create a new client connection with a socket address.
+ */
+struct rx_connection *
+rx_NewConnection2(struct rx_sockaddr *sa, u_short sservice,
+		  struct rx_securityClass *securityObject,
+		  int serviceSecurityIndex)
+{
+    afs_uint32 shost = sa->u.in.sin_addr.s_addr;
+    u_short sport = sa->u.in.sin_port;
     int hashindex, i;
     struct rx_connection *conn;
     int code;

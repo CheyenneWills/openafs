@@ -36,7 +36,7 @@
 # include <roken.h>
 #endif
 
-#include <rx/rx.h>
+#include "rx.h"
 
 /**
  * Format an IPV4 network address to a string ddd.ddd.ddd.ddd
@@ -58,4 +58,37 @@ rx_inet2str(afs_uint32 addr, struct rx_inet_fmtbuf *buf)
 	     (taddr >> 8) & 0xff,
 	     (taddr) & 0xff);
     return buf->buffer;
+}
+
+char *
+rx_sockaddr2str(struct rx_sockaddr *sa, struct rx_sockaddr_fmtbuf *buf)
+{
+    /* TODO */
+    return buf->buffer;
+}
+
+/**
+ * Return true if a has the same value as b.
+ *
+ * @param[in] a  sockaddr to compare
+ * @param[in] b  sockaddr to compare
+ */
+int
+rx_sockaddr_equal(struct rx_sockaddr *a, struct rx_sockaddr *b)
+{
+    return a->u.in.sin_addr.s_addr == b->u.in.sin_addr.s_addr
+	   && a->u.in.sin_port == b->u.in.sin_port;
+}
+
+/**
+ * Copy a sockaddr.
+ *
+ * @param[out] dst destination address
+ * @param[in] src source address
+ */
+int
+rx_sockaddr_copy(struct rx_sockaddr *dst, struct rx_sockaddr *src)
+{
+    /* TODO */
+    return 0;
 }

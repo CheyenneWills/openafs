@@ -67,6 +67,18 @@ struct rx_connection;
 struct rx_call;
 struct rx_packet;
 
+/**
+ * RX socket address
+ */
+struct rx_sockaddr {
+    union {
+	struct sockaddr sa;
+	struct sockaddr_in in;
+	struct sockaddr_in6 in6;
+	struct sockaddr_storage ss;
+    } u;
+};
+
 /* Connection management */
 
 extern afs_uint32  rx_GetConnectionEpoch(struct rx_connection *conn);
@@ -98,6 +110,15 @@ struct rx_inet_fmtbuf {
 
 extern char *rx_Conn2str(struct rx_connection *conn, struct rx_inet_fmtbuf *buf);
 extern char *rx_inet2str(afs_uint32 addr, struct rx_inet_fmtbuf *buf);
+
+
+struct rx_sockaddr_fmtbuf {
+    char buffer[23]; /**< ipv4addr:port ddd.ddd.ddd.ddd:dddddz */
+};
+
+extern char *rx_sockaddr2str(struct rx_sockaddr *sa, struct rx_sockaddr_fmtbuf *buf);
+extern int rx_sockaddr_equal(struct rx_sockaddr *a, struct rx_sockaddr *b);
+extern int rx_sockaddr_copy(struct rx_sockaddr *dst, struct rx_sockaddr *src);
 
 /* Call management */
 extern struct rx_connection *rx_ConnectionOf(struct rx_call *call);

@@ -35,6 +35,11 @@ extern struct rx_connection *rx_NewConnection(afs_uint32 shost,
 					      struct rx_securityClass
 					      *securityObject,
 					      int serviceSecurityIndex);
+extern struct rx_connection *rx_NewConnection2(struct rx_sockaddr *addr,
+					      u_short sservice,
+					      struct rx_securityClass
+					      *securityObject,
+					      int serviceSecurityIndex);
 extern void rx_SetConnDeadTime(struct rx_connection *conn,
 			       int seconds);
 extern void rx_SetConnHardDeadTime(struct rx_connection *conn, int seconds);
