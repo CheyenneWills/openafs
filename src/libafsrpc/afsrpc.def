@@ -366,3 +366,6 @@ EXPORTS
 ; for debugging
         rx_DumpCalls                            @9998
         rx_DumpPackets                          @9999
+
+; sockaddr support
+    rx_NewConnection2   @10000
