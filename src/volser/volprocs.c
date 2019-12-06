@@ -123,15 +123,14 @@ static afs_int32 VolSetDate(struct rx_call *, afs_int32, afs_int32);
  * Return the host address of the caller as a string.
  *
  * @param[in]  acid    incoming rx call
- * @param[out] buffer  buffer to be filled with the addess string
+ * @param[out] buf     format work buffer
  *
- * @return address as formatted by inet_ntoa
+ * @returns pointer to buffer with string representation of netaddr:port
  */
 static_inline char *
-callerAddress(struct rx_call *acid, char *buffer)
+callerAddress(struct rx_call *acid, struct rx_inet_fmtbuf *buf)
 {
-    afs_uint32 ip = rx_HostOf(rx_PeerOf(rx_ConnectionOf(acid)));
-    return afs_inet_ntoa_r(ip, buffer);
+    return rx_Conn2str(rx_ConnectionOf(acid), buf);
 }
 
 /* this call unlocks all of the partition locks we've set */
@@ -454,9 +453,9 @@ VolNukeVolume(struct rx_call *acid, afs_int32 apartID, afs_uint32 avolID)
     if (!afsconf_SuperUser(tdir, acid, caller))
 	return VOLSERBAD_ACCESS;
     if (DoLogging) {
-	char buffer[16];
+	struct rx_inet_fmtbuf buffer;
 	Log("%s on %s is executing VolNukeVolume %u\n", caller,
-	    callerAddress(acid, buffer), avolID);
+	    callerAddress(acid, &buffer), avolID);
     }
 
     if (volutil_PartitionName2_r(apartID, partName, sizeof(partName)) != 0)
@@ -512,9 +511,9 @@ VolCreateVolume(struct rx_call *acid, afs_int32 apart, char *aname,
     if (!afsconf_SuperUser(tdir, acid, caller))
 	return VOLSERBAD_ACCESS;
     if (DoLogging) {
-	char buffer[16];
+	struct rx_inet_fmtbuf buffer;
 	Log("%s on %s is executing CreateVolume '%s'\n", caller,
-	    callerAddress(acid, buffer), aname);
+	    callerAddress(acid, &buffer), aname);
     }
     if ((error = ConvertPartition(apart, ppath, sizeof(ppath))))
 	return error;		/*a standard unix error */
@@ -618,9 +617,9 @@ VolDeleteVolume(struct rx_call *acid, afs_int32 atrans)
 	return ENOENT;
     }
     if (DoLogging) {
-	char buffer[16];
+	struct rx_inet_fmtbuf buffer;
 	Log("%s on %s is executing Delete Volume %" AFS_VOLID_FMT "\n", caller,
-	    callerAddress(acid, buffer), afs_printable_VolumeId_lu(tt->volid));
+	    callerAddress(acid, &buffer), afs_printable_VolumeId_lu(tt->volid));
     }
     TSetRxCall(tt, acid, "DeleteVolume");
     VPurgeVolume(&error, tt->volume);	/* don't check error code, it is not set! */
@@ -681,9 +680,9 @@ VolClone(struct rx_call *acid, afs_int32 atrans, VolumeId purgeId,
     if (!afsconf_SuperUser(tdir, acid, caller))
 	return VOLSERBAD_ACCESS;	/*not a super user */
     if (DoLogging) {
-	char buffer[16];
+	struct rx_inet_fmtbuf buffer;
 	Log("%s on %s is executing Clone Volume new name=%s\n", caller,
-	    callerAddress(acid, buffer), newName);
+	    callerAddress(acid, &buffer), newName);
     }
     error = 0;
     purgevp = (Volume *) 0;
@@ -868,9 +867,9 @@ VolReClone(struct rx_call *acid, afs_int32 atrans, VolumeId cloneId)
     if (!afsconf_SuperUser(tdir, acid, caller))
 	return VOLSERBAD_ACCESS;
     if (DoLogging) {
-	char buffer[16];
+	struct rx_inet_fmtbuf buffer;
 	Log("%s on %s is executing Reclone Volume %" AFS_VOLID_FMT "\n", caller,
-	    callerAddress(acid, buffer), afs_printable_VolumeId_lu(cloneId));
+	    callerAddress(acid, &buffer), afs_printable_VolumeId_lu(cloneId));
     }
     error = 0;
     clonevp = originalvp = (Volume *) 0;
@@ -1556,9 +1555,9 @@ VolRestore(struct rx_call *acid, afs_int32 atrans, struct restoreCookie *cookie)
 	return ENOENT;
     }
     if (DoLogging) {
-	char buffer[16];
+	struct rx_inet_fmtbuf buffer;
 	Log("%s on %s is executing Restore %" AFS_VOLID_FMT "\n", caller,
-	    callerAddress(acid, buffer), afs_printable_VolumeId_lu(tt->volid));
+	    callerAddress(acid, &buffer), afs_printable_VolumeId_lu(tt->volid));
     }
     TSetRxCall(tt, acid, "Restore");
 

@@ -520,6 +520,13 @@ extern void ulock_relLock(struct ubik_trans *atrans);
 extern void ulock_Debug(struct ubik_debug *aparm);
 /*\}*/
 
+/*! \name util.c */
+extern char *ubik_ServerInterface2str(struct ubik_server *ts, int iface_index,
+				       struct rx_inet_fmtbuf *buf);
+extern char *ubik_InterfaceAddr2str(UbikInterfaceAddr *addr, int iface_index,
+				     struct rx_inet_fmtbuf *buf);
+/*\}*/
+
 /*! \name vote.c */
 extern int uvote_ShouldIRun(void);
 extern afs_int32 uvote_GetSyncSite(void);

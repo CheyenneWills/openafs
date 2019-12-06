@@ -527,7 +527,7 @@ ubeacon_Interact(void *dummy)
 	 * Don't waste time using mult Rx calls if there are no connections out there
 	 */
 	if (i > 0) {
-	    char hoststr[16];
+	    struct rx_inet_fmtbuf hoststr;
 	    multi_Rx(connections, i) {
 		multi_VOTE_Beacon(syncsite, startTime, &tversion,
 				  &ttid);
@@ -548,12 +548,12 @@ ubeacon_Interact(void *dummy)
 		     * (rxkad, rxgk, etc). treat the host as if we got a
 		     * timeout, since this is not a valid vote. */
 		    ViceLog(0, ("assuming distant vote time %d from %s is an error; marking host down\n",
-		               (int)code, afs_inet_ntoa_r(ts->addr[0], hoststr)));
+				(int)code, ubik_ServerInterface2str(ts, 0, &hoststr)));
 		    code = -1;
 		}
 		if (code > 0 && rx_ConnError(connections[multi_i])) {
 		    ViceLog(0, ("assuming vote from %s is invalid due to conn error %d; marking host down\n",
-		               afs_inet_ntoa_r(ts->addr[0], hoststr),
+			       ubik_ServerInterface2str(ts, 0, &hoststr),
 		               (int)rx_ConnError(connections[multi_i])));
 		    code = -1;
 		}
@@ -564,7 +564,7 @@ ubeacon_Interact(void *dummy)
 		if (code > 0) {
 		    if ((code & ~0xff) == ERROR_TABLE_BASE_RXK) {
 			ViceLog(0, ("Server %s is marked down due to token error %d\n",
-				    afs_inet_ntoa_r(ts->addr[0], hoststr), code));
+				    ubik_ServerInterface2str(ts, 0, &hoststr), code));
 			ts->up = 0;
 			ts->beaconSinceDown = 0;
 			urecovery_LostServer(ts);
@@ -580,20 +580,20 @@ ubeacon_Interact(void *dummy)
 			ts->up = 1;	/* server is up (not really necessary: recovery does this for real) */
 			ts->beaconSinceDown = 1;
 			ViceLog(5, ("yes vote from host %s\n",
-				    afs_inet_ntoa_r(ts->addr[0], hoststr)));
+				    ubik_ServerInterface2str(ts, 0, &hoststr)));
 		    }
 		} else if (code == 0) {
 		    ts->lastVoteTime = temp;
 		    ts->lastVote = 0;
 		    ts->beaconSinceDown = 1;
 		    ViceLog(5, ("no vote from %s\n",
-				afs_inet_ntoa_r(ts->addr[0], hoststr)));
+				ubik_ServerInterface2str(ts, 0, &hoststr)));
 		} else if (code < 0) {
 		    ts->up = 0;
 		    ts->beaconSinceDown = 0;
 		    urecovery_LostServer(ts);
 		    ViceLog(0, ("Server %s is marked down due to VOTE_Beacon time out (%d)\n",
-				afs_inet_ntoa_r(ts->addr[0], hoststr), code));
+				ubik_ServerInterface2str(ts, 0, &hoststr), code));
 		}
 		UBIK_BEACON_UNLOCK;
 	    }
@@ -833,9 +833,7 @@ ubeacon_updateUbikNetworkAddress(afs_uint32 ubik_host[UBIK_MAX_INTERFACE_ADDR])
     UbikInterfaceAddr inAddr, outAddr;
     struct rx_connection *conns[MAXSERVERS];
     struct ubik_server *ts, *server[MAXSERVERS];
-    char buffer[32];
-    char hoststr[16];
-
+    struct rx_inet_fmtbuf buffer, hoststr;
     UBIK_ADDR_LOCK;
     for (count = 0, ts = ubik_servers; ts; count++, ts = ts->next) {
 	conns[count] = ts->disk_rxcid;
@@ -861,10 +859,10 @@ ubeacon_updateUbikNetworkAddress(afs_uint32 ubik_host[UBIK_MAX_INTERFACE_ADDR])
 		UBIK_ADDR_LOCK;
 		if (ts->addr[0] != htonl(outAddr.hostAddr[0])) {
 		    code = UBADHOST;
-		    strcpy(buffer, afs_inet_ntoa_r(ts->addr[0], hoststr));
+		    ubik_ServerInterface2str(ts, 0, &buffer);
 		    ViceLog(0, ("ubik:Two primary addresses for same server \
-                    %s %s\n", buffer,
-		    afs_inet_ntoa_r(htonl(outAddr.hostAddr[0]), hoststr)));
+                    %s %s\n", buffer.buffer,
+		    ubik_InterfaceAddr2str(&outAddr, 0, &hoststr)));
 		} else {
 		    for (j = 1; j < UBIK_MAX_INTERFACE_ADDR; j++)
 			ts->addr[j] = htonl(outAddr.hostAddr[j]);
@@ -873,21 +871,21 @@ ubeacon_updateUbikNetworkAddress(afs_uint32 ubik_host[UBIK_MAX_INTERFACE_ADDR])
 	    } else if (multi_error == RXGEN_OPCODE) {	/* pre 3.5 remote server */
 		UBIK_ADDR_LOCK;
 		ViceLog(0, ("ubik server %s does not support UpdateInterfaceAddr RPC\n",
-		     afs_inet_ntoa_r(ts->addr[0], hoststr)));
+		     ubik_ServerInterface2str(ts, 0, &hoststr)));
 		UBIK_ADDR_UNLOCK;
 	    } else if (multi_error == UBADHOST) {
 		code = UBADHOST;	/* remote CellServDB inconsistency */
 		ViceLog(0, ("Inconsistent Cell Info on server:\n"));
 		UBIK_ADDR_LOCK;
 		for (j = 0; j < UBIK_MAX_INTERFACE_ADDR && ts->addr[j]; j++)
-		    ViceLog(0, ("... %s\n", afs_inet_ntoa_r(ts->addr[j], hoststr)));
+		    ViceLog(0, ("... %s\n", ubik_ServerInterface2str(ts, j, &hoststr)));
 		UBIK_ADDR_UNLOCK;
 	    } else {
 		UBIK_BEACON_LOCK;
 		ts->up = 0;	/* mark the remote server as down */
 		UBIK_BEACON_UNLOCK;
 		ViceLog(0, ("Server %s is marked down due to DISK_UpdateInterfaceAddr code %d\n",
-			    afs_inet_ntoa_r(ts->addr[0], hoststr), multi_error));
+			    ubik_ServerInterface2str(ts, 0, &hoststr), multi_error));
 
 	    }
 	}

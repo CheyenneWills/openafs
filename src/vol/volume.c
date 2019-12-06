@@ -4436,15 +4436,12 @@ VScanCalls_r(struct Volume *vp)
 
     for(queue_Scan(&vp->rx_call_list, cbv, ncbv, VCallByVol)) {
 	if (GetLogLevel() != 0) {
-	    struct rx_peer *peer;
-	    char hoststr[16];
-	    peer = rx_PeerOf(rx_ConnectionOf(cbv->call));
+	    struct rx_inet_fmtbuf hoststr;
 
-	    Log("Offlining volume %" AFS_VOLID_FMT " while client %s:%u is trying to read "
+	    Log("Offlining volume %" AFS_VOLID_FMT " while client %s is trying to read "
 	        "from it; kicking client off with error %ld\n",
 	        afs_printable_VolumeId_lu(vp->hashid),
-	        afs_inet_ntoa_r(rx_HostOf(peer), hoststr),
-	        (unsigned) ntohs(rx_PortOf(peer)),
+		rx_Conn2str(rx_ConnectionOf(cbv->call), &hoststr),
 	        (long) err);
 	}
 	(*vol_opts.interrupt_rxcall) (cbv->call, err);

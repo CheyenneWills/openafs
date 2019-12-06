@@ -191,6 +191,7 @@ SVOTE_Beacon(struct rx_call * rxcall, afs_int32 astate,
     struct ubik_server *ts;
     int isClone = 0;
     char hoststr[16];
+    struct rx_inet_fmtbuf connstr;
 
     if (rxcall) {		/* caller's host */
 	aconn = rx_ConnectionOf(rxcall);
@@ -202,7 +203,7 @@ SVOTE_Beacon(struct rx_call * rxcall, afs_int32 astate,
 	otherHost = ubikGetPrimaryInterfaceAddr(otherHost);
 	if (!otherHost) {
 	    ViceLog(5, ("Received beacon from unknown host %s\n",
-			afs_inet_ntoa_r(rx_HostOf(rxp), hoststr)));
+			rx_Conn2str(aconn, &connstr)));
 	    return 0;		/* I don't know about you: vote no */
 	}
 	for (ts = ubik_servers; ts; ts = ts->next) {

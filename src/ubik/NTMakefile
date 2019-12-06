@@ -41,6 +41,7 @@ LIBOBJS =\
 	$(OUT)\ubikcmd.obj \
 	$(OUT)\ubikclient.obj \
 	$(OUT)\uerrors.obj	\
+	$(OUT)\util.obj \
 	$(OUT)\AFS_component_version_number.obj
 
 
@@ -68,6 +69,7 @@ MT_LIBOBJS =\
 	$(OUT)\ubikcmd_mt.obj \
 	$(OUT)\ubikclient_mt.obj \
 	$(OUT)\uerrors_mt.obj	\
+	$(OUT)\util_mt.obj \
 	$(OUT)\AFS_component_version_number.obj
 
 $(OUT)\disk_mt.obj:disk.c
@@ -113,6 +115,9 @@ $(OUT)\ubikcmd_mt.obj:ubikcmd.c
 	$(C2OBJ) $** -DAFS_PTHREAD_ENV
 
 $(OUT)\ubikclient_mt.obj:ubikclient.c
+	$(C2OBJ) $** -DAFS_PTHREAD_ENV
+
+$(OUT)\util_mt.obj:util.c
 	$(C2OBJ) $** -DAFS_PTHREAD_ENV
 
 $(MT_LIBFILE): $(MT_LIBOBJS)

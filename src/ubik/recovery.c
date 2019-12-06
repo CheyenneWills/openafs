@@ -456,6 +456,7 @@ urecovery_Interact(void *dummy)
     struct ubik_stat ubikstat;
     struct in_addr inAddr;
     char hoststr[16];
+    struct rx_inet_fmtbuf serverstr;
     char pbuffer[1028];
     int fd = -1;
     afs_int32 pass;
@@ -604,7 +605,7 @@ urecovery_Interact(void *dummy)
 
 	    ViceLog(0, ("Ubik: Synchronize database: receive (via GetFile) "
 			"from server %s begin\n",
-		       afs_inet_ntoa_r(bestServer->addr[0], hoststr)));
+		       ubik_ServerInterface2str(bestServer, 0, &serverstr)));
 	    UBIK_ADDR_UNLOCK;
 
 	    code = StartDISK_GetFile(rxcall, file);
@@ -723,12 +724,12 @@ urecovery_Interact(void *dummy)
 		ViceLog(0,
 		    ("Ubik: Synchronize database: receive (via GetFile) "
 		    "from server %s failed (error = %d)\n",
-		    afs_inet_ntoa_r(bestServer->addr[0], hoststr), code));
+		    ubik_ServerInterface2str(bestServer, 0, &serverstr), code));
 	    } else {
 		ViceLog(0,
 		    ("Ubik: Synchronize database: receive (via GetFile) "
 		    "from server %s complete, version: %d.%d\n",
-		    afs_inet_ntoa_r(bestServer->addr[0], hoststr),
+		    ubik_ServerInterface2str(bestServer, 0, &serverstr),
 		    ubik_dbase->version.epoch, ubik_dbase->version.counter));
 
 		urecovery_state |= UBIK_RECHAVEDB;
@@ -901,7 +902,7 @@ DoProbe(struct ubik_server *server)
     struct rx_connection *connSuccess = 0;
     int i, nconns, success_i = -1;
     afs_uint32 addr;
-    char buffer[32];
+    struct rx_inet_fmtbuf buffer;
     char hoststr[16];
 
     UBIK_ADDR_LOCK;
@@ -946,10 +947,10 @@ DoProbe(struct ubik_server *server)
 	                                      addr_globals.ubikSecIndex);
 
 	connSuccess = conns[success_i];
-	strcpy(buffer, afs_inet_ntoa_r(server->addr[0], hoststr));
+	ubik_ServerInterface2str(server, 0, &buffer);
 
 	ViceLog(0, ("ubik:server %s is back up: will be contacted through %s\n",
-	     buffer, afs_inet_ntoa_r(addr, hoststr)));
+	     buffer.buffer, afs_inet_ntoa_r(addr, hoststr)));
 	UBIK_ADDR_UNLOCK;
     }
 
@@ -960,7 +961,7 @@ DoProbe(struct ubik_server *server)
 
     if (!connSuccess)
 	ViceLog(5, ("ubik:server %s still down\n",
-		    afs_inet_ntoa_r(server->addr[0], hoststr)));
+		    ubik_ServerInterface2str(server, 0, &buffer)));
 
     if (connSuccess)
 	return 0;		/* success */

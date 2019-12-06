@@ -348,6 +348,8 @@ EXPORTS
 ;	xdr_Capabilities                        @353
 	xdr_rpcStats                            @354
 	rx_GetCallStatus                        @355
+	rx_Conn2str                             @356
+	rx_inet2str                             @357
 
 ; for performance testing
         rx_TSFPQGlobSize                        @2001 DATA

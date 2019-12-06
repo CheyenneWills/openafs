@@ -88,6 +88,17 @@ extern int rx_SecurityClassOf(struct rx_connection *);
 extern struct rx_service *rx_ServiceOf(struct rx_connection *);
 extern int rx_ConnError(struct rx_connection *);
 
+/* IP Address formatting */
+
+struct rx_inet_fmtbuf {
+    /* ipv4addr      ddd.ddd.ddd.dddz */
+    /* ipv4addr:port ddd.ddd.ddd.ddd:dddddz */
+    char buffer[23];
+};
+
+extern char *rx_Conn2str(struct rx_connection *conn, struct rx_inet_fmtbuf *buf);
+extern char *rx_inet2str(afs_uint32 addr, struct rx_inet_fmtbuf *buf);
+
 /* Call management */
 extern struct rx_connection *rx_ConnectionOf(struct rx_call *call);
 extern int rx_Error(struct rx_call *call);

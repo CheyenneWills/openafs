@@ -88,6 +88,7 @@ LT_objs = \
 	Kvice.cs.lo \
 	fcrypt.lo \
 	rx.lo \
+	rx_addr.lo \
 	rx_rdwr.lo \
 	rx_clock.lo \
 	rx_event.lo \
@@ -345,6 +346,8 @@ afs_nfsclnt.lo: $(TOP_SRC_AFS)/afs_nfsclnt.c
 	$(LT_CCRULE) $(TOP_SRC_AFS)/afs_nfsclnt.c
 rx.lo: $(TOP_SRC_RX)/rx.c
 	$(LT_CCRULE) $(TOP_SRC_RX)/rx.c
+rx_addr.lo: $(TOP_SRC_RX)/rx_addr.c
+	$(LT_CCRULE) $(TOP_SRC_RX)/rx_addr.c
 rx_clock.lo: $(TOP_SRC_RX)/rx_clock.c
 	$(LT_CCRULE) $(TOP_SRC_RX)/rx_clock.c
 rx_event.lo: $(TOP_SRC_RX)/rx_event.c

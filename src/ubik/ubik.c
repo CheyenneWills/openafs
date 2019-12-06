@@ -163,7 +163,7 @@ ContactQuorum_iterate(struct ubik_trans *atrans, int aflags, struct ubik_server 
 	    Quorum_EndIO(atrans, *conn);
 	    *conn = NULL;
 	    if (code) {		/* failure */
-		char hoststr[16];
+		struct rx_inet_fmtbuf hoststr;
 
 		*rcode = code;
 		UBIK_BEACON_LOCK;
@@ -173,7 +173,7 @@ ContactQuorum_iterate(struct ubik_trans *atrans, int aflags, struct ubik_server 
 		(*ts)->currentDB = 0;
 		urecovery_LostServer(*ts);	/* tell recovery to try to resend dbase later */
 		ViceLog(0, ("Server %s is marked down due to %s code %d\n",
-			    afs_inet_ntoa_r((*ts)->addr[0], hoststr), procname, *rcode));
+			    ubik_ServerInterface2str(*ts, 0, &hoststr), procname, *rcode));
 	    } else {		/* success */
 		if (!(*ts)->isClone)
 		    (*okcalls)++;	/* count up how many worked */

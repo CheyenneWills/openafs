@@ -132,6 +132,10 @@ struct client {
 				 * on host's clients list. */
 };
 
+struct h_hostdebug_fmtbuf {
+    /* addr:port uuid:uuid flags: 0xhhhhhhhhz */
+    char buffer[sizeof(struct rx_inet_fmtbuf) + sizeof(struct uuid_fmtbuf) + 25];
+};
 
 /*
  * key for the client structure stored in connection specific data
@@ -219,6 +223,12 @@ extern void h_EnumerateClients(VolumeId vid,
                                void *arock);
 extern int GetClient(struct rx_connection *tcon, struct client **cp);
 extern int PutClient(struct client **cp);
+
+extern char *h_AddrPort2str(struct AddrPort *interface, struct rx_inet_fmtbuf *buf);
+extern char *h_HostInterface2str(struct host *host, int iface_index, struct rx_inet_fmtbuf *buf);
+extern char *h_Client2str(struct client *client, struct rx_inet_fmtbuf *buf);
+extern char *h_Host2str(struct host *host, struct rx_inet_fmtbuf *buf);
+extern char *h_Host2Debugstr(struct host *host, struct h_hostdebug_fmtbuf *buf);
 extern void h_PrintStats(void);
 extern void h_PrintClients(void);
 extern void h_GetWorkStats(int *, int *, int *, afs_int32);

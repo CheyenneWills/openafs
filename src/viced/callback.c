@@ -722,7 +722,7 @@ MultiBreakCallBack_r(struct cbstruct cba[], int ncbas,
 	    if (multi_error) {
 		afs_uint32 idx;
 		struct host *hp;
-		char hoststr[16];
+		struct rx_inet_fmtbuf hoststr;
 
 		i = multi_to_cba_map[multi_i];
 		hp = cba[i].hp;
@@ -740,13 +740,12 @@ MultiBreakCallBack_r(struct cbstruct cba[], int ncbas,
 			if (ShowProblems) {
 			    ViceLog(7,
 				    ("BCB: Failed on file %u.%u.%u, "
-				     "Host %p (%s:%d) is down\n",
+				     "Host %p (%s) is down\n",
 				     afidp->AFSCBFids_val->Volume,
 				     afidp->AFSCBFids_val->Vnode,
 				     afidp->AFSCBFids_val->Unique,
                                      hp,
-				     afs_inet_ntoa_r(hp->z.host, hoststr),
-				     ntohs(hp->z.port)));
+				     h_Host2str(hp, &hoststr)));
 			}
 
 			H_LOCK;
@@ -810,12 +809,12 @@ BreakCallBack(struct host *xhost, AFSFid * fid, int flag)
     int ncbas;
     struct AFSCBFids tf;
     int hostindex;
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
 
     if (xhost)
 	ViceLog(7,
-		("BCB: BreakCallBack(Host %p all but %s:%d, (%u,%u,%u))\n",
-		 xhost, afs_inet_ntoa_r(xhost->z.host, hoststr), ntohs(xhost->z.port),
+		("BCB: BreakCallBack(Host %p all but %s, (%u,%u,%u))\n",
+		 xhost, h_Host2str(xhost, &hoststr),
 		 fid->Volume, fid->Vnode, fid->Unique));
     else
 	ViceLog(7,
@@ -866,9 +865,8 @@ BreakCallBack(struct host *xhost, AFSFid * fid, int flag)
 		    ViceLog(0, ("BCB: BOGUS! cb->hhead is NULL!\n"));
 		} else if (thishost->z.hostFlags & VENUSDOWN) {
 		    ViceLog(7,
-			    ("BCB: %p (%s:%d) is down; delaying break call back\n",
-			     thishost, afs_inet_ntoa_r(thishost->z.host, hoststr),
-			     ntohs(thishost->z.port)));
+			    ("BCB: %p (%s) is down; delaying break call back\n",
+			     thishost, h_Host2str(thishost, &hoststr)));
 		    cb->status = CB_DELAYED;
 		} else {
 		    if (!(thishost->z.hostFlags & HOSTDELETED)) {
@@ -912,7 +910,7 @@ DeleteCallBack(struct host *host, AFSFid * fid)
 {
     struct FileEntry *fe;
     afs_uint32 *pcb;
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
 
     H_LOCK;
     cbstuff.DeleteCallBacks++;
@@ -931,8 +929,8 @@ DeleteCallBack(struct host *host, AFSFid * fid)
     pcb = FindCBPtr(fe, host);
     if (!*pcb) {
 	ViceLog(8,
-		("DCB: No call back for host %p (%s:%d), (%u, %u, %u)\n",
-		 host, afs_inet_ntoa_r(host->z.host, hoststr), ntohs(host->z.port),
+		("DCB: No call back for host %p (%s), (%u, %u, %u)\n",
+		 host, h_Host2str(host, &hoststr),
 		 fid->Volume, fid->Vnode, fid->Unique));
 	h_Unlock_r(host);
 	H_UNLOCK;
@@ -1029,7 +1027,7 @@ BreakDelayedCallBacks_r(struct host *host)
     int cbi, first, nfids;
     struct CallBack *cb;
     int code;
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
     struct rx_connection *cb_conn;
 
     cbstuff.nbreakers++;
@@ -1055,16 +1053,14 @@ BreakDelayedCallBacks_r(struct host *host)
 	    if (ShowProblems) {
 		ViceLog(0,
 			("CB: Call back connect back failed (in break delayed) "
-			 "for Host %p (%s:%d)\n",
-			 host, afs_inet_ntoa_r(host->z.host, hoststr),
-			 ntohs(host->z.port)));
+			 "for Host %p (%s)\n",
+			 host, h_Host2str(host, &hoststr)));
 	    }
 	    host->z.hostFlags |= VENUSDOWN;
 	} else {
 	    ViceLog(25,
-		    ("InitCallBackState success on %p (%s:%d)\n",
-		     host, afs_inet_ntoa_r(host->z.host, hoststr),
-		     ntohs(host->z.port)));
+		    ("InitCallBackState success on %p (%s)\n",
+		     host, h_Host2str(host, &hoststr)));
 	    /* reset was done successfully */
 	    host->z.hostFlags |= RESETDONE;
 	    host->z.hostFlags &= ~VENUSDOWN;
@@ -1102,19 +1098,17 @@ BreakDelayedCallBacks_r(struct host *host)
 		int i;
 		if (ShowProblems) {
 		    ViceLog(0,
-			    ("CB: XCallBackBulk failed, Host %p (%s:%d); "
+			    ("CB: XCallBackBulk failed, Host %p (%s); "
 			     "callback list follows:\n",
-			     host, afs_inet_ntoa_r(host->z.host, hoststr),
-			     ntohs(host->z.port)));
+			     host, h_Host2str(host, &hoststr)));
 		}
 		for (i = 0; i < nfids; i++) {
 		    if (ShowProblems) {
 			ViceLog(0,
-				("CB: Host %p (%s:%d), file %u.%u.%u "
+				("CB: Host %p (%s), file %u.%u.%u "
 				 "(part of bulk callback)\n",
-				 host, afs_inet_ntoa_r(host->z.host, hoststr),
-				 ntohs(host->z.port), fids[i].Volume,
-				 fids[i].Vnode, fids[i].Unique));
+				 host, h_Host2str(host, &hoststr),
+				 fids[i].Volume, fids[i].Vnode, fids[i].Unique));
 		    }
 		    /* used to do this:
 		     * AddCallBack1_r(host, &fids[i], itot(thead[i]), CB_DELAYED, 1);
@@ -1140,7 +1134,7 @@ static int
 MultiBreakVolumeCallBack_r(struct host *host,
 			   struct VCBParams *parms, int deletefe)
 {
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
 
     if (host->z.hostFlags & HOSTDELETED)
 	return 0;
@@ -1153,9 +1147,8 @@ MultiBreakVolumeCallBack_r(struct host *host,
         /* Do not care if the host is now HOSTDELETED */
 	if (ShowProblems) {
 	    ViceLog(0,
-		    ("BVCB: volume callback for Host %p (%s:%d) failed\n",
-		     host, afs_inet_ntoa_r(host->z.host, hoststr),
-		     ntohs(host->z.port)));
+		    ("BVCB: volume callback for Host %p (%s) failed\n",
+		     host, h_Host2str(host, &hoststr)));
 	}
 	DeleteAllCallBacks_r(host, deletefe);	/* Delete all callback state
 						 * rather than attempting to
@@ -1273,7 +1266,7 @@ BreakLaterCallBacks(void)
     struct host *host;
     struct VCBParams henumParms;
     unsigned short tthead = 0;	/* zero is illegal value */
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
 
     /* Unchain first */
     ViceLog(25, ("Looking for FileEntries to unchain\n"));
@@ -1330,10 +1323,9 @@ BreakLaterCallBacks(void)
 		/* leave flag for MultiBreakVolumeCallBack to clear */
 	    } else {
 		ViceLog(125,
-			("Found host %p (%s:%d) non-DELAYED cb for %u:%u:%" AFS_VOLID_FMT "\n",
-			 host, afs_inet_ntoa_r(host->z.host, hoststr),
-			 ntohs(host->z.port), fe->vnode, fe->unique,
-			 afs_printable_VolumeId_lu(fe->volid)));
+			("Found host %p (%s) non-DELAYED cb for %u:%u:%" AFS_VOLID_FMT "\n",
+			 host, h_Host2str(host, &hoststr),
+			 fe->vnode, fe->unique, afs_printable_VolumeId_lu(fe->volid)));
 	    }
 	}
 	myfe = fe;
@@ -1384,7 +1376,7 @@ CleanupTimedOutCallBacks_r(void)
     afs_uint32 *thead;
     struct CallBack *cb;
     int ntimedout = 0;
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
 
     while (tfirst <= now) {
 	int cbi;
@@ -1394,10 +1386,9 @@ CleanupTimedOutCallBacks_r(void)
 		cb = itocb(cbi);
 		cbi = cb->tnext;
 		ViceLog(8,
-			("CCB: deleting timed out call back %x (%s:%d), (%" AFS_VOLID_FMT ",%u,%u)\n",
+			("CCB: deleting timed out call back %x (%s), (%" AFS_VOLID_FMT ",%u,%u)\n",
 			 h_itoh(cb->hhead)->z.host,
-			 afs_inet_ntoa_r(h_itoh(cb->hhead)->z.host, hoststr),
-			 h_itoh(cb->hhead)->z.port,
+			 h_Host2str(h_itoh(cb->hhead), &hoststr),
 			 afs_printable_VolumeId_lu(itofe(cb->fhead)->volid),
 			 itofe(cb->fhead)->vnode, itofe(cb->fhead)->unique));
 		HDel(cb);
@@ -1601,12 +1592,12 @@ static int
 ClearHostCallbacks_r(struct host *hp, int locked)
 {
     int code;
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
     struct rx_connection *cb_conn = NULL;
 
     ViceLog(5,
-	    ("GSS: Delete longest inactive host %p (%s:%d)\n",
-	     hp, afs_inet_ntoa_r(hp->z.host, hoststr), ntohs(hp->z.port)));
+	    ("GSS: Delete longest inactive host %p (%s)\n",
+	     hp, h_Host2str(hp, &hoststr)));
 
     if ((hp->z.hostFlags & HOSTDELETED)) {
 	/* hp could go away after reacquiring H_LOCK in h_NBLock_r, so we can't
@@ -3004,7 +2995,7 @@ MultiBreakCallBackAlternateAddress_r(struct host *host,
     struct AddrPort *interfaces;
     static struct rx_securityClass *sc = 0;
     static struct AFSCBs tc = { 0, 0 };
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
 
     /* nothing more can be done */
     if (!host->z.interface)
@@ -3044,8 +3035,8 @@ MultiBreakCallBackAlternateAddress_r(struct host *host,
 
     opr_Assert(j);			/* at least one alternate address */
     ViceLog(125,
-	    ("Starting multibreakcall back on all addr for host %p (%s:%d)\n",
-	     host, afs_inet_ntoa_r(host->z.host, hoststr), ntohs(host->z.port)));
+	    ("Starting multibreakcall back on all addr for host %p (%s)\n",
+	     host, h_Host2str(host, &hoststr)));
     H_UNLOCK;
     multi_Rx(conns, j) {
 	multi_RXAFSCB_CallBack(afidp, &tc);
@@ -3065,9 +3056,8 @@ MultiBreakCallBackAlternateAddress_r(struct host *host,
 	    rx_SetConnDeadTime(host->z.callback_rxcon, 50);
 	    rx_SetConnHardDeadTime(host->z.callback_rxcon, AFS_HARDDEADTIME);
 	    ViceLog(125,
-		    ("multibreakcall success with addr %s:%d\n",
-		     afs_inet_ntoa_r(interfaces[multi_i].addr, hoststr),
-                     ntohs(interfaces[multi_i].port)));
+		    ("multibreakcall success with addr %s\n",
+		     h_AddrPort2str(&interfaces[multi_i], &hoststr)));
 	    H_UNLOCK;
 	    multi_Abort;
 	}
@@ -3101,7 +3091,7 @@ MultiProbeAlternateAddress_r(struct host *host)
     struct rx_connection *connSuccess = 0;
     struct AddrPort *interfaces;
     static struct rx_securityClass *sc = 0;
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
 
     /* nothing more can be done */
     if (!host->z.interface)
@@ -3141,9 +3131,8 @@ MultiProbeAlternateAddress_r(struct host *host)
 
     opr_Assert(j);			/* at least one alternate address */
     ViceLog(125,
-	    ("Starting multiprobe on all addr for host %p (%s:%d)\n",
-	     host, afs_inet_ntoa_r(host->z.host, hoststr),
-	     ntohs(host->z.port)));
+	    ("Starting multiprobe on all addr for host %p (%s)\n",
+	     host, h_Host2str(host, &hoststr)));
     H_UNLOCK;
     multi_Rx(conns, j) {
 	multi_RXAFSCB_ProbeUuid(&host->z.interface->uuid);
@@ -3163,16 +3152,14 @@ MultiProbeAlternateAddress_r(struct host *host)
 	    rx_SetConnDeadTime(host->z.callback_rxcon, 50);
 	    rx_SetConnHardDeadTime(host->z.callback_rxcon, AFS_HARDDEADTIME);
 	    ViceLog(125,
-		    ("multiprobe success with addr %s:%d\n",
-		     afs_inet_ntoa_r(interfaces[multi_i].addr, hoststr),
-                     ntohs(interfaces[multi_i].port)));
+		    ("multiprobe success with addr %s\n",
+		     h_AddrPort2str(&interfaces[multi_i], &hoststr)));
 	    H_UNLOCK;
 	    multi_Abort;
 	} else {
 	    ViceLog(125,
-		    ("multiprobe failure with addr %s:%d\n",
-		     afs_inet_ntoa_r(interfaces[multi_i].addr, hoststr),
-                     ntohs(interfaces[multi_i].port)));
+		    ("multiprobe failure with addr %s\n",
+		     h_AddrPort2str(&interfaces[multi_i], &hoststr)));
 
             /* This is less than desirable but its the best we can do.
              * The AFS Cache Manager will return either 0 for a Uuid

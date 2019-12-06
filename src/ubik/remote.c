@@ -657,7 +657,7 @@ SDISK_UpdateInterfaceAddr(struct rx_call *rxcall,
     struct ubik_server *ts, *tmp;
     afs_uint32 remoteAddr;	/* in net byte order */
     int i, j, found = 0, probableMatch = 0;
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
 
     UBIK_ADDR_LOCK;
     /* copy the output parameters */
@@ -696,7 +696,7 @@ SDISK_UpdateInterfaceAddr(struct rx_call *rxcall,
     if (!probableMatch || found) {
 	ViceLog(0, ("Inconsistent Cell Info from server:\n"));
 	for (i = 0; i < UBIK_MAX_INTERFACE_ADDR && inAddr->hostAddr[i]; i++)
-	    ViceLog(0, ("... %s\n", afs_inet_ntoa_r(htonl(inAddr->hostAddr[i]), hoststr)));
+	    ViceLog(0, ("... %s\n", ubik_InterfaceAddr2str(inAddr, i, &hoststr)));
 	fflush(stdout);
 	fflush(stderr);
 	printServerInfo();
@@ -710,7 +710,7 @@ SDISK_UpdateInterfaceAddr(struct rx_call *rxcall,
 
     ViceLog(0, ("ubik: A Remote Server has addresses:\n"));
     for (i = 0; i < UBIK_MAX_INTERFACE_ADDR && ts->addr[i]; i++)
-	ViceLog(0, ("... %s\n", afs_inet_ntoa_r(ts->addr[i], hoststr)));
+	ViceLog(0, ("... %s\n", ubik_ServerInterface2str(ts, i, &hoststr)));
 
     UBIK_ADDR_UNLOCK;
 
@@ -733,13 +733,13 @@ printServerInfo(void)
 {
     struct ubik_server *ts;
     int i, j = 1;
-    char hoststr[16];
+    struct rx_inet_fmtbuf hoststr;
 
     ViceLog(0, ("Local CellServDB:\n"));
     for (ts = ubik_servers; ts; ts = ts->next, j++) {
 	ViceLog(0, ("  Server %d:\n", j));
 	for (i = 0; (i < UBIK_MAX_INTERFACE_ADDR) && ts->addr[i]; i++)
-	    ViceLog(0, ("  ... %s\n", afs_inet_ntoa_r(ts->addr[i], hoststr)));
+	    ViceLog(0, ("  ... %s\n", ubik_ServerInterface2str(ts, i, &hoststr)));
     }
 }
 

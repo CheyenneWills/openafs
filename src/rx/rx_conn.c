@@ -14,7 +14,9 @@
 #include <roken.h>
 
 #include "rx.h"
+#include "rx_atomic.h"
 #include "rx_conn.h"
+#include "rx_peer.h"
 
 afs_uint32
 rx_GetConnectionEpoch(struct rx_connection *conn) {
@@ -119,4 +121,24 @@ int
 rx_ConnError(struct rx_connection *conn)
 {
     return conn->error;
+}
+
+/**
+ * Format the network address:port of a rx connection.
+ *
+ * @param[in] conn pointer to a struct rx_connection
+ * @param[out] buf format work buffer
+ *
+ * @returns pointer to start of string representation of netaddr:port
+ */
+char *
+rx_Conn2str(struct rx_connection *conn, struct rx_inet_fmtbuf *buf)
+{
+    struct rx_inet_fmtbuf inetfmtbuf;
+
+    snprintf(buf->buffer, sizeof(buf->buffer), "%s:%hu",
+	     rx_inet2str(conn->peer->host, &inetfmtbuf),
+	     ntohs(conn->peer->port));
+
+    return buf->buffer;
 }
