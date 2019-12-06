@@ -19,11 +19,11 @@
 #include <WINNT/afsreg.h>
 #endif
 
+#include <rx/rx.h>
 #include <afs/cellconfig.h>
 #include <afs/afsutil.h>
 #include <afs/com_err.h>
 #include <afs/cmd.h>
-#include <rx/rx.h>
 #include <rx/xdr.h>
 #include <rx/rxgk_int.h>
 
