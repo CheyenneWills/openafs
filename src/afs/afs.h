@@ -457,11 +457,20 @@ struct srvAddr {
     struct server *server;	/* back to parent */
     struct sa_conn_vector *conns;   /* All user connections to this server */
     struct afs_conn *natping;
-    afs_int32 sa_ip;		/* Host addr in network byte order */
+    struct rx_sockaddr sa_addr;	/* Host addr and port in network byte order */
+    /* port value (sa_portal) has been moved into sa_addr, but sa_port value
+     * is used to determine if this an address for a fileserver or vlserver.
+     * sadly, we can override the ports with the newcell pioctl.
+     * checking the port value is problematic, because the member name depends
+     * on the address type (sin_port or sin6_port), so add sa_type instead
+     * and set that when the sa_addr is set.
+     */
+    u_short sa_type; /* is this a fs or vl addr? (instead of checking port?) */
     u_short sa_iprank;		/* indiv ip address priority */
-    u_short sa_portal;		/* port addr in network byte order */
     u_char sa_flags;
 };
+#define sa_ip sa_addr.u.in.sin_addr.s_addr
+#define sa_portal sa_addr.u.in.sin_port
 
 /*
  * Values used in the flags field of the server structure below.
