@@ -16,6 +16,7 @@
 #include <afs/afsutil.h>
 #include <ctype.h>
 #include <search.h>
+#include <rx/rx.h>
 #include "cellconfig.h"
 #include "internal.h"
 

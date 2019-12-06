@@ -31,7 +31,7 @@ VerifyEntries(struct afsconf_cell *aci)
     struct hostent *th;
 
     for (i = 0; i < aci->numServers; i++) {
-	if (aci->hostAddr[i].sin_addr.s_addr == 0) {
+	if (aci->hostSA[i].u.in.sin_addr.s_addr == 0) {
 	    /* no address spec'd */
 	    if (*(aci->hostName[i]) != 0) {
 		int code;
@@ -52,12 +52,13 @@ VerifyEntries(struct afsconf_cell *aci)
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
 		    struct sockaddr_in *sa = (struct sockaddr_in *)rp->ai_addr;
 		    if (!rx_IsLoopbackAddr(ntohl(sa->sin_addr.s_addr))) {
+			aci->hostSA[i].u.in.sin_addr.s_addr = sa->sin_addr.s_addr;
 			aci->hostAddr[i].sin_addr.s_addr = sa->sin_addr.s_addr;
 			break;
 		    }
 		}
 		freeaddrinfo(result);
-		if (aci->hostAddr[i].sin_addr.s_addr == 0) {
+		if (aci->hostSA[i].u.in.sin_addr.s_addr == 0) {
 		    printf("No non-loopback addresses found for host %s\n",
 			   aci->hostName[i]);
 		    return AFSCONF_FAILURE;
@@ -69,7 +70,7 @@ VerifyEntries(struct afsconf_cell *aci)
 	    if (aci->hostName[i][0] != 0)
 		continue;	/* name known too */
 	    /* figure out name, if possible */
-	    th = gethostbyaddr((char *)(&aci->hostAddr[i].sin_addr), 4,
+	    th = gethostbyaddr((char *)(&aci->hostSA[i].u.in.sin_addr), 4,
 			       AF_INET);
 	    if (!th) {
 		strcpy(aci->hostName[i], "UNKNOWNHOST");
@@ -147,17 +148,17 @@ afsconf_SetExtendedCellInfo(struct afsconf_dir *adir,
     }
     fprintf(tf, ">%s	#Cell name\n", acellInfo->name);
     for (i = 0; i < acellInfo->numServers; i++) {
-	code = acellInfo->hostAddr[i].sin_addr.s_addr;	/* net order */
+	struct rx_sockaddr_fmtbuf addrbuf;
+	code = acellInfo->hostSA[i].u.in.sin_addr.s_addr;	/* net order */
 	if (code == 0)
 	    continue;		/* delete request */
-	code = ntohl(code);	/* convert to host order */
 	if (clones && clones[i])
-	    fprintf(tf, "[%d.%d.%d.%d]  #%s\n", (code >> 24) & 0xff,
-		    (code >> 16) & 0xff, (code >> 8) & 0xff, code & 0xff,
+	    fprintf(tf, "[%s]  #%s\n",
+		    rx_sockaddr2str(&acellInfo->hostSA[i], &addrbuf),
 		    acellInfo->hostName[i]);
 	else
-	    fprintf(tf, "%d.%d.%d.%d    #%s\n", (code >> 24) & 0xff,
-		    (code >> 16) & 0xff, (code >> 8) & 0xff, code & 0xff,
+	    fprintf(tf, "%s    #%s\n",
+		    rx_sockaddr2str(&acellInfo->hostSA[i], &addrbuf),
 		    acellInfo->hostName[i]);
     }
     if (ferror(tf)) {
