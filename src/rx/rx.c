@@ -1753,19 +1753,14 @@ rxi_SetCallNumberVector(struct rx_connection *aconn,
     return 0;
 }
 
-/* Advertise a new service.  A service is named locally by a UDP port
- * number plus a 16-bit service id.  Returns (struct rx_service *) 0
- * on a failure.
- *
-     char *serviceName;	 Name for identification purposes (e.g. the
-                         service name might be used for probing for
-                         statistics) */
 struct rx_service *
-rx_NewServiceHost(afs_uint32 host, u_short port, u_short serviceId,
+rx_NewServiceHostSA(struct rx_sockaddr *addr, u_short serviceId,
 		  char *serviceName, struct rx_securityClass **securityObjects,
 		  int nSecurityObjects,
 		  afs_int32(*serviceProc) (struct rx_call * acall))
 {
+    afs_uint32 host = addr->u.in.sin_addr.s_addr;
+    u_short port = addr->u.in.sin_port;
     osi_socket socket = OSI_NULLSOCKET;
     struct rx_service *tservice;
     int i;
@@ -1873,6 +1868,27 @@ rx_SetSecurityConfiguration(struct rx_service *service,
 	}
     }
     return 0;
+}
+
+/* Advertise a new service.  A service is named locally by a UDP port
+ * number plus a 16-bit service id.  Returns (struct rx_service *) 0
+ * on a failure.
+ *
+     char *serviceName;	 Name for identification purposes (e.g. the
+                         service name might be used for probing for
+                         statistics) */
+struct rx_service *
+rx_NewServiceHost(afs_uint32 host, u_short port, u_short serviceId,
+		  char *serviceName, struct rx_securityClass **securityObjects,
+		  int nSecurityObjects,
+		  afs_int32(*serviceProc) (struct rx_call * acall))
+{
+    struct rx_sockaddr taddr;
+    taddr.u.in.sin_addr.s_addr = host;
+    taddr.u.in.sin_port = port;
+    return rx_NewServiceHostSA(&taddr, serviceId,
+			       serviceName, securityObjects,
+			       nSecurityObjects, serviceProc);
 }
 
 struct rx_service *

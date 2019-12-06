@@ -69,6 +69,15 @@ extern struct rx_service *rx_NewServiceHost(afs_uint32 host, u_short port,
 					    afs_int32(*serviceProc) (struct
 								     rx_call *
 								     acall));
+extern struct rx_service *rx_NewServiceSA(struct rx_sockaddr *addr,
+					    u_short serviceId,
+					    char *serviceName,
+					    struct rx_securityClass
+					    **securityObjects,
+					    int nSecurityObjects,
+					    afs_int32(*serviceProc) (struct
+								     rx_call *
+								     acall));
 extern void rxi_ServerProc(int threadID, struct rx_call *newcall,
 			   osi_socket * socketp);
 extern void rx_WakeupServerProcs(void);
