@@ -64,6 +64,20 @@ char *
 rx_sockaddr2str(struct rx_sockaddr *sa, struct rx_sockaddr_fmtbuf *buf)
 {
     /* TODO */
+    switch (sa->u.sa.sa_family) {
+    case AF_INET: {
+	afs_uint32 taddr;
+	taddr = ntohl(sa->u.in.sin_addr.s_addr);
+	snprintf(buf->buffer, sizeof(buf->buffer), "%u.%u.%u.%u",
+		 (taddr >> 24) & 0xff,
+		 (taddr >> 16) & 0xff,
+		 (taddr >> 8) & 0xff,
+		 (taddr) & 0xff);
+	    break;
+    }
+    default:
+	    osi_Panic("???");
+    }
     return buf->buffer;
 }
 
