@@ -7,6 +7,7 @@
 #include <roken.h>
 
 #include <lock.h>
+#include <rx/rx.h>
 #include <afs/cellconfig.h>
 #define UBIK_INTERNALS
 #include <ubik.h>

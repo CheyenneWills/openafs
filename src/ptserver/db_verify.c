@@ -38,6 +38,7 @@
 #include <sys/file.h>
 #endif
 
+#include <rx/rx.h>
 #include <afs/cellconfig.h>
 #include <afs/afsutil.h>
 #include <ubik.h>
