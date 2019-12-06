@@ -58,7 +58,8 @@ struct afsconf_cell {
     char name[MAXCELLCHARS];	/*Cell name */
     short numServers;		/*Num active servers for the cell */
     short flags;		/* useful flags */
-    struct sockaddr_in hostAddr[MAXHOSTSPERCELL];	/*IP addresses for cell's servers */
+    struct sockaddr_in xhostAddr[MAXHOSTSPERCELL];	/*IP addresses for cell's servers */
+    struct rx_sockaddr hostSA[MAXHOSTSPERCELL];		/* SA addresses for cell's servers */
     char hostName[MAXHOSTSPERCELL][MAXHOSTCHARS];	/*Names for cell's servers */
     char clone[MAXHOSTSPERCELL];			/*Indicates which ones are clones */
     char *linkedCell;		/* Linked cell name, if any */
