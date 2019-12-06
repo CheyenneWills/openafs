@@ -89,6 +89,8 @@ rx_sockaddr_equal(struct rx_sockaddr *a, struct rx_sockaddr *b)
 int
 rx_sockaddr_copy(struct rx_sockaddr *dst, struct rx_sockaddr *src)
 {
-    /* TODO */
+    dst->u.in.sin_family = AF_INET;
+    dst->u.in.sin_addr.s_addr = src->u.in.sin_addr.s_addr;
+    dst->u.in.sin_port = src->u.in.sin_port;
     return 0;
 }
