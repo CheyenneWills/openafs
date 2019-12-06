@@ -3436,14 +3436,14 @@ h_stateVerifyAddrHash(struct fs_dump_state * state, struct host * h,
     struct host *host = NULL;
     struct h_AddrHashChain *chain;
     int index = h_HashIndex(addr);
-    char tmp[16];
+    struct rx_sockaddr_fmtbuf tmp;
     int chain_len = 0;
 
     for (chain = hostAddrHashTable[index]; chain; chain = chain->next) {
 	host = chain->hostPtr;
 	if (host == NULL) {
-	    afs_inet_ntoa_r(addr->u.in.sin_addr.s_addr, tmp);
-	    ViceLog(0, ("h_stateVerifyAddrHash: error: addr hash chain has NULL host ptr (lookup addr %s)\n", tmp));
+	    rx_sockaddr2str(addr, &tmp);
+	    ViceLog(0, ("h_stateVerifyAddrHash: error: addr hash chain has NULL host ptr (lookup addr %s)\n", tmp.buffer));
 	    ret = 1;
 	    goto done;
 	}
@@ -3478,15 +3478,15 @@ h_stateVerifyAddrHash(struct fs_dump_state * state, struct host * h,
     }
 
     if (!found && valid) {
-	afs_inet_ntoa_r(addr->u.in.sin_addr.s_addr, tmp);
+	rx_sockaddr2str(addr, &tmp);
 	if (state->mode == FS_STATE_LOAD_MODE) {
-	    ViceLog(0, ("h_stateVerifyAddrHash: error: addr %s:%u not found in hash\n",
-	                tmp, (unsigned)htons(addr->u.in.sin_port)));
+	    ViceLog(0, ("h_stateVerifyAddrHash: error: addr %s not found in hash\n",
+	                tmp.buffer));
 	    ret = 1;
 	    goto done;
 	} else {
-	    ViceLog(0, ("h_stateVerifyAddrHash: warning: addr %s:%u not found in hash\n",
-	                tmp, (unsigned)htons(addr->u.in.sin_port)));
+	    ViceLog(0, ("h_stateVerifyAddrHash: warning: addr %s not found in hash\n",
+	                tmp.buffer));
 	    state->flags.warnings_generated = 1;
 	}
     }
