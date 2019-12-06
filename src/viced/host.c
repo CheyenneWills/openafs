@@ -58,6 +58,7 @@ extern int lwps;		/* the max number of server threads */
 extern afsUUID FS_HostUUID;
 extern char *FS_configPath;
 
+struct rx_sockaddr nulladdr;
 afsUUID nulluuid;
 int CEs = 0;			/* active clients */
 int CEBlocks = 0;		/* number of blocks of CEs */
@@ -747,7 +748,7 @@ h_SetupCallbackConn_r(struct host * host)
     if (!sc)
 	sc = rxnull_NewClientSecurityObject();
     host->z.callback_rxcon =
-	rx_NewConnection(host->z.addr.u.in.sin_addr.s_addr, host->z.addr.u.in.sin_port, 1, sc, 0);
+	rx_NewConnection2(&host->z.addr, 1, sc, 0);
     rx_SetConnDeadTime(host->z.callback_rxcon, 50);
     rx_SetConnHardDeadTime(host->z.callback_rxcon, AFS_HARDDEADTIME);
 }
@@ -1297,9 +1298,7 @@ removeAddress_r(struct host *host, struct rx_sockaddr *addr)
 			     ("Removed address for host %p (%s), new primary interface %s.\n",
 			       host, h_Host2str(host, &hoststr),
 			       h_HostInterface2str(host, i, &hoststr2)));
-		    host->z.addr.u.in.sin_family = AF_INET;
-		    host->z.addr.u.in.sin_addr.s_addr = host->z.interface->interface[i].addr.u.in.sin_addr.s_addr;
-		    host->z.addr.u.in.sin_port = host->z.interface->interface[i].addr.u.in.sin_port;
+		    rx_sockaddr_copy(&host->z.addr, &host->z.interface->interface[i].addr);
 		    h_AddHostToAddrHashTable_r(&host->z.addr, host);
                     break;
                 }
@@ -1311,9 +1310,7 @@ removeAddress_r(struct host *host, struct rx_sockaddr *addr)
 			   host, h_Host2str(host, &hoststr)));
 		host->z.hostFlags |= HOSTDELETED;
                 /* addr/port was removed from the hash table */
-		host->z.addr.u.in.sin_family = AF_INET;
-		host->z.addr.u.in.sin_addr.s_addr = 0;
-		host->z.addr.u.in.sin_port = 0;
+		rx_sockaddr_copy(&host->z.addr, &nulladdr);
             } else {
 		rxconn = host->z.callback_rxcon;
 		host->z.callback_rxcon = NULL;
@@ -1347,9 +1344,7 @@ createHostAddrHashChain_r(int index, struct rx_sockaddr *addr, struct host *host
     }
     chain->hostPtr = host;
     chain->next = hostAddrHashTable[index];
-    chain->addr.u.in.sin_family = AF_INET;
-    chain->addr.u.in.sin_addr.s_addr = addr->u.in.sin_addr.s_addr;
-    chain->addr.u.in.sin_port = addr->u.in.sin_port;
+    rx_sockaddr_copy(&chain->addr, addr);
     hostAddrHashTable[index] = chain;
     ViceLog(125, ("h_AddHostToAddrHashTable_r: host %p added as %s\n",
 		  host, AddrHashChain2str(chain, &hoststr)));
@@ -1387,7 +1382,7 @@ reconcileHosts_r(struct rx_sockaddr *addr, struct host *newHost,
 	sc = rxnull_NewClientSecurityObject();
     }
 
-    cb = rx_NewConnection(addr->u.in.sin_addr.s_addr, addr->u.in.sin_port, 1, sc, 0);
+    cb = rx_NewConnection2(addr, 1, sc, 0);
     rx_SetConnDeadTime(cb, 50);
     rx_SetConnHardDeadTime(cb, AFS_HARDDEADTIME);
 
@@ -1539,9 +1534,7 @@ addInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
      */
     number = host->z.interface->numberOfInterfaces;
     for (i = 0; i < number; i++) {
-	if (host->z.interface->interface[i].addr.u.in.sin_addr.s_addr
-	     == addr->u.in.sin_addr.s_addr
-	     && host->z.interface->interface[i].addr.u.in.sin_port == addr->u.in.sin_port) {
+	if (rx_sockaddr_equal(&host->z.interface->interface[i].addr, addr)) {
 	    ViceLog(125,
 		    ("addInterfaceAddr : found host %p (%s) adding %s%s\n",
 		     host, h_Host2str(host, &hoststr),
@@ -1572,9 +1565,7 @@ addInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
 	interface->interface[i] = host->z.interface->interface[i];
 
     /* Add the new valid interface */
-    interface->interface[number].addr.u.in.sin_family = AF_INET;
-    interface->interface[number].addr.u.in.sin_addr.s_addr = addr->u.in.sin_addr.s_addr;
-    interface->interface[number].addr.u.in.sin_port = addr->u.in.sin_port;
+    rx_sockaddr_copy(&interface->interface[number].addr, addr);
     interface->interface[number].valid = 1;
     h_AddHostToAddrHashTable_r(addr, host);
     free(host->z.interface);
@@ -1612,9 +1603,7 @@ removeInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
     interface = host->z.interface;
     number = host->z.interface->numberOfInterfaces;
     for (i = 0; i < number; i++) {
-	if (interface->interface[i].addr.u.in.sin_addr.s_addr
-	    == addr->u.in.sin_addr.s_addr
-	    && interface->interface[i].addr.u.in.sin_port == addr->u.in.sin_port) {
+	if (rx_sockaddr_equal(&interface->interface[i].addr, addr)) {
 	    if (interface->interface[i].valid)
 		h_DeleteHostFromAddrHashTable_r(addr, host);
 	    number--;
@@ -1896,9 +1885,7 @@ h_GetHost_r(struct rx_connection *tcon)
 	}
 
 	prewait_tmays = host->z.n_tmays;
-	prewait_addr.u.in.sin_family = AF_INET;
-	prewait_addr.u.in.sin_addr.s_addr = host->z.addr.u.in.sin_addr.s_addr;
-	prewait_addr.u.in.sin_port = host->z.addr.u.in.sin_port;
+	rx_sockaddr_copy(&prewait_addr, &host->z.addr);
 
 	h_Lock_r(host);
 	if (!(host->z.hostFlags & ALTADDR) ||
@@ -1959,7 +1946,7 @@ h_GetHost_r(struct rx_connection *tcon)
              */
 	    if (!sc)
                 sc = rxnull_NewClientSecurityObject();
-            cb_in = rx_NewConnection(addr.u.in.sin_addr.s_addr, addr.u.in.sin_port, 1, sc, 0);
+            cb_in = rx_NewConnection2(&addr, 1, sc, 0);
             rx_SetConnDeadTime(cb_in, 50);
             rx_SetConnHardDeadTime(cb_in, AFS_HARDDEADTIME);
 
@@ -2084,9 +2071,7 @@ h_GetHost_r(struct rx_connection *tcon)
                      */
                     addInterfaceAddr_r(host, &addr);
 		    removeInterfaceAddr_r(host, &host->z.addr);
-		    host->z.addr.u.in.sin_family = AF_INET;
-		    host->z.addr.u.in.sin_addr.s_addr = addr.u.in.sin_addr.s_addr;
-		    host->z.addr.u.in.sin_port = addr.u.in.sin_port;
+		    rx_sockaddr_copy(&host->z.addr, &addr);
 		    rxconn = host->z.callback_rxcon;
 		    host->z.callback_rxcon = cb_in;
                     cb_in = NULL;
@@ -2354,8 +2339,7 @@ h_GetHost_r(struct rx_connection *tcon)
 				}
 			    }
 			}
-			oldHost->z.addr.u.in.sin_family = AF_INET;
-			oldHost->z.addr.u.in.sin_addr.s_addr = addr.u.in.sin_addr.s_addr;
+			rx_sockaddr_copy(&oldHost->z.addr, &addr);
 			oldHost->z.addr.u.in.sin_port = addr.u.in.sin_port;
 			rxconn = oldHost->z.callback_rxcon;
 			oldHost->z.callback_rxcon = host->z.callback_rxcon;
@@ -2434,6 +2418,7 @@ h_InitHostPackage(int hquota)
     opr_Assert(hquota > 0);
     h_quota_limit = hquota;
 
+    memset(&nulladdr, 0, sizeof(nulladdr));
     memset(&nulluuid, 0, sizeof(afsUUID));
     rxcon_ident_key = rx_KeyCreate((rx_destructor_t) free);
     rxcon_client_key = rx_KeyCreate((rx_destructor_t) 0);
