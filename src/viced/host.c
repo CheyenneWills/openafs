@@ -2971,11 +2971,10 @@ h_UserName(struct client *client)
 char *
 h_AddrPort2str(struct AddrPort *interface, struct rx_inet_fmtbuf *buf)
 {
-    struct rx_inet_fmtbuf inetfmtbuf;
+    struct rx_sockaddr_fmtbuf fmtbuf;
 
-    snprintf(buf->buffer, sizeof(buf->buffer), "%s:%hu",
-	     rx_inet2str(interface->addr.u.in.sin_addr.s_addr, &inetfmtbuf),
-	     ntohs(interface->addr.u.in.sin_port));
+    snprintf(buf->buffer, sizeof(buf->buffer), "%s",
+	     rx_sockaddr2str(&interface->addr, &fmtbuf));
     return buf->buffer;
 }
 /**
@@ -3010,11 +3009,10 @@ h_HostInterface2str(struct host *host, int iface_index,
 char *
 h_Client2str(struct client *client, struct rx_inet_fmtbuf *buf)
 {
-    struct rx_inet_fmtbuf inetfmtbuf;
+    struct rx_sockaddr_fmtbuf fmtbuf;
 
-    snprintf(buf->buffer, sizeof(buf->buffer), "%s:%hu",
-	    rx_inet2str(client->z.host->z.addr.u.in.sin_addr.s_addr, &inetfmtbuf),
-	    ntohs(client->z.host->z.addr.u.in.sin_port));
+    snprintf(buf->buffer, sizeof(buf->buffer), "%s",
+	    rx_sockaddr2str(&client->z.host->z.addr, &fmtbuf));
     return buf->buffer;
 }
 
@@ -3029,11 +3027,10 @@ h_Client2str(struct client *client, struct rx_inet_fmtbuf *buf)
 char *
 h_Host2str(struct host *host, struct rx_inet_fmtbuf *buf)
 {
-    struct rx_inet_fmtbuf inetfmtbuf;
+    struct rx_sockaddr_fmtbuf fmtbuf;
 
-    snprintf(buf->buffer, sizeof(buf->buffer), "%s:%hu",
-	     rx_inet2str(host->z.addr.u.in.sin_addr.s_addr, &inetfmtbuf),
-	     ntohs(host->z.addr.u.in.sin_port));
+    snprintf(buf->buffer, sizeof(buf->buffer), "%s",
+	     rx_sockaddr2str(&host->z.addr, &fmtbuf));
     return buf->buffer;
 }
 
@@ -3049,12 +3046,11 @@ h_Host2str(struct host *host, struct rx_inet_fmtbuf *buf)
 char *
 h_Host2Debugstr(struct host *host, struct h_hostdebug_fmtbuf *buf)
 {
-    struct rx_inet_fmtbuf inetfmtbuf;
+    struct rx_sockaddr_fmtbuf fmtbuf;
     struct uuid_fmtbuf uuidstr;
 
-    snprintf(buf->buffer, sizeof(buf->buffer), "%s:%hu uuid: %s flags: 0x%x",
-	     rx_inet2str(host->z.addr.u.in.sin_addr.s_addr, &inetfmtbuf),
-	     ntohs(host->z.addr.u.in.sin_port),
+    snprintf(buf->buffer, sizeof(buf->buffer), "%s uuid: %s flags: 0x%x",
+	     rx_sockaddr2str(&host->z.addr, &fmtbuf),
 	     host->z.interface ?
 		afsUUID_to_string(&host->z.interface->uuid, &uuidstr) :
 		"<none>",
