@@ -20,6 +20,7 @@
 #include <hcrypto/ui.h>
 
 #include <afs/com_err.h>
+#include <rx/rx.h>
 #include <afs/cellconfig.h>
 #include <afs/auth.h>
 #include <afs/ptint.h>
@@ -29,7 +30,6 @@
 #include <afs/afsutil.h>
 #include <afs/sys_prototypes.h>
 
-#include <rx/rx.h>
 #include <rx/rx_globals.h>
 #include <rx/rxkad.h>		/* max ticket lifetime */
 #include <rx/rxkad_convert.h>

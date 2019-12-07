@@ -20,6 +20,7 @@
 
 #include <rx/xdr.h>
 #include <afs/pthread_glock.h>
+#include <rx/rx.h>
 #include <afs/cellconfig.h>
 #include <afs/auth.h>
 #include <lock.h>

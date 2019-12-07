@@ -14,9 +14,9 @@
 #include <afs/opr.h>
 
 #include <afs/pthread_glock.h>
+#include <rx/rx.h>
 #include <afs/cellconfig.h>
 #include <rx/xdr.h>
-#include <rx/rx.h>
 
 #include "kauth.h"
 #include "kautils.h"
