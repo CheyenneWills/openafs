@@ -230,6 +230,27 @@ rx_GetCachedConnection(unsigned int remoteAddr, unsigned short port,
 		       struct rx_securityClass *securityObject,
 		       int securityIndex)
 {
+    struct rx_sockaddr sa;
+    sa.u.in.sin_family = AF_INET;
+    sa.u.in.sin_addr.s_addr = remoteAddr;
+    sa.u.in.sin_port = port;
+
+    return rx_GetCachedConnection2(&sa, service, securityObject, securityIndex);
+}
+
+/*
+ * Hand back the caller a connection
+ * The function has the same foot print and return values
+ * as rx_NewConnection2.
+ */
+
+struct rx_connection *
+rx_GetCachedConnection2(struct rx_sockaddr *sa, unsigned short service,
+		       struct rx_securityClass *securityObject,
+		       int securityIndex)
+{
+    afs_uint32 remoteAddr = sa->u.in.sin_addr.s_addr;
+    u_short port = sa->u.in.sin_port;
     struct rx_connection *conn = NULL;
     rx_connParts_t parts;
 

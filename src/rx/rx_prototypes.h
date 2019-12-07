@@ -217,6 +217,11 @@ extern struct rx_connection *rx_GetCachedConnection(unsigned int remoteAddr,
 						    struct rx_securityClass
 						    *securityObject,
 						    int securityIndex);
+extern struct rx_connection *rx_GetCachedConnection2(struct rx_sockaddr *sa,
+						    unsigned short service,
+						    struct rx_securityClass
+						    *securityObject,
+						    int securityIndex);
 extern void rx_ReleaseCachedConnection(struct rx_connection *conn);
 
 
