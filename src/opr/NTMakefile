@@ -23,6 +23,7 @@ INCFILES = \
 	$(DESTDIR)\include\opr\time.h \
 	$(DESTDIR)\include\opr\lock.h \
 	$(DESTDIR)\include\opr\lockstub.h \
+	$(DESTDIR)\include\opr\sockaddr.h \
 	$(DESTDIR)\include\opr\softsig.h \
 	$(DESTDIR)\include\opr\uuid.h
 
@@ -41,6 +42,7 @@ LIBOBJS = \
 	$(OUT)\fmt.obj \
 	$(OUT)\proc.obj \
 	$(OUT)\rbtree.obj \
+	$(OUT)\sockaddr.obj \
 	$(OUT)\uuid.obj \
 	$(OUT)\AFS_component_version_number.obj
 

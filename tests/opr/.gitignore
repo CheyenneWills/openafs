@@ -9,4 +9,5 @@
 /rbtree-t
 /time-t
 /uuid-t
+/sockaddr-t
 /softsig-helper
