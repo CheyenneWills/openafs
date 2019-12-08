@@ -225,7 +225,7 @@ rxi_DeleteCachedConnections(void)
  */
 
 struct rx_connection *
-rx_GetCachedConnection(unsigned int remoteAddr, unsigned short port,
+rx_GetCachedConnectionSA(struct opr_sockaddr *addr,
 		       unsigned short service,
 		       struct rx_securityClass *securityObject,
 		       int securityIndex)
@@ -233,8 +233,8 @@ rx_GetCachedConnection(unsigned int remoteAddr, unsigned short port,
     struct rx_connection *conn = NULL;
     rx_connParts_t parts;
 
-    parts.hostAddr = remoteAddr;
-    parts.port = port;
+    parts.hostAddr = addr->u.in.sin_addr.s_addr;
+    parts.port = addr->u.in.sin_port;
     parts.service = service;
     parts.securityObject = securityObject;
     parts.securityIndex = securityIndex;
@@ -246,6 +246,20 @@ rx_GetCachedConnection(unsigned int remoteAddr, unsigned short port,
     rxi_GetCachedConnection(&parts, &conn);
 
     return conn;
+}
+
+struct rx_connection *
+rx_GetCachedConnection(unsigned int remoteAddr, unsigned short port,
+		       unsigned short service,
+		       struct rx_securityClass *securityObject,
+		       int securityIndex)
+{
+    struct opr_sockaddr addr;
+    addr.u.in.sin_family = AF_INET;
+    addr.u.in.sin_addr.s_addr = remoteAddr;
+    addr.u.in.sin_port = port;
+    return rx_GetCachedConnectionSA(&addr, service, securityObject,
+				  securityIndex);
 }
 
 /*

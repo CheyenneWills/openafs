@@ -170,3 +170,6 @@ RXAFS_FsCmd
 rx_GetLocalPeers
 xdr_free
 xdr_alloc
+rx_GetCachedConnectionSA
+rx_NewConnectionSA
+rx_NewServiceSA

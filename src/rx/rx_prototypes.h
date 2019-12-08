@@ -35,6 +35,11 @@ extern struct rx_connection *rx_NewConnection(afs_uint32 shost,
 					      struct rx_securityClass
 					      *securityObject,
 					      int serviceSecurityIndex);
+extern struct rx_connection *rx_NewConnectionSA(struct opr_sockaddr *addr,
+					      u_short sservice,
+					      struct rx_securityClass
+					      *securityObject,
+					      int serviceSecurityIndex);
 extern void rx_SetConnDeadTime(struct rx_connection *conn,
 			       int seconds);
 extern void rx_SetConnHardDeadTime(struct rx_connection *conn, int seconds);
@@ -56,6 +61,15 @@ extern struct rx_service *rx_NewService(u_short port, u_short serviceId,
 								 rx_call *
 								 acall));
 extern struct rx_service *rx_NewServiceHost(afs_uint32 host, u_short port,
+					    u_short serviceId,
+					    char *serviceName,
+					    struct rx_securityClass
+					    **securityObjects,
+					    int nSecurityObjects,
+					    afs_int32(*serviceProc) (struct
+								     rx_call *
+								     acall));
+extern struct rx_service *rx_NewServiceSA(struct opr_sockaddr *addr,
 					    u_short serviceId,
 					    char *serviceName,
 					    struct rx_securityClass
@@ -199,6 +213,11 @@ extern int osi_GetTime(struct timeval *tv);
 extern void rxi_DeleteCachedConnections(void);
 extern struct rx_connection *rx_GetCachedConnection(unsigned int remoteAddr,
 						    unsigned short port,
+						    unsigned short service,
+						    struct rx_securityClass
+						    *securityObject,
+						    int securityIndex);
+extern struct rx_connection *rx_GetCachedConnectionSA(struct opr_sockaddr *addr,
 						    unsigned short service,
 						    struct rx_securityClass
 						    *securityObject,

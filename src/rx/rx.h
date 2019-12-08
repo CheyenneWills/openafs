@@ -52,6 +52,7 @@
 #endif
 #endif /* KERNEL */
 
+#include <opr/sockaddr.h>
 #include <opr/queue.h>
 
 #include "rx_clock.h"

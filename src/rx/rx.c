@@ -1048,6 +1048,23 @@ rx_NewConnection(afs_uint32 shost, u_short sport, u_short sservice,
 		 struct rx_securityClass *securityObject,
 		 int serviceSecurityIndex)
 {
+    struct opr_sockaddr addr;
+    addr.u.in.sin_family = AF_INET;
+    addr.u.in.sin_addr.s_addr = shost;
+    addr.u.in.sin_port = sport;
+    return rx_NewConnectionSA(&addr, sservice, securityObject, serviceSecurityIndex);
+}
+
+/**
+ * Create a new client connection with a socket address.
+ */
+struct rx_connection *
+rx_NewConnectionSA(struct opr_sockaddr *addr, u_short sservice,
+		  struct rx_securityClass *securityObject,
+		  int serviceSecurityIndex)
+{
+    afs_uint32 shost = addr->u.in.sin_addr.s_addr;
+    u_short sport = addr->u.in.sin_port;
     int hashindex, i;
     struct rx_connection *conn;
     int code;
@@ -1744,11 +1761,13 @@ rxi_SetCallNumberVector(struct rx_connection *aconn,
                          service name might be used for probing for
                          statistics) */
 struct rx_service *
-rx_NewServiceHost(afs_uint32 host, u_short port, u_short serviceId,
+rx_NewServiceHostSA(struct opr_sockaddr *addr, u_short serviceId,
 		  char *serviceName, struct rx_securityClass **securityObjects,
 		  int nSecurityObjects,
 		  afs_int32(*serviceProc) (struct rx_call * acall))
 {
+    afs_uint32 host = addr->u.in.sin_addr.s_addr;
+    u_short port = addr->u.in.sin_port;
     osi_socket socket = OSI_NULLSOCKET;
     struct rx_service *tservice;
     int i;
@@ -1856,6 +1875,20 @@ rx_SetSecurityConfiguration(struct rx_service *service,
 	}
     }
     return 0;
+}
+
+struct rx_service *
+rx_NewServiceHost(afs_uint32 host, u_short port, u_short serviceId,
+		  char *serviceName, struct rx_securityClass **securityObjects,
+		  int nSecurityObjects,
+		  afs_int32(*serviceProc) (struct rx_call * acall))
+{
+    struct opr_sockaddr addr;
+    addr.u.in.sin_addr.s_addr = host;
+    addr.u.in.sin_port = port;
+    return rx_NewServiceHostSA(&addr, serviceId,
+			       serviceName, securityObjects,
+			       nSecurityObjects, serviceProc);
 }
 
 struct rx_service *
