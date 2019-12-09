@@ -81,11 +81,13 @@ internal_client_init(struct afsconf_dir *dir, struct afsconf_cell *info,
 	    return -1;
 	}
 	for (i = 0; i < info->numServers; i++) {
-	    if (!info->hostAddr[i].sin_port && port)
+	    if (!info->hostSA[i].u.in.sin_port && port) {
+		info->hostSA[i].u.in.sin_port = port;
 		info->hostAddr[i].sin_port = port;
+	    }
 	    serverconns[i] =
-		rx_NewConnection(info->hostAddr[i].sin_addr.s_addr,
-				 info->hostAddr[i].sin_port, usrvid,
+		rx_NewConnectionSA(&info->hostSA[i],
+				 usrvid,
 				 sc, scIndex);
 	}
     }
