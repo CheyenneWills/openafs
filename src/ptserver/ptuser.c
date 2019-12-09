@@ -335,8 +335,8 @@ pr_Initialize2(IN afs_int32 secLevel, IN const char *confDir, IN char *cell,
     memset(serverconns, 0, sizeof(serverconns));	/* terminate list!!! */
     for (i = 0; i < info.numServers; i++)
 	serverconns[i] =
-	    rx_NewConnection(info.hostAddr[i].sin_addr.s_addr,
-			     info.hostAddr[i].sin_port, PRSRV, sc,
+	    rx_NewConnectionSA(&info.hostSA[i],
+			     PRSRV, sc,
 			     scIndex);
 
     code = ubik_ClientInit(serverconns, &pruclient);
