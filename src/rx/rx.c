@@ -1883,7 +1883,7 @@ rx_NewServiceHost(afs_uint32 host, u_short port, u_short serviceId,
 		  int nSecurityObjects,
 		  afs_int32(*serviceProc) (struct rx_call * acall))
 {
-    struct rx_sockaddr taddr;
+    struct opr_sockaddr taddr;
     taddr.u.in.sin_addr.s_addr = host;
     taddr.u.in.sin_port = port;
     return rx_NewServiceHostSA(&taddr, serviceId,
@@ -1892,15 +1892,12 @@ rx_NewServiceHost(afs_uint32 host, u_short port, u_short serviceId,
 }
 
 struct rx_service *
-rx_NewServiceHost(afs_uint32 host, u_short port, u_short serviceId,
+rx_NewServiceSA(struct opr_sockaddr *addr, u_short serviceId,
 		  char *serviceName, struct rx_securityClass **securityObjects,
 		  int nSecurityObjects,
 		  afs_int32(*serviceProc) (struct rx_call * acall))
 {
-    struct opr_sockaddr addr;
-    addr.u.in.sin_addr.s_addr = host;
-    addr.u.in.sin_port = port;
-    return rx_NewServiceHostSA(&addr, serviceId,
+    return rx_NewServiceHostSA(addr, serviceId,
 			       serviceName, securityObjects,
 			       nSecurityObjects, serviceProc);
 }
