@@ -11,6 +11,7 @@ opr/fmt
 opr/jhash
 opr/queues
 opr/rbtree
+opr/sockaddr
 opr/softsig
 opr/time
 opr/uuid
