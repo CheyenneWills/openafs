@@ -1439,7 +1439,7 @@ ConfigCell(struct afsconf_cell *aci, void *arock, struct afsconf_dir *adir)
     }
     /* build address list */
     for (i = 0; i < MAXHOSTSPERCELL; i++)
-	memcpy(&hosts[i], &aci->hostAddr[i].sin_addr, sizeof(afs_int32));
+	memcpy(&hosts[i], &aci->hostSA[i].u.in.sin_addr, sizeof(afs_int32));
 
     if (aci->linkedCell)
 	cellFlags |= 4;		/* Flag that linkedCell arg exists,
@@ -1511,7 +1511,7 @@ AfsdbLookupHandler(void)
 	    else
 		kernelMsg[1] = 0;
 	    for (i = 0; i < acellInfo.numServers; i++)
-		kernelMsg[i + 2] = acellInfo.hostAddr[i].sin_addr.s_addr;
+		kernelMsg[i + 2] = acellInfo.hostSA[i].u.in.sin_addr.s_addr;
 	    strncpy(acellName, acellInfo.name, sizeof(acellName));
 	    acellName[sizeof(acellName) - 1] = '\0';
 	}
