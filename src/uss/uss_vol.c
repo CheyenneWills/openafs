@@ -196,8 +196,8 @@ InitThisModule(int a_noAuthFlag, char *a_confDir, char *a_cellName)
 	     USER_SERVICE_ID);
 #endif /* USS_VOL_DB */
 	serverconns[i] =
-	    rx_NewConnection(info.hostAddr[i].sin_addr.s_addr,
-			     info.hostAddr[i].sin_port, USER_SERVICE_ID, sc,
+	    rx_NewConnectionSA(&info.hostSA[i],
+			     USER_SERVICE_ID, sc,
 			     scIndex);
     }
 
