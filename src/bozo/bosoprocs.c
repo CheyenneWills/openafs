@@ -516,6 +516,7 @@ SBOZO_DeleteCellHost(struct rx_call *acall, char *aname)
 	goto fail;
     }
 
+    memset(&tcell.hostSA[which].u.in, 0, sizeof(struct sockaddr_in));
     memset(&tcell.hostAddr[which], 0, sizeof(struct sockaddr_in));
     memset(tcell.hostName[which], 0, MAXHOSTCHARS);
     code =
@@ -577,10 +578,10 @@ SBOZO_AddCellHost(struct rx_call *acall, char *aname)
 	 * same number of entries.
 	 */
 	if (tcell.numServers >
-	    sizeof tcell.hostAddr / sizeof tcell.hostAddr[0]) {
+	    sizeof tcell.hostSA / sizeof tcell.hostSA[0]) {
 	    bozo_Log
 		("ERROR: AddCellHost: attempt to add more than %ld database servers (database server '%s' not added)\n",
-		 (long)(sizeof tcell.hostAddr / sizeof tcell.hostAddr[0]),
+		 (long)(sizeof tcell.hostSA / sizeof tcell.hostSA[0]),
 		 aname);
 	    code = BZDOM;
 	    goto fail;
@@ -596,6 +597,7 @@ SBOZO_AddCellHost(struct rx_call *acall, char *aname)
 	}
     }
 
+    memset(&tcell.hostSA[which], 0, sizeof(tcell.hostSA[which]));
     memset(&tcell.hostAddr[which], 0, sizeof(struct sockaddr_in));
     strcpy(tcell.hostName[which], n);
     clones[which] = isClone;
