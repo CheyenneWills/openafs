@@ -1377,7 +1377,7 @@ CleanupTimedOutCallBacks_r(void)
     struct CallBack *cb;
     int ntimedout = 0;
     struct rx_inet_fmtbuf hoststr;
-    struct rx_sockaddr_fmtbuf tmp;
+    struct opr_sockaddr_str tmp;
 
     while (tfirst <= now) {
 	int cbi;
@@ -1388,7 +1388,7 @@ CleanupTimedOutCallBacks_r(void)
 		cbi = cb->tnext;
 		ViceLog(8,
 			("CCB: deleting timed out call back %s (%s), (%" AFS_VOLID_FMT ",%u,%u)\n",
-			 rx_sockaddr2str(&h_itoh(cb->hhead)->z.addr, &tmp),
+			 opr_sockaddr2str(&h_itoh(cb->hhead)->z.addr, &tmp),
 			 h_Host2str(h_itoh(cb->hhead), &hoststr),
 			 afs_printable_VolumeId_lu(itofe(cb->fhead)->volid),
 			 itofe(cb->fhead)->vnode, itofe(cb->fhead)->unique));
@@ -3021,12 +3021,12 @@ MultiBreakCallBackAlternateAddress_r(struct host *host,
     /* initialize alternate rx connections */
     for (i = 0, j = 0; i < host->z.interface->numberOfInterfaces; i++) {
 	/* this is the current primary address */
-	if (rx_sockaddr_equal(&host->z.addr, &host->z.interface->interface[i].addr))
+	if (opr_sockaddr_equal(&host->z.addr, &host->z.interface->interface[i].addr))
 	    continue;
 
 	interfaces[j] = host->z.interface->interface[i];
 	conns[j] =
-	    rx_NewConnection2(&interfaces[j].addr, 1, sc, 0);
+	    rx_NewConnectionSA(&interfaces[j].addr, 1, sc, 0);
 	rx_SetConnDeadTime(conns[j], 2);
 	rx_SetConnHardDeadTime(conns[j], AFS_HARDDEADTIME);
 	j++;
@@ -3048,7 +3048,7 @@ MultiBreakCallBackAlternateAddress_r(struct host *host,
 	    /* add then remove */
 	    addInterfaceAddr_r(host, &interfaces[multi_i].addr);
 	    removeInterfaceAddr_r(host, &host->z.addr);
-	    rx_sockaddr_copy(&host->z.addr, &interfaces[multi_i].addr);
+	    opr_sockaddr_copy(&host->z.addr, &interfaces[multi_i].addr);
 	    connSuccess = conns[multi_i];
 	    rx_SetConnDeadTime(host->z.callback_rxcon, 50);
 	    rx_SetConnHardDeadTime(host->z.callback_rxcon, AFS_HARDDEADTIME);
@@ -3113,12 +3113,12 @@ MultiProbeAlternateAddress_r(struct host *host)
     /* initialize alternate rx connections */
     for (i = 0, j = 0; i < host->z.interface->numberOfInterfaces; i++) {
 	/* this is the current primary address */
-	if (rx_sockaddr_equal(&host->z.addr, &host->z.interface->interface[i].addr))
+	if (opr_sockaddr_equal(&host->z.addr, &host->z.interface->interface[i].addr))
 	    continue;
 
 	interfaces[j] = host->z.interface->interface[i];
 	conns[j] =
-	    rx_NewConnection2(&interfaces[j].addr, 1, sc, 0);
+	    rx_NewConnectionSA(&interfaces[j].addr, 1, sc, 0);
 	rx_SetConnDeadTime(conns[j], 2);
 	rx_SetConnHardDeadTime(conns[j], AFS_HARDDEADTIME);
 	j++;
@@ -3140,7 +3140,7 @@ MultiProbeAlternateAddress_r(struct host *host)
 	    /* add then remove */
 	    addInterfaceAddr_r(host, &interfaces[multi_i].addr);
 	    removeInterfaceAddr_r(host, &host->z.addr);
-	    rx_sockaddr_copy(&host->z.addr, &interfaces[multi_i].addr);
+	    opr_sockaddr_copy(&host->z.addr, &interfaces[multi_i].addr);
 	    connSuccess = conns[multi_i];
 	    rx_SetConnDeadTime(host->z.callback_rxcon, 50);
 	    rx_SetConnHardDeadTime(host->z.callback_rxcon, AFS_HARDDEADTIME);
