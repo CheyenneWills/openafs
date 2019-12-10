@@ -309,9 +309,9 @@ MyBeforeProc(struct cmd_syndesc *as, void *arock)
 
     for (i = 0; i < info.numServers; ++i)
 	serverconns[i] =
-	    rx_NewConnection(info.hostAddr[i].sin_addr.s_addr,
-			     info.hostAddr[i].sin_port, USER_SERVICE_ID, sc,
-			     scindex);
+	    rx_NewConnectionSA(&info.hostSA[i],
+			       USER_SERVICE_ID, sc,
+			       scindex);
     for (; i < MAXSERVERS; ++i) {
 	serverconns[i] = (struct rx_connection *)0;
     }
