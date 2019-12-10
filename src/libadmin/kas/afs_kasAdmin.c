@@ -414,6 +414,10 @@ kas_ServerOpen(const void *cellHandle, const char **serverList,
 	}
 	if (util_AdminServerAddressGetFromName
 	    (serverList[server_count], &server_addr, &tst)) {
+	    server_info.hostSA[server_count].u.in.sin_addr.s_addr =
+		htonl(server_addr);
+	    server_info.hostSA[server_count].u.in.sin_port =
+		htons(AFSCONF_KAUTHPORT);
 	    server_info.hostAddr[server_count].sin_addr.s_addr =
 		htonl(server_addr);
 	    server_info.hostAddr[server_count].sin_port =
