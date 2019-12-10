@@ -58,7 +58,7 @@ extern int lwps;		/* the max number of server threads */
 extern afsUUID FS_HostUUID;
 extern char *FS_configPath;
 
-struct rx_sockaddr nulladdr;
+struct opr_sockaddr nulladdr;
 afsUUID nulluuid;
 int CEs = 0;			/* active clients */
 int CEBlocks = 0;		/* number of blocks of CEs */
@@ -81,9 +81,9 @@ struct enumclient_args {
 static void h_SetupCallbackConn_r(struct host * host);
 static int h_threadquota(int);
 static int initInterfaceAddr_r(struct host *, struct interfaceAddr *);
-static int h_Lookup_r(struct rx_sockaddr *addr, struct host **hostp);
-static void h_AddHostToAddrHashTable_r(struct rx_sockaddr *addr, struct host * host);
-static int h_DeleteHostFromAddrHashTable_r(struct rx_sockaddr *addr, struct host *host);
+static int h_Lookup_r(struct opr_sockaddr *addr, struct host **hostp);
+static void h_AddHostToAddrHashTable_r(struct opr_sockaddr *addr, struct host * host);
+static int h_DeleteHostFromAddrHashTable_r(struct opr_sockaddr *addr, struct host *host);
 
 #define CESPERBLOCK 73
 struct CEBlock {		/* block of CESPERBLOCK file entries */
@@ -191,7 +191,7 @@ static struct h_AddrHashChain *hostAddrHashTable[h_HASHENTRIES];
 static struct h_UuidHashChain *hostUuidHashTable[h_HASHENTRIES];
 
 static_inline afs_uint32
-h_HashIndex(struct rx_sockaddr *addr)
+h_HashIndex(struct opr_sockaddr *addr)
 {
     return ntohl(addr->u.in.sin_addr.s_addr) & (h_HASHENTRIES-1);
 }
@@ -275,11 +275,11 @@ FreeHT(struct host *entry)
 static char *
 AddrHashChain2str(struct h_AddrHashChain *chain, struct rx_inet_fmtbuf *buf)
 {
-    struct rx_sockaddr_fmtbuf fmtbuf;
+    struct opr_sockaddr_str fmtbuf;
 
     memset(buf, 0, sizeof(*buf));
     snprintf(buf->buffer, sizeof(buf->buffer), "%s",
-	     rx_sockaddr2str(&chain->addr, &fmtbuf));
+	     opr_sockaddr2str(&chain->addr, &fmtbuf));
     return buf->buffer;
 }
 
@@ -391,7 +391,7 @@ getThreadClient(struct ubik_client **client)
 }
 
 static int
-hpr_GetHostCPS(struct rx_sockaddr *addr, prlist *CPS)
+hpr_GetHostCPS(struct opr_sockaddr *addr, prlist *CPS)
 {
     afs_int32 code;
     afs_int32 over;
@@ -660,7 +660,7 @@ h_gethostcps_r(struct host *host, afs_int32 now)
 
 /* args in net byte order */
 void
-h_flushhostcps(struct rx_sockaddr *addr)
+h_flushhostcps(struct opr_sockaddr *addr)
 {
     struct host *host;
 
@@ -748,7 +748,7 @@ h_SetupCallbackConn_r(struct host * host)
     if (!sc)
 	sc = rxnull_NewClientSecurityObject();
     host->z.callback_rxcon =
-	rx_NewConnection2(&host->z.addr, 1, sc, 0);
+	rx_NewConnectionSA(&host->z.addr, 1, sc, 0);
     rx_SetConnDeadTime(host->z.callback_rxcon, 50);
     rx_SetConnHardDeadTime(host->z.callback_rxcon, AFS_HARDDEADTIME);
 }
@@ -760,7 +760,7 @@ h_SetupCallbackConn_r(struct host * host)
  * On return, refCount is incremented.
  */
 static int
-h_Lookup_r(struct rx_sockaddr *addr, struct host **hostp)
+h_Lookup_r(struct opr_sockaddr *addr, struct host **hostp)
 {
     afs_int32 now;
     struct host *host = NULL;
@@ -773,7 +773,7 @@ h_Lookup_r(struct rx_sockaddr *addr, struct host **hostp)
 	host = chain->hostPtr;
 	opr_Assert(host);
 	if (!(host->z.hostFlags & HOSTDELETED)
-	    && rx_sockaddr_equal(&chain->addr, addr)) {
+	    && opr_sockaddr_equal(&chain->addr, addr)) {
 	    if ((host->z.hostFlags & HWHO_INPROGRESS) &&
 		h_threadquota(host->lock.num_waiting)) {
 		*hostp = 0;
@@ -957,7 +957,7 @@ h_TossStuff_r(struct host *host)
                  * removed it.  If the addr/port is not valid, its not
                  * in the hash table.
                  */
-                if (hostAddrPort.valid && rx_sockaddr_equal(&host->z.addr, &hostAddrPort.addr))
+                if (hostAddrPort.valid && opr_sockaddr_equal(&host->z.addr, &hostAddrPort.addr))
                     h_DeleteHostFromAddrHashTable_r(&hostAddrPort.addr, host);
 	    }
 	    free(host->z.interface);
@@ -1220,20 +1220,20 @@ h_DeleteHostFromUuidHashTable_r(struct host *host)
  * All addresses are in network byte order.
  */
 static int
-invalidateInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
+invalidateInterfaceAddr_r(struct host *host, struct opr_sockaddr *addr)
 {
     int i;
     int number;
     struct Interface *interface;
     struct rx_inet_fmtbuf hoststr;
-    struct rx_sockaddr_fmtbuf hoststr2;
+    struct opr_sockaddr_str hoststr2;
 
     opr_Assert(host);
     opr_Assert(host->z.interface);
 
     ViceLog(125, ("invalidateInterfaceAddr : host %p (%s) addr %s\n",
 		  host, h_Host2str(host, &hoststr),
-		  rx_sockaddr2str(addr, &hoststr2)));
+		  opr_sockaddr2str(addr, &hoststr2)));
 
     /*
      * Make sure this address is on the list of known addresses
@@ -1242,7 +1242,7 @@ invalidateInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
     interface = host->z.interface;
     number = host->z.interface->numberOfInterfaces;
     for (i = 0; i < number; i++) {
-	if (rx_sockaddr_equal(&interface->interface[i].addr, addr)) {
+	if (opr_sockaddr_equal(&interface->interface[i].addr, addr)) {
             if (interface->interface[i].valid) {
                 h_DeleteHostFromAddrHashTable_r(addr, host);
 		interface->interface[i].valid = 0;
@@ -1265,14 +1265,14 @@ invalidateInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
  * All addresses are in network byte order.
  */
 static int
-removeAddress_r(struct host *host, struct rx_sockaddr *addr)
+removeAddress_r(struct host *host, struct opr_sockaddr *addr)
 {
     int i;
     struct rx_inet_fmtbuf hoststr, hoststr2;
     struct rx_connection *rxconn;
 
     if (!host->z.interface || host->z.interface->numberOfInterfaces == 1) {
-	if (rx_sockaddr_equal(&host->z.addr, addr)) {
+	if (opr_sockaddr_equal(&host->z.addr, addr)) {
 	    ViceLog(25,
 		    ("Removing only address for host %p (%s), deleting host.\n",
 		     host, h_Host2str(host, &hoststr)));
@@ -1290,7 +1290,7 @@ removeAddress_r(struct host *host, struct rx_sockaddr *addr)
 		     host, h_Host2str(host, &hoststr)));
         }
     } else {
-	if (rx_sockaddr_equal(&host->z.addr, addr)) {
+	if (opr_sockaddr_equal(&host->z.addr, addr)) {
             removeInterfaceAddr_r(host, addr);
 	    for (i=0; i < host->z.interface->numberOfInterfaces; i++) {
 		if (host->z.interface->interface[i].valid) {
@@ -1298,7 +1298,7 @@ removeAddress_r(struct host *host, struct rx_sockaddr *addr)
 			     ("Removed address for host %p (%s), new primary interface %s.\n",
 			       host, h_Host2str(host, &hoststr),
 			       h_HostInterface2str(host, i, &hoststr2)));
-		    rx_sockaddr_copy(&host->z.addr, &host->z.interface->interface[i].addr);
+		    opr_sockaddr_copy(&host->z.addr, &host->z.interface->interface[i].addr);
 		    h_AddHostToAddrHashTable_r(&host->z.addr, host);
                     break;
                 }
@@ -1310,7 +1310,7 @@ removeAddress_r(struct host *host, struct rx_sockaddr *addr)
 			   host, h_Host2str(host, &hoststr)));
 		host->z.hostFlags |= HOSTDELETED;
                 /* addr/port was removed from the hash table */
-		rx_sockaddr_copy(&host->z.addr, &nulladdr);
+		opr_sockaddr_copy(&host->z.addr, &nulladdr);
             } else {
 		rxconn = host->z.callback_rxcon;
 		host->z.callback_rxcon = NULL;
@@ -1332,7 +1332,7 @@ removeAddress_r(struct host *host, struct rx_sockaddr *addr)
 }
 
 static void
-createHostAddrHashChain_r(int index, struct rx_sockaddr *addr, struct host *host)
+createHostAddrHashChain_r(int index, struct opr_sockaddr *addr, struct host *host)
 {
     struct h_AddrHashChain *chain;
     struct rx_inet_fmtbuf hoststr;
@@ -1344,7 +1344,7 @@ createHostAddrHashChain_r(int index, struct rx_sockaddr *addr, struct host *host
     }
     chain->hostPtr = host;
     chain->next = hostAddrHashTable[index];
-    rx_sockaddr_copy(&chain->addr, addr);
+    opr_sockaddr_copy(&chain->addr, addr);
     hostAddrHashTable[index] = chain;
     ViceLog(125, ("h_AddHostToAddrHashTable_r: host %p added as %s\n",
 		  host, AddrHashChain2str(chain, &hoststr)));
@@ -1359,7 +1359,7 @@ createHostAddrHashChain_r(int index, struct rx_sockaddr *addr, struct host *host
  * @param[in]	oldHost	the host previously added with this address
  */
 static void
-reconcileHosts_r(struct rx_sockaddr *addr, struct host *newHost,
+reconcileHosts_r(struct opr_sockaddr *addr, struct host *newHost,
 		 struct host *oldHost)
 {
     struct rx_connection *cb = NULL;
@@ -1368,11 +1368,11 @@ reconcileHosts_r(struct rx_sockaddr *addr, struct host *newHost,
     Capabilities caps;
     afsUUID *newHostUuid = &nulluuid;
     afsUUID *oldHostUuid = &nulluuid;
-    struct rx_sockaddr_fmtbuf hoststr;
+    struct opr_sockaddr_str hoststr;
 
     ViceLog(125,
 	    ("reconcileHosts_r: addr %s newHost %p oldHost %p\n",
-	     rx_sockaddr2str(addr, &hoststr),
+	     opr_sockaddr2str(addr, &hoststr),
 	     newHost, oldHost));
 
     opr_Assert(oldHost != newHost);
@@ -1382,7 +1382,7 @@ reconcileHosts_r(struct rx_sockaddr *addr, struct host *newHost,
 	sc = rxnull_NewClientSecurityObject();
     }
 
-    cb = rx_NewConnection2(addr, 1, sc, 0);
+    cb = rx_NewConnectionSA(addr, 1, sc, 0);
     rx_SetConnDeadTime(cb, 50);
     rx_SetConnHardDeadTime(cb, AFS_HARDDEADTIME);
 
@@ -1399,13 +1399,13 @@ reconcileHosts_r(struct rx_sockaddr *addr, struct host *newHost,
 	(code == 0 && afs_uuid_equal(&interf.uuid, &nulluuid))) {
 	ViceLog(0,
 		("reconcileHosts_r: WhoAreYou not supported for connection (%s), error %d\n",
-		 rx_sockaddr2str(addr, &hoststr), code));
+		 opr_sockaddr2str(addr, &hoststr), code));
 	goto fail;
     }
     if (code != 0) {
 	ViceLog(0,
 		("reconcileHosts_r: WhoAreYou failed for connection (%s), error %d\n",
-		 rx_sockaddr2str(addr, &hoststr), code));
+		 opr_sockaddr2str(addr, &hoststr), code));
 	goto fail;
     }
 
@@ -1429,13 +1429,13 @@ reconcileHosts_r(struct rx_sockaddr *addr, struct host *newHost,
 	afs_uuid_equal(oldHostUuid, &nulluuid)) {
 	ViceLog(0,
 		("reconcileHosts_r: Cannot reconcile hosts for connection (%s), no uuids\n",
-		 rx_sockaddr2str(addr, &hoststr)));
+		 opr_sockaddr2str(addr, &hoststr)));
 	goto done;
     }
     if (afs_uuid_equal(newHostUuid, oldHostUuid)) {
 	ViceLog(0,
 		("reconcileHosts_r: Cannot reconcile hosts for connection (%s), same uuids\n",
-		 rx_sockaddr2str(addr, &hoststr)));
+		 opr_sockaddr2str(addr, &hoststr)));
 	goto done;
     }
 
@@ -1448,7 +1448,7 @@ reconcileHosts_r(struct rx_sockaddr *addr, struct host *newHost,
 	struct h_AddrHashChain *chain;
 	int index = h_HashIndex(addr);
 	for (chain = hostAddrHashTable[index]; chain; chain = chain->next) {
-	    if (rx_sockaddr_equal(&chain->addr, addr)) {
+	    if (opr_sockaddr_equal(&chain->addr, addr)) {
 		chain->hostPtr = newHost;
 		removeAddress_r(oldHost, addr);
 		goto done;
@@ -1481,7 +1481,7 @@ reconcileHosts_r(struct rx_sockaddr *addr, struct host *newHost,
 
 /* inserts a new HashChain structure corresponding to this address */
 static void
-h_AddHostToAddrHashTable_r(struct rx_sockaddr *addr, struct host *host)
+h_AddHostToAddrHashTable_r(struct opr_sockaddr *addr, struct host *host)
 {
     int index;
     struct h_AddrHashChain *chain;
@@ -1492,7 +1492,7 @@ h_AddHostToAddrHashTable_r(struct rx_sockaddr *addr, struct host *host)
 
     /* don't add the same address:port pair entry multiple times */
     for (chain = hostAddrHashTable[index]; chain; chain = chain->next) {
-	if (rx_sockaddr_equal(&chain->addr, addr)) {
+	if (opr_sockaddr_equal(&chain->addr, addr)) {
 	    if (chain->hostPtr == host) {
 	        ViceLog(125,
 			("h_AddHostToAddrHashTable_r: host %p (%s) already hashed\n",
@@ -1517,13 +1517,13 @@ h_AddHostToAddrHashTable_r(struct rx_sockaddr *addr, struct host *host)
  * All addresses are in network byte order.
  */
 int
-addInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
+addInterfaceAddr_r(struct host *host, struct opr_sockaddr *addr)
 {
     int i;
     int number;
     struct Interface *interface;
     struct rx_inet_fmtbuf hoststr;
-    struct rx_sockaddr_fmtbuf hoststr2;
+    struct opr_sockaddr_str hoststr2;
 
     opr_Assert(host);
     opr_Assert(host->z.interface);
@@ -1534,11 +1534,11 @@ addInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
      */
     number = host->z.interface->numberOfInterfaces;
     for (i = 0; i < number; i++) {
-	if (rx_sockaddr_equal(&host->z.interface->interface[i].addr, addr)) {
+	if (opr_sockaddr_equal(&host->z.interface->interface[i].addr, addr)) {
 	    ViceLog(125,
 		    ("addInterfaceAddr : found host %p (%s) adding %s%s\n",
 		     host, h_Host2str(host, &hoststr),
-		     rx_sockaddr2str(addr, &hoststr2),
+		     opr_sockaddr2str(addr, &hoststr2),
 		     host->z.interface->interface[i].valid ? "" :
 		     ", validating"));
 
@@ -1552,7 +1552,7 @@ addInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
 
     ViceLog(125, ("addInterfaceAddr : host %p (%s) adding %s\n",
 		  host, h_Host2str(host, &hoststr),
-		  rx_sockaddr2str(addr, &hoststr2)));
+		  opr_sockaddr2str(addr, &hoststr2)));
 
     interface = malloc(sizeof(struct Interface)
 		       + (sizeof(struct AddrPort) * number));
@@ -1565,7 +1565,7 @@ addInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
 	interface->interface[i] = host->z.interface->interface[i];
 
     /* Add the new valid interface */
-    rx_sockaddr_copy(&interface->interface[number].addr, addr);
+    opr_sockaddr_copy(&interface->interface[number].addr, addr);
     interface->interface[number].valid = 1;
     h_AddHostToAddrHashTable_r(addr, host);
     free(host->z.interface);
@@ -1581,20 +1581,20 @@ addInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
  * All addresses are in network byte order.
  */
 int
-removeInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
+removeInterfaceAddr_r(struct host *host, struct opr_sockaddr *addr)
 {
     int i;
     int number;
     struct Interface *interface;
     struct rx_inet_fmtbuf hoststr;
-    struct rx_sockaddr_fmtbuf hoststr2;
+    struct opr_sockaddr_str hoststr2;
 
     opr_Assert(host);
     opr_Assert(host->z.interface);
 
     ViceLog(125, ("removeInterfaceAddr : host %p (%s) addr %s\n",
 		  host, h_Host2str(host, &hoststr),
-		  rx_sockaddr2str(addr, &hoststr2)));
+		  opr_sockaddr2str(addr, &hoststr2)));
 
     /*
      * Make sure this address is on the list of known addresses
@@ -1603,7 +1603,7 @@ removeInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
     interface = host->z.interface;
     number = host->z.interface->numberOfInterfaces;
     for (i = 0; i < number; i++) {
-	if (rx_sockaddr_equal(&interface->interface[i].addr, addr)) {
+	if (opr_sockaddr_equal(&interface->interface[i].addr, addr)) {
 	    if (interface->interface[i].valid)
 		h_DeleteHostFromAddrHashTable_r(addr, host);
 	    number--;
@@ -1675,7 +1675,7 @@ removeInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr)
  *         results in host
  */
 static int
-ShouldSkipTMAY(struct host *host, int prewait_tmays, struct rx_sockaddr *prewait_addr)
+ShouldSkipTMAY(struct host *host, int prewait_tmays, struct opr_sockaddr *prewait_addr)
 {
     int skiptmay = 0;
     if (host->z.n_tmays > prewait_tmays + 1) {
@@ -1685,7 +1685,7 @@ ShouldSkipTMAY(struct host *host, int prewait_tmays, struct rx_sockaddr *prewait
 	 * or additional guarantees. */
 	skiptmay = 1;
     }
-    if (!rx_sockaddr_equal(&host->z.addr, prewait_addr)) {
+    if (!opr_sockaddr_equal(&host->z.addr, prewait_addr)) {
 	/* ...but don't skip it if the host has changed */
 	skiptmay = 0;
     }
@@ -1841,7 +1841,7 @@ h_GetHost_r(struct rx_connection *tcon)
     struct interfaceAddr interf;
     int interfValid = 0;
     struct Identity *identP = NULL;
-    struct rx_sockaddr addr;
+    struct opr_sockaddr addr;
     struct rx_inet_fmtbuf hoststr, hoststr2;
     Capabilities caps;
     struct rx_connection *cb_conn = NULL;
@@ -1874,7 +1874,7 @@ h_GetHost_r(struct rx_connection *tcon)
 
 	int didtmay = 0; /* did we make a successful TMAY call against host->z.host? */
 	unsigned int prewait_tmays;
-	struct rx_sockaddr prewait_addr;
+	struct opr_sockaddr prewait_addr;
 	int skiptmay;
 
 	if ((host->z.hostFlags & HWHO_INPROGRESS) &&
@@ -1885,7 +1885,7 @@ h_GetHost_r(struct rx_connection *tcon)
 	}
 
 	prewait_tmays = host->z.n_tmays;
-	rx_sockaddr_copy(&prewait_addr, &host->z.addr);
+	opr_sockaddr_copy(&prewait_addr, &host->z.addr);
 
 	h_Lock_r(host);
 	if (!(host->z.hostFlags & ALTADDR) ||
@@ -1920,7 +1920,7 @@ h_GetHost_r(struct rx_connection *tcon)
 	skiptmay = ShouldSkipTMAY(host, prewait_tmays, &prewait_addr);
 
 	H_UNLOCK;
-	if (rx_sockaddr_equal(&addr, &host->z.addr)) {
+	if (opr_sockaddr_equal(&addr, &host->z.addr)) {
             /* The existing callback connection matches the
              * incoming connection so just use it.
              */
@@ -1946,7 +1946,7 @@ h_GetHost_r(struct rx_connection *tcon)
              */
 	    if (!sc)
                 sc = rxnull_NewClientSecurityObject();
-            cb_in = rx_NewConnection2(&addr, 1, sc, 0);
+            cb_in = rx_NewConnectionSA(&addr, 1, sc, 0);
             rx_SetConnDeadTime(cb_in, 50);
             rx_SetConnHardDeadTime(cb_in, AFS_HARDDEADTIME);
 
@@ -2071,7 +2071,7 @@ h_GetHost_r(struct rx_connection *tcon)
                      */
                     addInterfaceAddr_r(host, &addr);
 		    removeInterfaceAddr_r(host, &host->z.addr);
-		    rx_sockaddr_copy(&host->z.addr, &addr);
+		    opr_sockaddr_copy(&host->z.addr, &addr);
 		    rxconn = host->z.callback_rxcon;
 		    host->z.callback_rxcon = cb_in;
                     cb_in = NULL;
@@ -2296,7 +2296,7 @@ h_GetHost_r(struct rx_connection *tcon)
                         probefail = 1;
                     }
 
-		    if (!rx_sockaddr_equal(&oldHost->z.addr, &addr)) {
+		    if (!opr_sockaddr_equal(&oldHost->z.addr, &addr)) {
 			struct rx_connection *rxconn;
 			ViceLog(25,
 				 ("CB: Host %p (%s) has new addr %s\n",
@@ -2324,13 +2324,13 @@ h_GetHost_r(struct rx_connection *tcon)
 			    struct Interface *interface = oldHost->z.interface;
 			    int number = oldHost->z.interface->numberOfInterfaces;
 			    for (i = 0; i < number; i++) {
-				if (rx_sockaddr_equal(&interface->interface[i].addr, &addr)) {
+				if (opr_sockaddr_equal(&interface->interface[i].addr, &addr)) {
 				    /*
 				     * We have just been contacted by a client
 				     * that has been seen from behind a NAT
 				     * and at least one other address.
 				     */
-				    struct rx_sockaddr taddr;
+				    struct opr_sockaddr taddr;
 				    taddr.u.in.sin_family = AF_INET;
 				    taddr.u.in.sin_addr.s_addr = addr.u.in.sin_addr.s_addr;
 				    taddr.u.in.sin_port = interface->interface[i].addr.u.in.sin_port;
@@ -2339,7 +2339,7 @@ h_GetHost_r(struct rx_connection *tcon)
 				}
 			    }
 			}
-			rx_sockaddr_copy(&oldHost->z.addr, &addr);
+			opr_sockaddr_copy(&oldHost->z.addr, &addr);
 			oldHost->z.addr.u.in.sin_port = addr.u.in.sin_port;
 			rxconn = oldHost->z.callback_rxcon;
 			oldHost->z.callback_rxcon = host->z.callback_rxcon;
@@ -2971,10 +2971,10 @@ h_UserName(struct client *client)
 char *
 h_AddrPort2str(struct AddrPort *interface, struct rx_inet_fmtbuf *buf)
 {
-    struct rx_sockaddr_fmtbuf fmtbuf;
+    struct opr_sockaddr_str fmtbuf;
 
     snprintf(buf->buffer, sizeof(buf->buffer), "%s",
-	     rx_sockaddr2str(&interface->addr, &fmtbuf));
+	     opr_sockaddr2str(&interface->addr, &fmtbuf));
     return buf->buffer;
 }
 /**
@@ -3009,10 +3009,10 @@ h_HostInterface2str(struct host *host, int iface_index,
 char *
 h_Client2str(struct client *client, struct rx_inet_fmtbuf *buf)
 {
-    struct rx_sockaddr_fmtbuf fmtbuf;
+    struct opr_sockaddr_str fmtbuf;
 
     snprintf(buf->buffer, sizeof(buf->buffer), "%s",
-	    rx_sockaddr2str(&client->z.host->z.addr, &fmtbuf));
+	    opr_sockaddr2str(&client->z.host->z.addr, &fmtbuf));
     return buf->buffer;
 }
 
@@ -3027,10 +3027,10 @@ h_Client2str(struct client *client, struct rx_inet_fmtbuf *buf)
 char *
 h_Host2str(struct host *host, struct rx_inet_fmtbuf *buf)
 {
-    struct rx_sockaddr_fmtbuf fmtbuf;
+    struct opr_sockaddr_str fmtbuf;
 
     snprintf(buf->buffer, sizeof(buf->buffer), "%s",
-	     rx_sockaddr2str(&host->z.addr, &fmtbuf));
+	     opr_sockaddr2str(&host->z.addr, &fmtbuf));
     return buf->buffer;
 }
 
@@ -3046,11 +3046,11 @@ h_Host2str(struct host *host, struct rx_inet_fmtbuf *buf)
 char *
 h_Host2Debugstr(struct host *host, struct h_hostdebug_fmtbuf *buf)
 {
-    struct rx_sockaddr_fmtbuf fmtbuf;
+    struct opr_sockaddr_str fmtbuf;
     struct uuid_fmtbuf uuidstr;
 
     snprintf(buf->buffer, sizeof(buf->buffer), "%s uuid: %s flags: 0x%x",
-	     rx_sockaddr2str(&host->z.addr, &fmtbuf),
+	     opr_sockaddr2str(&host->z.addr, &fmtbuf),
 	     host->z.interface ?
 		afsUUID_to_string(&host->z.interface->uuid, &uuidstr) :
 		"<none>",
@@ -3243,7 +3243,7 @@ static int h_stateRestoreHost(struct fs_dump_state * state);
 static int h_stateRestoreIndex(struct host * h, void *rock);
 static int h_stateVerifyHost(struct host * h, void *rock);
 static int h_stateVerifyAddrHash(struct fs_dump_state * state, struct host * h,
-                                 struct rx_sockaddr *addr, int valid);
+                                 struct opr_sockaddr *addr, int valid);
 static int h_stateVerifyUuidHash(struct fs_dump_state * state, struct host * h);
 static void h_hostToDiskEntry_r(struct host * in, struct hostDiskEntry * out);
 static void h_diskEntryToHost_r(struct hostDiskEntry * in, struct host * out);
@@ -3430,24 +3430,24 @@ h_stateVerifyHost(struct host * h, void* rock)
  */
 static int
 h_stateVerifyAddrHash(struct fs_dump_state * state, struct host * h,
-                      struct rx_sockaddr *addr, int valid)
+                      struct opr_sockaddr *addr, int valid)
 {
     int ret = 0, found = 0;
     struct host *host = NULL;
     struct h_AddrHashChain *chain;
     int index = h_HashIndex(addr);
-    struct rx_sockaddr_fmtbuf tmp;
+    struct opr_sockaddr_str tmp;
     int chain_len = 0;
 
     for (chain = hostAddrHashTable[index]; chain; chain = chain->next) {
 	host = chain->hostPtr;
 	if (host == NULL) {
-	    rx_sockaddr2str(addr, &tmp);
+	    opr_sockaddr2str(addr, &tmp);
 	    ViceLog(0, ("h_stateVerifyAddrHash: error: addr hash chain has NULL host ptr (lookup addr %s)\n", tmp.buffer));
 	    ret = 1;
 	    goto done;
 	}
-	if (rx_sockaddr_equal(&chain->addr, addr)) {
+	if (opr_sockaddr_equal(&chain->addr, addr)) {
 	    if (host != h) {
 		if (valid) {
 		    ViceLog(0, ("h_stateVerifyAddrHash: warning: addr hash entry "
@@ -3478,7 +3478,7 @@ h_stateVerifyAddrHash(struct fs_dump_state * state, struct host * h,
     }
 
     if (!found && valid) {
-	rx_sockaddr2str(addr, &tmp);
+	opr_sockaddr2str(addr, &tmp);
 	if (state->mode == FS_STATE_LOAD_MODE) {
 	    ViceLog(0, ("h_stateVerifyAddrHash: error: addr %s not found in hash\n",
 	                tmp.buffer));
@@ -3766,7 +3766,7 @@ h_stateRestoreHost(struct fs_dump_state * state)
 	int i;
 	for (i = ifp->numberOfInterfaces-1; i >= 0; i--) {
 	    if (ifp->interface[i].valid
-		&& !rx_sockaddr_equal(&ifp->interface[i].addr, &host->z.addr)) {
+		&& !opr_sockaddr_equal(&ifp->interface[i].addr, &host->z.addr)) {
 		h_AddHostToAddrHashTable_r(&ifp->interface[i].addr, host);
 	    }
 	}
@@ -4371,24 +4371,24 @@ initInterfaceAddr_r(struct host *host, struct interfaceAddr *interf)
 /* deleted a HashChain structure for this address and host */
 /* returns 1 on success */
 static int
-h_DeleteHostFromAddrHashTable_r(struct rx_sockaddr *addr,
+h_DeleteHostFromAddrHashTable_r(struct opr_sockaddr *addr,
 				struct host *host)
 {
     struct rx_inet_fmtbuf hoststr;
     struct h_AddrHashChain **hp, *th;
-    struct rx_sockaddr zeroaddr;
+    struct opr_sockaddr zeroaddr;
 
     zeroaddr.u.in.sin_family = AF_INET;
     zeroaddr.u.in.sin_addr.s_addr = 0;
     zeroaddr.u.in.sin_port = 0;
 
-    if (rx_sockaddr_equal(addr, &zeroaddr))
+    if (opr_sockaddr_equal(addr, &zeroaddr))
 	return 1;
 
     for (hp = &hostAddrHashTable[h_HashIndex(addr)]; (th = *hp);
 	 hp = &th->next) {
 	opr_Assert(th->hostPtr);
-	if (th->hostPtr == host && rx_sockaddr_equal(&th->addr, addr)) {
+	if (th->hostPtr == host && opr_sockaddr_equal(&th->addr, addr)) {
 	    ViceLog(125, ("h_DeleteHostFromAddrHashTable_r: host %p (%s)\n",
 			  host, h_Host2str(host, &hoststr)));
 	    *hp = th->next;

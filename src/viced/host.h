@@ -40,7 +40,7 @@ struct Identity {
 };
 
 struct AddrPort  {
-    struct rx_sockaddr addr;	/* in network byte order */
+    struct opr_sockaddr addr;	/* in network byte order */
     afs_int16  valid;
 };
 
@@ -55,7 +55,7 @@ struct host_to_zero {
     struct host *next, *prev;	/* linked list of all hosts */
     struct rx_connection *callback_rxcon;	/* rx callback connection */
     afs_uint32 refCount;     	/* reference count */
-    struct rx_sockaddr	addr;	/* address and port of host interface that is
+    struct opr_sockaddr	addr;	/* address and port of host interface that is
 				 * currently being used, in network byte order */
     char Console;		/* XXXX This host is a console */
     unsigned short hostFlags;	/*  bit map */
@@ -92,7 +92,7 @@ struct host {
 struct h_AddrHashChain {
     struct host *hostPtr;
     struct h_AddrHashChain *next;
-    struct rx_sockaddr addr;
+    struct opr_sockaddr addr;
 };
 
 struct h_UuidHashChain {
@@ -227,7 +227,7 @@ extern void h_PrintStats(void);
 extern void h_PrintClients(void);
 extern void h_GetWorkStats(int *, int *, int *, afs_int32);
 extern void h_GetWorkStats64(afs_uint64 *, afs_uint64 *, afs_uint64 *, afs_int32);
-extern void h_flushhostcps(struct rx_sockaddr *addr);
+extern void h_flushhostcps(struct opr_sockaddr *addr);
 extern void h_GetHostNetStats(afs_int32 * a_numHostsP, afs_int32 * a_sameNetOrSubnetP,
 		  afs_int32 * a_diffSubnetP, afs_int32 * a_diffNetworkP);
 extern int h_NBLock_r(struct host *host);
@@ -236,8 +236,8 @@ extern void h_InitHostPackage(int hquota);
 extern void h_CheckHosts(void );
 extern void h_AddHostToUuidHashTable_r(afsUUID * uuid, struct host * host);
 extern int h_DeleteHostFromUuidHashTable_r(struct host *host);
-extern int addInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr);
-extern int removeInterfaceAddr_r(struct host *host, struct rx_sockaddr *addr);
+extern int addInterfaceAddr_r(struct host *host, struct opr_sockaddr *addr);
+extern int removeInterfaceAddr_r(struct host *host, struct opr_sockaddr *addr);
 extern afs_int32 hpr_Initialize(struct ubik_client **);
 extern int hpr_End(struct ubik_client *);
 extern int hpr_IdToName(idlist *ids, namelist *names);
