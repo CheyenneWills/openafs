@@ -29,6 +29,7 @@
 
 /*
  * Supports only AF_INET (IPv4) at this time.
+ * Returns <addr:port>
  */
 
 char *
@@ -46,6 +47,24 @@ opr_sockaddr2str(struct opr_sockaddr *addr, struct opr_sockaddr_str *str)
     return str->buffer;
 }
 
+/*
+ * Supports only AF_INET (IPv4) at this time.
+ * Returns <addr>
+ */
+
+char *
+opr_sockaddr_addr2str(struct opr_sockaddr *addr, struct opr_sockaddr_str *str)
+{
+    afs_uint32 taddr = ntohl(addr->u.in.sin_addr.s_addr);
+    afs_uint16 tport = ntohs(addr->u.in.sin_port);
+
+    snprintf(str->buffer, sizeof(str->buffer), "%u.%u.%u.%u",
+	     (taddr >> 24) & 0xff,
+	     (taddr >> 16) & 0xff,
+	     (taddr >> 8) & 0xff,
+	     (taddr) & 0xff)
+    return str->buffer;
+}
 /**
  * Return true if a has the same value as b.
  *

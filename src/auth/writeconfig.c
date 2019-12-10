@@ -148,17 +148,17 @@ afsconf_SetExtendedCellInfo(struct afsconf_dir *adir,
     }
     fprintf(tf, ">%s	#Cell name\n", acellInfo->name);
     for (i = 0; i < acellInfo->numServers; i++) {
-	code = acellInfo->hostAddr[i].sin_addr.s_addr;	/* net order */
+	struct opr_sockaddr_str addrbuf;
+	code = acellInfo->hostSA[i].u.in.sin_addr.s_addr;	/* net order */
 	if (code == 0)
 	    continue;		/* delete request */
-	code = ntohl(code);	/* convert to host order */
 	if (clones && clones[i])
-	    fprintf(tf, "[%d.%d.%d.%d]  #%s\n", (code >> 24) & 0xff,
-		    (code >> 16) & 0xff, (code >> 8) & 0xff, code & 0xff,
+	    fprintf(tf, "[%s]  #%s\n",
+		    opr_sockaddr_addr2str(&acellInfo->hostSA[i], &addrbuf),
 		    acellInfo->hostName[i]);
 	else
-	    fprintf(tf, "%d.%d.%d.%d    #%s\n", (code >> 24) & 0xff,
-		    (code >> 16) & 0xff, (code >> 8) & 0xff, code & 0xff,
+	    fprintf(tf, "%s    #%s\n",
+		    opr_sockaddr_addr2str(&acellInfo->hostSA[i], &addrbuf),
 		    acellInfo->hostName[i]);
     }
     if (ferror(tf)) {

@@ -43,6 +43,7 @@ struct opr_sockaddr_str {
 };
 
 extern char *opr_sockaddr2str(struct opr_sockaddr *sa, struct opr_sockaddr_str *str);
+extern char *opr_sockaddr_port2str(struct opr_sockaddr *sa, struct opr_sockaddr_str *str);
 extern int opr_sockaddr_equal(struct opr_sockaddr *a, struct opr_sockaddr *b);
 extern int opr_sockaddr_copy(struct opr_sockaddr *dst, struct opr_sockaddr *src);
 
