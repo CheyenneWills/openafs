@@ -895,11 +895,9 @@ afsclient_CellOpen(const char *cellName, const void *tokenHandle,
 		sc[scIndex] = servers[i].sc;
 		for (j = 0; (j < info.numServers); j++) {
 		    serverconns[j] =
-			rx_GetCachedConnection(info.hostAddr[j].sin_addr.
-					       s_addr,
-					       info.hostAddr[j].sin_port,
-					       servers[i].serviceId,
-					       sc[scIndex], scIndex);
+			rx_GetCachedConnectionSA(&info.hostSA[j],
+						 servers[i].serviceId,
+						 sc[scIndex], scIndex);
 		}
 		serverconns[j] = 0;
 		tst = ubik_ClientInit(serverconns, servers[i].ubik);
