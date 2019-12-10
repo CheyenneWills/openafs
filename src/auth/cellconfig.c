@@ -74,7 +74,7 @@ static int GetCellNT(struct afsconf_dir *adir);
 #endif
 static int GetCellUnix(struct afsconf_dir *adir);
 static int LoadConfig(struct afsconf_dir *adir);
-static int ParseHostLine(char *aline, struct sockaddr_in *addr,
+static int ParseHostLine(char *aline, struct opr_sockaddr *addr,
 			 char *aname, char *aclone /* boolean */);
 static int ParseCellLine(char *aline, char *aname,
 			 char *alname);
@@ -799,7 +799,7 @@ LoadConfig(struct afsconf_dir *adir)
 	    i = curEntry->cellInfo.numServers;
 	    if (i < MAXHOSTSPERCELL) {
 		code = ParseHostLine(tbuffer,
-				     &curEntry->cellInfo.hostAddr[i],
+				     &curEntry->cellInfo.hostSA[i],
 				     curEntry->cellInfo.hostName[i],
 				     &curEntry->cellInfo.clone[i]);
 		if (code) {
@@ -817,6 +817,16 @@ LoadConfig(struct afsconf_dir *adir)
 		    fclose(tf);
 		    UnloadConfig(adir);
 		    return -1;
+		}
+		if (curEntry->cellInfo.hostSA[i].u.in.sin_family == AF_INET) {
+		    /* Keep hostAddr in sync with hostSA */
+		    memcpy(&curEntry->cellInfo.hostAddr[i],
+			   &curEntry->cellInfo.hostSA[i].u.in,
+			   sizeof(curEntry->cellInfo.hostAddr[i]));
+		} else {
+		    /* clear the entry */
+		    memset(&curEntry->cellInfo.hostAddr[i], 0,
+			   sizeof(curEntry->cellInfo.hostAddr[i]));
 		}
 		curEntry->cellInfo.numServers = ++i;
 	    } else {
@@ -907,7 +917,7 @@ LoadConfig(struct afsconf_dir *adir)
  * into the appropriate pieces.
  */
 static int
-ParseHostLine(char *aline, struct sockaddr_in *addr, char *aname,
+ParseHostLine(char *aline, struct opr_sockaddr *addr, char *aname,
 	      char *aclone /* boolean */)
 {
     int i;
@@ -937,12 +947,13 @@ ParseHostLine(char *aline, struct sockaddr_in *addr, char *aname,
 	    return AFSCONF_SYNTAX;
 	}
     }
-    addr->sin_family = AF_INET;
-    addr->sin_port = 0;
+/* CCW NOTE: will eventually handle ipv6 as well */
+    addr->u.in.sin_family = AF_INET;
+    addr->u.in.sin_port = 0;
 #ifdef STRUCT_SOCKADDR_HAS_SA_LEN
-    addr->sin_len = sizeof(struct sockaddr_in);
+    addr->u.in.sin_len = sizeof(struct sockaddr_in);
 #endif
-    tp = (char *)&addr->sin_addr;
+    tp = (char *)&addr->u.in.sin_addr;
     *tp++ = c[0];
     *tp++ = c[1];
     *tp++ = c[2];
@@ -1038,8 +1049,8 @@ afsconf_GetExtendedCellInfo(struct afsconf_dir *adir, char *acellName,
 int
 afsconf_LookupServer(const char *service, const char *protocol,
 		     const char *cellName, unsigned short afsdbPort,
-		     afs_uint32 *cellHostAddrs, char cellHostNames[][MAXHOSTCHARS],
-		     unsigned short ports[], unsigned short ipRanks[],
+		     struct opr_sockaddr *cellHostAddrs, char cellHostNames[][MAXHOSTCHARS],
+		     unsigned short ipRanks[],
 		     int *numServers, int *ttl, char **arealCellName)
 {
     int code = 0;
@@ -1180,8 +1191,9 @@ afsconf_LookupServer(const char *service, const char *protocol,
 		if (he->h_addrtype == AF_INET) {
 		    afs_uint32 ipaddr;
 		    memcpy(&ipaddr, he->h_addr, sizeof(ipaddr));
-		    cellHostAddrs[server_num] = ipaddr;
-		    ports[server_num] = afsdbPort;
+		    cellHostAddrs[server_num].u.in.sin_family = AF_INET;
+		    cellHostAddrs[server_num].u.in.sin_addr.s_addr = ipaddr;
+		    cellHostAddrs[server_num].u.in.sin_port = afsdbPort;
 		    ipRanks[server_num] = 0;
 		    strncpy(cellHostNames[server_num], host,
 			    sizeof(cellHostNames[server_num]));
@@ -1215,9 +1227,10 @@ afsconf_LookupServer(const char *service, const char *protocol,
 		    afs_uint32 ipaddr;
 
 		    memcpy(&ipaddr, he->h_addr, sizeof(ipaddr));
-		    cellHostAddrs[server_num] = ipaddr;
+		    cellHostAddrs[server_num].u.in.sin_family = AF_INET;
+		    cellHostAddrs[server_num].u.in.sin_addr.s_addr = ipaddr;
 		    ipRanks[server_num] = (p[0] << 8) | p[1];
-		    ports[server_num] = htons((p[4] << 8) | p[5]);
+		    cellHostAddrs[server_num].u.in.sin_port = htons((p[4] << 8) | p[5]);
 		    /* weight = (p[2] << 8) | p[3]; */
 		    strncpy(cellHostNames[server_num], host,
 			    sizeof(cellHostNames[server_num]));
@@ -1262,10 +1275,9 @@ int
 afsconf_GetAfsdbInfo(char *acellName, char *aservice,
 		     struct afsconf_cell *acellInfo)
 {
-    afs_uint32 cellHostAddrs[AFSMAXCELLHOSTS];
+    struct opr_sockaddr cellHostAddrs[AFSMAXCELLHOSTS];
     char cellHostNames[AFSMAXCELLHOSTS][MAXHOSTCHARS];
     unsigned short ipRanks[AFSMAXCELLHOSTS];
-    unsigned short ports[AFSMAXCELLHOSTS];
     char *realCellName = NULL;
     int ttl, numServers, i;
     char *service = aservice;
@@ -1281,7 +1293,7 @@ afsconf_GetAfsdbInfo(char *acellName, char *aservice,
     code = afsconf_LookupServer((const char *)service, "udp",
 				(const char *)acellName, afsdbport,
 				cellHostAddrs, cellHostNames,
-				ports, ipRanks, &numServers, &ttl,
+				ipRanks, &numServers, &ttl,
 				&realCellName);
 
     /* If we couldn't find an entry for the requested service
@@ -1292,22 +1304,23 @@ afsconf_GetAfsdbInfo(char *acellName, char *aservice,
         code = afsconf_LookupServer("afs3-vlserver", "udp",
                                     (const char *)acellName, afsdbport,
                                     cellHostAddrs, cellHostNames,
-                                    ports, ipRanks, &numServers, &ttl,
+                                    ipRanks, &numServers, &ttl,
                                     &realCellName);
         if (code >= 0) {
             for (i = 0; i < numServers; i++)
-                ports[i] = afsdbport;
+                cellHostAddrs[i].u.in.sin_port = afsdbport;
         }
     }
     if (code == 0) {
 	acellInfo->timeout = ttl;
 	acellInfo->numServers = numServers;
 	for (i = 0; i < numServers; i++) {
-	    memcpy(&acellInfo->hostAddr[i].sin_addr.s_addr, &cellHostAddrs[i],
-		   sizeof(afs_int32));
+	    memcpy(&acellInfo->hostSA[i], &cellHostAddrs[i],
+		   sizeof(acellInfo->hostSA[i]));
 	    memcpy(acellInfo->hostName[i], cellHostNames[i], MAXHOSTCHARS);
-	    acellInfo->hostAddr[i].sin_family = AF_INET;
-	    acellInfo->hostAddr[i].sin_port = ports[i];
+	    /* CCW NOTE: IPV6 test will be needed */
+	    memcpy(&acellInfo->hostAddr[i], &acellInfo->hostSA[i].u.in,
+		   sizeof(acellInfo->hostAddr[i]));
 
 	    if (realCellName) {
 		strlcpy(acellInfo->name, realCellName,
@@ -1375,14 +1388,16 @@ afsconf_GetAfsdbInfo(char *acellName, char *aservice,
 	return -1;
 
     for (i = 0; i < numServers; i++) {
-	memcpy(&acellInfo->hostAddr[i].sin_addr.s_addr, &cellHostAddrs[i],
+	memcpy(&acellInfo->hostSA[i].u.in.sin_addr.s_addr, &cellHostAddrs[i],
 	       sizeof(afs_uint32));
 	memcpy(acellInfo->hostName[i], cellHostNames[i], MAXHOSTCHARS);
 	acellInfo->hostAddr[i].sin_family = AF_INET;
         if (aservice)
-            acellInfo->hostAddr[i].sin_port = ports[i];
+	    acellInfo->hostSA[i].u.in.sin_port = ports[i];
         else
-            acellInfo->hostAddr[i].sin_port = 0;
+	    acellInfo->hostSA[i].u.in.sin_port = 0;
+	memcpy(&acellInfo->hostAddr[i], &acellInfo->hostSA[i].u.in,
+	       sizeof(acellInfo->hostAddr[i]));
     }
 
     acellInfo->numServers = numServers;
@@ -1464,6 +1479,7 @@ afsconf_GetCellInfo(struct afsconf_dir *adir, char *acellName, char *aservice,
 		return AFSCONF_NOTFOUND;	/* service not found */
 	    }
 	    for (i = 0; i < acellInfo->numServers; i++) {
+		acellInfo->hostSA[i].u.in.sin_port = tservice;
 		acellInfo->hostAddr[i].sin_port = tservice;
 	    }
 	}
@@ -1479,10 +1495,12 @@ afsconf_GetCellInfo(struct afsconf_dir *adir, char *acellName, char *aservice,
             int j;
             short numServers=0;		                        /*Num active servers for the cell */
             struct sockaddr_in hostAddr[MAXHOSTSPERCELL];	/*IP addresses for cell's servers */
+            struct opr_sockaddr hostSA[MAXHOSTSPERCELL];        /*Sockaddrs for cell's servers */
             char hostName[MAXHOSTSPERCELL][MAXHOSTCHARS];	/*Names for cell's servers */
             char clone[MAXHOSTSPERCELL];			/*Indicates which ones are clones. */
 
             memset(&hostAddr, 0, sizeof(hostAddr));
+            memset(&hostSA, 0, sizeof(hostSA));
             memset(&hostName, 0, sizeof(hostName));
             memset(&clone, 0, sizeof(clone));
 
@@ -1499,19 +1517,19 @@ afsconf_GetCellInfo(struct afsconf_dir *adir, char *acellName, char *aservice,
 			afs_uint32 addr;
 			memcpy(&addr, he->h_addr_list[i], sizeof(addr));
                         for (k=0, dup=0; !dup && k < numServers; k++) {
-                            if (hostAddr[k].sin_addr.s_addr == addr) {
+                            if (hostSA[k].u.in.sin_addr.s_addr == addr) {
                                 dup = 1;
 			    }
                         }
                         if (dup)
                             continue;
 
-                        hostAddr[numServers].sin_family = AF_INET;
-                        hostAddr[numServers].sin_port = acellInfo->hostAddr[0].sin_port;
+                        hostSA[numServers].u.in.sin_family = AF_INET;
+                        hostSA[numServers].u.in.sin_port = acellInfo->hostSA[0].u.in.sin_port;
 #ifdef STRUCT_SOCKADDR_HAS_SA_LEN
-                        hostAddr[numServers].sin_len = sizeof(struct sockaddr_in);
+                        hostSA[numServers].u.in.sin_len = sizeof(struct sockaddr_in);
 #endif
-                        memcpy(&hostAddr[numServers].sin_addr.s_addr, he->h_addr_list[i], sizeof(afs_uint32));
+                        memcpy(&hostSA[numServers].u.in.sin_addr.s_addr, he->h_addr_list[i], sizeof(afs_uint32));
                         strcpy(hostName[numServers], acellInfo->hostName[j]);
                         clone[numServers] = acellInfo->clone[j];
                         foundAddr = 1;
@@ -1519,7 +1537,8 @@ afsconf_GetCellInfo(struct afsconf_dir *adir, char *acellName, char *aservice,
                     }
                 }
                 if (!foundAddr) {
-                    hostAddr[numServers] = acellInfo->hostAddr[j];
+                    memcpy(&hostSA[numServers], &acellInfo->hostSA[j],
+                           sizeof(hostSA[numServers]));
                     strcpy(hostName[numServers], acellInfo->hostName[j]);
                     clone[numServers] = acellInfo->clone[j];
                     numServers++;
@@ -1527,7 +1546,10 @@ afsconf_GetCellInfo(struct afsconf_dir *adir, char *acellName, char *aservice,
             }
 
             for (i=0; i<numServers; i++) {
-                acellInfo->hostAddr[i] = hostAddr[i];
+                memcpy(&acellInfo->hostSA[i], &hostSA[i],
+                       sizeof(acellInfo->hostSA[i]));
+		memcpy(&acellInfo->hostAddr[i], &acellInfo->hostSA[i].u.in,
+		       sizeof(acellInfo->hostAddr[i]));
                 strcpy(acellInfo->hostName[i], hostName[i]);
                 acellInfo->clone[i] = clone[i];
             }
