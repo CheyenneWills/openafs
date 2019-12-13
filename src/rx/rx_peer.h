@@ -23,8 +23,7 @@ struct rx_peer {
 #ifdef RX_ENABLE_LOCKS
     afs_kmutex_t peer_lock;	/* Lock peer */
 #endif				/* RX_ENABLE_LOCKS */
-    afs_uint32 host;		/* Remote IP address, in net byte order */
-    u_short port;		/* Remote UDP port, in net byte order */
+    opr_sockaddr peerSA;	/* Remote network sock address */
 
     /* interface mtu probably used for this host  -  includes RX Header */
     u_short ifMTU;		/* doesn't include IP/UDP header */
