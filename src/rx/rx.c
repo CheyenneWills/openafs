@@ -2953,7 +2953,7 @@ rxi_SetPeerMtu(struct rx_peer *peer, opr_sockaddr *sa, int mtu)
 		}
 	    }
 	} else {
-	    hashIndex = PEER_HASH(host, port);
+	    hashIndex = rx_hashPeerSA(sa);
 	    for (peer = rx_peerHashTable[hashIndex]; peer; peer = peer->next) {
 		if (opr_sockaddr_equal(&peer->peerSA, sa))
 		    break;
@@ -2995,15 +2995,15 @@ rxi_SetPeerMtu(struct rx_peer *peer, opr_sockaddr *sa, int mtu)
 
 #ifdef AFS_RXERRQ_ENV
 static void
-rxi_SetPeerDead(struct sock_extended_err *err, afs_uint32 host, afs_uint16 port)
+rxi_SetPeerDead(struct sock_extended_err *err, opr_sockaddr *sa)
 {
-    int hashIndex = PEER_HASH(host, port);
+    int hashIndex = rx_hashPeerSA(sa);
     struct rx_peer *peer;
 
     MUTEX_ENTER(&rx_peerHashTable_lock);
 
     for (peer = rx_peerHashTable[hashIndex]; peer; peer = peer->next) {
-	if (peer->host == host && peer->port == port) {
+	if (opr_sockaddr_equal(&peer, sa)) {
 	    peer->refCount++;
 	    break;
 	}
