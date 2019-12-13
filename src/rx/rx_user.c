@@ -782,12 +782,12 @@ rxi_HandleSocketError(int socket)
     struct msghdr msg;
     struct cmsghdr *cmsg;
     struct sock_extended_err *err;
-    struct sockaddr_in addr;
+    opr_sockaddr addr;
     char controlmsgbuf[256];
     int code;
 
-    msg.msg_name = &addr;
-    msg.msg_namelen = sizeof(addr);
+    msg.msg_name = &addr.u.in;
+    msg.msg_namelen = sizeof(addr.u.in);
     msg.msg_iov = NULL;
     msg.msg_iovlen = 0;
     msg.msg_control = controlmsgbuf;
@@ -801,7 +801,7 @@ rxi_HandleSocketError(int socket)
     for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 	if (cmsg->cmsg_level == SOL_IP && cmsg->cmsg_type == IP_RECVERR) {
 	    err = (struct sock_extended_err *)CMSG_DATA(cmsg);
-	    rxi_ProcessNetError(err, addr.sin_addr.s_addr, addr.sin_port);
+	    rxi_ProcessNetError(err, &addr);
 	}
     }
 
