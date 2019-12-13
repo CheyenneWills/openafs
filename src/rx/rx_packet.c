@@ -1875,8 +1875,8 @@ rxi_ReceiveDebugPacket(struct rx_packet *ap, osi_socket asocket,
 		    if ((all || rxi_IsConnInteresting(tc))
 			&& tin.index-- <= 0) {
 			int do_secstats = 0;
-			tconn.host = tc->peer->host;
-			tconn.port = tc->peer->port;
+			tconn.host = tc->peer->peerSA.u.in.sin_addr.s_addr;
+			tconn.port = tc->peer->peerSA.u.in.sin_port;
 			tconn.cid = htonl(tc->cid);
 			tconn.epoch = htonl(tc->epoch);
 			tconn.serial = htonl(tc->serial);
@@ -1995,8 +1995,8 @@ rxi_ReceiveDebugPacket(struct rx_packet *ap, osi_socket asocket,
                         MUTEX_EXIT(&rx_peerHashTable_lock);
 
                         MUTEX_ENTER(&tp->peer_lock);
-			tpeer.host = tp->host;
-			tpeer.port = tp->port;
+			tpeer.host = tp->peerSA.u.in.sin_addr.s_addr;
+			tpeer.port = tp->peerSA.u.in.sin_port;
 			tpeer.ifMTU = htons(tp->ifMTU);
 			tpeer.idleWhen = htonl(tp->idleWhen);
 			tpeer.refCount = htons(tp->refCount);
@@ -2231,12 +2231,10 @@ rxi_SendPacket(struct rx_call *call, struct rx_connection *conn,
     osi_socket socket;
 #ifdef RXDEBUG
     char deliveryType = 'S';
+    struct opr_sockaddr_str sockstr;
 #endif
     /* The address we're sending the packet to */
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port = peer->port;
-    addr.sin_addr.s_addr = peer->host;
+    memcpy(&addr, &peer->peerSA.u.in, sizeof(addr));
     memset(&addr.sin_zero, 0, sizeof(addr.sin_zero));
 
     /* This stuff should be revamped, I think, so that most, if not
@@ -2352,9 +2350,10 @@ rxi_SendPacket(struct rx_call *call, struct rx_connection *conn,
 #endif
 #ifdef RXDEBUG
     }
-    dpf(("%c %d %s: %x.%u.%u.%u.%u.%u.%u flags %d, packet %p len %d\n",
-          deliveryType, p->header.serial, rx_packetTypes[p->header.type - 1], ntohl(peer->host),
-          ntohs(peer->port), p->header.serial, p->header.epoch, p->header.cid, p->header.callNumber,
+    dpf(("%c %d %s: %s.%u.%u.%u.%u.%u flags %d, packet %p len %d\n",
+          deliveryType, p->header.serial, rx_packetTypes[p->header.type - 1],
+	  opr_sockaddr2str(&peer->peerSA, &sockstr),
+	  p->header.serial, p->header.epoch, p->header.cid, p->header.callNumber,
           p->header.seq, p->header.flags, p, p->length));
 #endif
     if (rx_stats_active) {
@@ -2386,11 +2385,10 @@ rxi_SendPacketList(struct rx_call *call, struct rx_connection *conn,
     struct rx_jumboHeader *jp;
 #ifdef RXDEBUG
     char deliveryType = 'S';
+    struct opr_sockaddr_str sockstr;
 #endif
     /* The address we're sending the packet to */
-    addr.sin_family = AF_INET;
-    addr.sin_port = peer->port;
-    addr.sin_addr.s_addr = peer->host;
+    memcpy(&addr, &peer->peerSA.u.in, sizeof(addr));
     memset(&addr.sin_zero, 0, sizeof(addr.sin_zero));
 
     if (len + 1 > RX_MAXIOVECS) {
@@ -2545,9 +2543,10 @@ rxi_SendPacketList(struct rx_call *call, struct rx_connection *conn,
 
     osi_Assert(p != NULL);
 
-    dpf(("%c %d %s: %x.%u.%u.%u.%u.%u.%u flags %d, packet %p len %d\n",
-          deliveryType, p->header.serial, rx_packetTypes[p->header.type - 1], ntohl(peer->host),
-          ntohs(peer->port), p->header.serial, p->header.epoch, p->header.cid, p->header.callNumber,
+    dpf(("%c %d %s: %s.%u.%u.%u.%u.%u flags %d, packet %p len %d\n",
+          deliveryType, p->header.serial, rx_packetTypes[p->header.type - 1],
+	  opr_sockaddr2str(&peer->peerSA, &sockstr),
+	  p->header.serial, p->header.epoch, p->header.cid, p->header.callNumber,
           p->header.seq, p->header.flags, p, p->length));
 
 #endif
