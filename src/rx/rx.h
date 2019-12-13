@@ -111,6 +111,7 @@ extern void rx_GetCallStatus(struct rx_call *call,
 /* Peer management */
 extern afs_uint32 rx_HostOf(struct rx_peer *peer);
 extern u_short rx_PortOf(struct rx_peer *peer);
+extern opr_sockaddr *rx_SockaddrOf(struct rx_peer *);
 
 /* Packets */
 
