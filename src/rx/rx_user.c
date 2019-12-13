@@ -692,7 +692,7 @@ rxi_InitPeerParams(struct rx_peer *pp)
 
     /* try to second-guess IP, and identify which link is most likely to
      * be used for traffic to/from this host. */
-    ppaddr = ntohl(pp->host);
+    ppaddr = ntohl(pp->peerSA.u.in.sin_addr.s_addr);
 
     pp->ifMTU = 0;
     rx_rto_setPeerTimeoutSecs(pp, 2);
@@ -723,11 +723,7 @@ rxi_InitPeerParams(struct rx_peer *pp)
 #ifdef AFS_ADAPT_PMTU
     sock=socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock != OSI_NULLSOCKET) {
-        addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = pp->host;
-        addr.sin_port = pp->port;
-        memset(&addr.sin_zero, 0, sizeof(addr.sin_zero));
-        if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
+        if (connect(sock, &pp->peerSA.u.in, sizeof(p->peerSA.u.in)) == 0) {
             int mtu=0;
             socklen_t s = sizeof(mtu);
             if (getsockopt(sock, SOL_IP, IP_MTU, &mtu, &s)== 0) {
