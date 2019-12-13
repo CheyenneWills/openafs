@@ -77,7 +77,7 @@ unsigned int
 rx_GetCallInterface(struct rx_call *call)
 {
     afs_uint32 serviceid = call->conn->serviceId;
-    afs_uint32 port = call->conn->service->servicePort;
+    afs_uint32 port = call->conn->service->serviceSA.u.in.sin_port;
 
     return ntohs(serviceid) << 16 | ntohs(port);
 }

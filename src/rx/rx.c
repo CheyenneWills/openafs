@@ -1814,7 +1814,7 @@ rx_NewServiceSA(struct opr_sockaddr *addr, u_short serviceId,
     for (i = 0; i < RX_MAX_SERVICES; i++) {
 	struct rx_service *service = rx_services[i];
 	if (service) {
-	    if (port == service->servicePort && host == service->serviceHost) {
+	    if (opr_sockaddr_equal(addr, &service->serviceSA)) {
 		if (service->serviceId == serviceId) {
 		    /* The identical service has already been
 		     * installed; if the caller was intending to
@@ -1844,8 +1844,7 @@ rx_NewServiceSA(struct opr_sockaddr *addr, u_short serviceId,
 	    }
 	    service = tservice;
 	    service->socket = socket;
-	    service->serviceHost = host;
-	    service->servicePort = port;
+	    opr_sockaddr_copy(&service->serviceSA, addr);
 	    service->serviceId = serviceId;
 	    service->serviceName = serviceName;
 	    service->nSecurityObjects = nSecurityObjects;
@@ -2069,6 +2068,9 @@ rx_GetCall(int tno, struct rx_service *cur_service, osi_socket * socketp)
     struct rx_serverQueueEntry *sq;
     struct rx_call *call = (struct rx_call *)0;
     struct rx_service *service = NULL;
+#ifdef RXDEBUG
+    struct opr_sockaddr_str sockstr;
+#endif
 
     MUTEX_ENTER(&freeSQEList_lock);
 
@@ -2223,8 +2225,9 @@ rx_GetCall(int tno, struct rx_service *cur_service, osi_socket * socketp)
 #endif
 
 	rxi_calltrace(RX_CALL_START, call);
-	dpf(("rx_GetCall(port=%d, service=%d) ==> call %p\n",
-	     call->conn->service->servicePort, call->conn->service->serviceId,
+	dpf(("rx_GetCall(sockaddr=%s, service=%d) ==> call %p\n",
+	     opr_sockaddr2str(&call->conn->service->serviceSA, &sockstr),
+	     call->conn->service->serviceId,
 	     call));
 
 	MUTEX_EXIT(&call->lock);
@@ -2242,6 +2245,9 @@ rx_GetCall(int tno, struct rx_service *cur_service, osi_socket * socketp)
     struct rx_serverQueueEntry *sq;
     struct rx_call *call = (struct rx_call *)0, *choice2;
     struct rx_service *service = NULL;
+#ifdef RXDEBUG
+    struct opr_sockaddr_str sockstr;
+#endif
     SPLVAR;
 
     NETPRI;
@@ -2385,8 +2391,9 @@ rx_GetCall(int tno, struct rx_service *cur_service, osi_socket * socketp)
 #endif
 
 	rxi_calltrace(RX_CALL_START, call);
-	dpf(("rx_GetCall(port=%d, service=%d) ==> call %p\n",
-	     call->conn->service->servicePort, call->conn->service->serviceId,
+	dpf(("rx_GetCall(sockaddr=%s, service=%d) ==> call %p\n",
+	     opr_sockaddr2str(&call->conn->service->serviceSA, &sockstr),
+	     call->conn->service->serviceId,
 	     call));
     } else {
 	dpf(("rx_GetCall(socketp=%p, *socketp=0x%x)\n", socketp, *socketp));
