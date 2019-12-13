@@ -679,7 +679,7 @@ struct rx_statistics {		/* General rx statistics */
     int receiveCbufPktAllocFailures;
     int sendCbufPktAllocFailures;
     int nBusies;
-    int spares[4];
+    int RESERVE_IPV6[4];	/* 128bits for IPV6 address */
 };
 
 /* structures for debug input and output packets */
@@ -746,7 +746,8 @@ struct rx_debugConn_vL {
     char callOther[RX_MAXCALLS];
     /* old style getconn stops here */
     struct rx_securityObjectStats secStats;
-    afs_int32 sparel[10];
+    afs_int32 RESERVE_IPV6[4];    /* 128 bits Reserved for IPV6 address */
+    afs_int32 sparel[6];
 };
 
 struct rx_debugConn {
@@ -768,7 +769,8 @@ struct rx_debugConn {
     struct rx_securityObjectStats secStats;
     afs_int32 epoch;
     afs_int32 natMTU;
-    afs_int32 sparel[9];
+    afs_int32 RESERVE_IPV6[4];    /* 128 bits Reserved for IPV6 address */
+    afs_int32 sparel[5];
 };
 
 struct rx_debugPeer {
@@ -798,7 +800,8 @@ struct rx_debugPeer {
     u_short congestSeq;
     afs_hyper_t bytesSent;
     afs_hyper_t bytesReceived;
-    afs_int32 sparel[10];
+    afs_int32 RESERVE_IPV6[4];    /* 128 bits Reserved for IPV6 address */
+    afs_int32 sparel[6];
 };
 
 #define	RX_OTHER_IN	1	/* packets avail in in queue */
