@@ -286,21 +286,7 @@ GetServer(char *aname)
     return 0;
 }
 
-afs_int32
-GetVolumeType(char *aname)
-{
-
-    if (!strcmp(aname, "ro"))
-	return (ROVOL);
-    else if (!strcmp(aname, "rw"))
-	return (RWVOL);
-    else if (!strcmp(aname, "bk"))
-	return (BACKVOL);
-    else
-	return (-1);
-}
-
-int
+static int
 IsPartValid(afs_int32 partId, afs_uint32 server, afs_int32 *code)
 {
     struct partList dummyPartList;
@@ -4458,41 +4444,6 @@ CompareVldbEntryByName(const void *p1, const void *p2)
     return (strcmp(arg1->name, arg2->name));
 }
 
-/*
-static int CompareVldbEntry(char *p1, char *p2)
-{
-    struct nvldbentry *arg1,*arg2;
-    int i;
-    int pos1, pos2;
-    char comp1[100],comp2[100];
-    char temp1[20],temp2[20];
-
-    arg1 = (struct nvldbentry *)p1;
-    arg2 = (struct nvldbentry *)p2;
-    pos1 = -1;
-    pos2 = -1;
-
-    for(i = 0; i < arg1->nServers; i++)
-	if(arg1->serverFlags[i] & VLSF_RWVOL) pos1 = i;
-    for(i = 0; i < arg2->nServers; i++)
-	if(arg2->serverFlags[i] & VLSF_RWVOL) pos2 = i;
-    if(pos1 == -1 || pos2 == -1){
-	pos1 = 0;
-	pos2 = 0;
-    }
-    sprintf(comp1,"%10u",arg1->serverNumber[pos1]);
-    sprintf(comp2,"%10u",arg2->serverNumber[pos2]);
-    sprintf(temp1,"%10u",arg1->serverPartition[pos1]);
-    sprintf(temp2,"%10u",arg2->serverPartition[pos2]);
-    strcat(comp1,temp1);
-    strcat(comp2,temp2);
-    strcat(comp1,arg1->name);
-    strcat(comp1,arg2->name);
-    return(strcmp(comp1,comp2));
-
-}
-
-*/
 static int
 ListVLDB(struct cmd_syndesc *as, void *arock)
 {
@@ -5959,14 +5910,6 @@ MyBeforeProc(struct cmd_syndesc *as, void *arock)
     else
 	noresolve = 0;
 
-    return 0;
-}
-
-int
-osi_audit(void)
-{
-/* this sucks but it works for now.
-*/
     return 0;
 }
 
