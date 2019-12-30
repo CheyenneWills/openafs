@@ -31,6 +31,8 @@
 int
 main(int argc, char **argv)
 {
+    struct in_addr addr;
+    afs_uint16 port;
     opr_sockaddr a;
     opr_sockaddr b;
     opr_sockaddr_str astr;
@@ -41,8 +43,9 @@ main(int argc, char **argv)
     memset(&a, 0, sizeof(a));
     memset(&b, 0, sizeof(b));
 
-    inet_pton(AF_INET, "192.168.1.1", &a.u.in.sin_addr.s_addr);
-    a.u.in.sin_port = htons(7001);
+    inet_pton(AF_INET, "192.168.1.1", &addr);
+    port = htons(7001);
+    opr_sockaddr_by_inet(&a, addr, port);
 
     is_string("192.168.1.1:7001", opr_sockaddr2str(&a, &astr), "sockaddr2str prints 192.168.1.1:7001");
 
@@ -50,7 +53,10 @@ main(int argc, char **argv)
     is_string("192.168.1.1:7001", opr_sockaddr2str(&b, &bstr), "sockaddr_copy a -> b");
     ok(opr_sockaddr_equal(&a, &b), "sockaddr_equal when a == b");
 
-    inet_pton(AF_INET, "192.168.1.2", &a.u.in.sin_addr.s_addr);
+    inet_pton(AF_INET, "192.168.1.2", &addr);
+    port = htons(7001);
+    opr_sockaddr_by_inet(&a, addr, port);
+
     is_string("192.168.1.2:7001", opr_sockaddr2str(&a, &astr), "sockaddr2str prints 192.168.1.2:7001");
     ok(!opr_sockaddr_equal(&a, &b), "sockaddr_equal when a != b");
 

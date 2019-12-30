@@ -45,6 +45,7 @@ struct opr_sockaddr_str {
 typedef struct opr_sockaddr_str opr_sockaddr_str;
 
 extern char *opr_sockaddr2str(opr_sockaddr *sa, opr_sockaddr_str *str);
+extern int opr_sockaddr_by_inet(opr_sockaddr *dst, struct in_addr addr, afs_uint16 port);
 extern int opr_sockaddr_equal(opr_sockaddr *a, opr_sockaddr *b);
 extern int opr_sockaddr_copy(opr_sockaddr *dst, opr_sockaddr *src);
 
