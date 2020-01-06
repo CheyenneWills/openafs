@@ -73,6 +73,17 @@ rx_RecordCallStatistics(struct rx_call *call, unsigned int rxInterface,
 			     call->app.bytesRcvd, 1);
 }
 
+unsigned int
+rx_GetCallInterface(struct rx_call *call)
+{
+    afs_uint32 serviceid = call->conn->serviceId;
+    afs_uint32 port = call->conn->service->servicePort;
+
+    return ntohs(serviceid) << 16 | ntohs(port);
+}
+
+
+
 /*
  * Accessor for VolMonitor 'vos status'
  * note: the rx_call members are all unsigned, but our return targets

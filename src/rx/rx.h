@@ -108,6 +108,7 @@ extern void rx_GetCallStatus(struct rx_call *call,
 			     afs_int32 *transmitNext,
 			     int *lastSendTime,
 			     int *lastReceiveTime);
+extern unsigned int rx_GetCallInterface(struct rx_call *call);
 /* Peer management */
 extern afs_uint32 rx_HostOf(struct rx_peer *peer);
 extern u_short rx_PortOf(struct rx_peer *peer);

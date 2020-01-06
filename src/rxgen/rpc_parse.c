@@ -1659,9 +1659,7 @@ ss_ProcTail_setup(definition * defp)
 	if (PackageStatIndex[PackageIndex]) {
 	    f_print(fout, " %s,\n", PackageStatIndex[PackageIndex]);
 	} else {
-	    f_print(fout,
-		    "\n\t\t(((afs_uint32)(ntohs(rx_ServiceIdOf(rx_ConnectionOf(z_call))) << 16)) |\n"
-		    "\t\t((afs_uint32)ntohs(rx_ServiceOf(rx_ConnectionOf(z_call))->servicePort))),\n");
+	    f_print(fout, "\t\trx_GetCallInterface(z_call), \n");
 	}
 	f_print(fout, "\t\t%d, %sNO_OF_STAT_FUNCS, 0);\n",
 		no_of_stat_funcs, PackagePrefix[PackageIndex]);
