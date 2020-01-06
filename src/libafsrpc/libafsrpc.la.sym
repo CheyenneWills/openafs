@@ -69,6 +69,11 @@ rx_GetServerDebug
 rx_GetServerPeers
 rx_GetServerStats
 rx_GetServerVersion
+rx_GetServerConnectionsSA
+rx_GetServerDebugSA
+rx_GetServerPeersSA
+rx_GetServerStatsSA
+rx_GetServerVersionSA
 rx_GetServiceSpecific
 rx_GetSpecific
 rx_GetStatistics

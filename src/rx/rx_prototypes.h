@@ -109,16 +109,31 @@ extern afs_int32 rx_GetServerDebug(osi_socket socket, afs_uint32 remoteAddr,
 				   afs_uint16 remotePort,
 				   struct rx_debugStats *stat,
 				   afs_uint32 * supportedValues);
+extern afs_int32 rx_GetServerDebugSA(osi_socket socket, opr_sockaddr *remoteSA,
+				   struct rx_debugStats *stat,
+				   afs_uint32 * supportedValues);
 extern afs_int32 rx_GetServerStats(osi_socket socket, afs_uint32 remoteAddr,
 				   afs_uint16 remotePort,
+				   struct rx_statistics *stat,
+				   afs_uint32 * supportedValues);
+extern afs_int32 rx_GetServerStatsSA(osi_socket socket, opr_sockaddr *remoteSA,
 				   struct rx_statistics *stat,
 				   afs_uint32 * supportedValues);
 extern afs_int32 rx_GetServerVersion(osi_socket socket, afs_uint32 remoteAddr,
 				     afs_uint16 remotePort,
 				     size_t version_length, char *version);
+extern afs_int32 rx_GetServerVersionSA(osi_socket socket, opr_sockaddr *remoteSA,
+				     size_t version_length, char *version);
 extern afs_int32 rx_GetServerConnections(osi_socket socket,
 					 afs_uint32 remoteAddr,
 					 afs_uint16 remotePort,
+					 afs_int32 * nextConnection,
+					 int allConnections,
+					 afs_uint32 debugSupportedValues,
+					 struct rx_debugConn *conn,
+					 afs_uint32 * supportedValues);
+extern afs_int32 rx_GetServerConnectionsSA(osi_socket socket,
+					 opr_sockaddr *remoteSA,
 					 afs_int32 * nextConnection,
 					 int allConnections,
 					 afs_uint32 debugSupportedValues,
@@ -130,7 +145,15 @@ extern afs_int32 rx_GetServerPeers(osi_socket socket, afs_uint32 remoteAddr,
 				   afs_uint32 debugSupportedValues,
 				   struct rx_debugPeer *peer,
 				   afs_uint32 * supportedValues);
+extern afs_int32 rx_GetServerPeersSA(osi_socket socket,
+				   opr_sockaddr *remoteSA,
+				   afs_int32 * nextPeer,
+				   afs_uint32 debugSupportedValues,
+				   struct rx_debugPeer *peer,
+				   afs_uint32 * supportedValues);
 extern afs_int32 rx_GetLocalPeers(afs_uint32 peerHost, afs_uint16 peerPort,
+				      struct rx_debugPeer * peerStats);
+extern afs_int32 rx_GetLocalPeersSA(opr_sockaddr *peerSA,
 				      struct rx_debugPeer * peerStats);
 extern void shutdown_rx(void);
 #ifndef KERNEL

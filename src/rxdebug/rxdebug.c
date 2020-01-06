@@ -63,6 +63,7 @@ MainCommand(struct cmd_syndesc *as, void *arock)
     int j;
     struct sockaddr_in taddr;
     afs_int32 host;
+    opr_sockaddr remoteSA;
     struct in_addr hostAddr;
     short port;
     struct hostent *th;
@@ -192,6 +193,15 @@ MainCommand(struct cmd_syndesc *as, void *arock)
 
     dallyCounter = 0;
 
+
+    remoteSA.u.in.sin_family = AF_INET;
+    remoteSA.u.in.sin_addr.s_addr = host;
+    remoteSA.u.in.sin_port = port;
+    memset(&remoteSA.u.in.sin_zero, 0, sizeof(remoteSA.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    remoteSA.u.in.sin_len = sizeof(remoteSA.u.in);
+#endif
+
     hostAddr.s_addr = host;
     afs_inet_ntoa_r(hostAddr.s_addr, hoststr);
     printf("Trying %s (port %d):\n", hoststr, ntohs(port));
@@ -223,7 +233,7 @@ MainCommand(struct cmd_syndesc *as, void *arock)
     if (version_flag) {
         memset(version, 0, sizeof(version));
 
-	code = rx_GetServerVersion(s, host, port, length, version);
+	code = rx_GetServerVersionSA(s, &remoteSA, length, version);
 	if (code < 0) {
 	    printf("get version call failed with code %d, errno %d\n", code,
 		   errno);
@@ -238,7 +248,7 @@ MainCommand(struct cmd_syndesc *as, void *arock)
     }
 
 
-    code = rx_GetServerDebug(s, host, port, &tstats, &supportedDebugValues);
+    code = rx_GetServerDebugSA(s, &remoteSA, &tstats, &supportedDebugValues);
     if (code < 0) {
 	printf("getstats call failed with code %d\n", code);
 	exit(1);
@@ -282,7 +292,7 @@ MainCommand(struct cmd_syndesc *as, void *arock)
 
 	    /* should gracefully handle the case where rx_stats grows */
 	    code =
-		rx_GetServerStats(s, host, port, &rxstats,
+		rx_GetServerStatsSA(s, &remoteSA, &rxstats,
 				  &supportedStatValues);
 	    if (code < 0) {
 		printf("rxstats call failed with code %d\n", code);
@@ -333,7 +343,7 @@ MainCommand(struct cmd_syndesc *as, void *arock)
 
 	for (i = 0;; i++) {
 	    code =
-		rx_GetServerConnections(s, host, port, &nextconn, allconns,
+		rx_GetServerConnectionsSA(s, &remoteSA, &nextconn, allconns,
 					supportedDebugValues, &tconn,
 					&supportedConnValues);
 	    if (code < 0) {
@@ -584,7 +594,7 @@ MainCommand(struct cmd_syndesc *as, void *arock)
 	for (i = 0;; i++) {
 	    struct rx_debugPeer tpeer;
 	    code =
-		rx_GetServerPeers(s, host, port, &nextpeer, allconns, &tpeer,
+		rx_GetServerPeersSA(s, &remoteSA, &nextpeer, allconns, &tpeer,
 				  &supportedPeerValues);
 	    if (code < 0) {
 		printf("getpeer call failed with code %d\n", code);

@@ -2368,6 +2368,7 @@ util_RXDebugVersion(rxdebugHandle_p handle, rxdebugVersion_p version,
     int rc = 0;
     afs_status_t tst = 0;
     int code;
+    opr_sockaddr remoteSA;
 
     if (handle == NULL) {
 	tst = ADMRXDEBUGHANDLENULL;
@@ -2378,9 +2379,15 @@ util_RXDebugVersion(rxdebugHandle_p handle, rxdebugVersion_p version,
 	tst = ADMRXDEBUGVERSIONNULL;
 	goto fail_util_RXDebugVersion;
     }
-
+    remoteSA.u.in.sin_family = AF_INET;
+    remoteSA.u.in.sin_addr.s_addr = handle->ipAddr;
+    remoteSA.u.in.sin_port = handle->udpPort;
+    memset(&remoteSA.u.in.sin_zero, 0 , sizeof(remoteSA.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    remoteSA.u.in.sin_len = sizeof(remoteSA.u.in);
+#endif
     code =
-	rx_GetServerVersion(handle->sock, handle->ipAddr, handle->udpPort,
+	rx_GetServerVersionSA(handle->sock, &remoteSA,
 			    UTIL_MAX_RXDEBUG_VERSION_LEN, version);
     if (code < 0) {
 	tst = ADMCLIENTRXDEBUGTIMEOUT;
@@ -2480,6 +2487,7 @@ util_RXDebugBasicStats(rxdebugHandle_p handle, struct rx_debugStats *stats,
     int rc = 0;
     afs_status_t tst = 0;
     int code;
+    opr_sockaddr remoteSA;
 
     if (handle == NULL) {
 	tst = ADMRXDEBUGHANDLENULL;
@@ -2491,8 +2499,16 @@ util_RXDebugBasicStats(rxdebugHandle_p handle, struct rx_debugStats *stats,
 	goto fail_util_RXDebugBasicStats;
     }
 
+    remoteSA.u.in.sin_family = AF_INET;
+    remoteSA.u.in.sin_addr.s_addr = handle->ipAddr;
+    remoteSA.u.in.sin_port = handle->udpPort;
+    memset(&remoteSA.u.in.sin_zero, 0 , sizeof(remoteSA.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    remoteSA.u.in.sin_len = sizeof(remoteSA.u.in);
+#endif
+
     code =
-	rx_GetServerDebug(handle->sock, handle->ipAddr, handle->udpPort,
+	rx_GetServerDebugSA(handle->sock, &remoteSA,
 			  stats, &handle->supportedStats);
     if (code < 0) {
 	tst = ADMCLIENTRXDEBUGTIMEOUT;
@@ -2539,6 +2555,7 @@ util_RXDebugRxStats(rxdebugHandle_p handle, struct rx_statistics *stats,
     afs_status_t tst = 0;
     int code;
     afs_uint32 tsupported;
+    opr_sockaddr remoteSA;
 
     if (handle == NULL) {
 	tst = ADMRXDEBUGHANDLENULL;
@@ -2567,9 +2584,15 @@ util_RXDebugRxStats(rxdebugHandle_p handle, struct rx_statistics *stats,
 	tst = ADMCLIENTRXDEBUGNOTSUPPORTED;
 	goto fail_util_RXDebugRxStats;
     }
-
+    remoteSA.u.in.sin_family = AF_INET;
+    remoteSA.u.in.sin_addr.s_addr = handle->ipAddr;
+    remoteSA.u.in.sin_port = handle->udpPort;
+    memset(&remoteSA.u.in.sin_zero, 0 , sizeof(remoteSA.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    remoteSA.u.in.sin_len = sizeof(remoteSA.u.in);
+#endif
     code =
-	rx_GetServerStats(handle->sock, handle->ipAddr, handle->udpPort,
+	rx_GetServerStatsSA(handle->sock, &remoteSA,
 			  stats, &handle->supportedStats);
     if (code < 0) {
 	tst = ADMCLIENTRXDEBUGTIMEOUT;
@@ -2610,13 +2633,21 @@ RXDebugConnsFromServer(void *rpc_specific, int slot, int *last_item,
     int code;
     afs_status_t tst = 0;
     rxdebug_conn_get_p t = (rxdebug_conn_get_p) rpc_specific;
+    opr_sockaddr remoteSA;
 
     /*
      * Get the next entry the list of connections
      */
+    remoteSA.u.in.sin_family = AF_INET;
+    remoteSA.u.in.sin_addr.s_addr = t->handle->ipAddr;
+    remoteSA.u.in.sin_port = t->handle->udpPort;
+    memset(&remoteSA.u.in.sin_zero, 0 , sizeof(remoteSA.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    remoteSA.u.in.sin_len = sizeof(remoteSA.u.in);
+#endif
     code =
-	rx_GetServerConnections(t->handle->sock, t->handle->ipAddr,
-				t->handle->udpPort, &t->index, t->allconns,
+	rx_GetServerConnectionsSA(t->handle->sock, &remoteSA,
+				&t->index, t->allconns,
 				t->handle->supportedStats,
 				&t->items[slot].conn,
 				&t->items[slot].supportedValues);
@@ -2876,13 +2907,21 @@ RXDebugPeersFromServer(void *rpc_specific, int slot, int *last_item,
     int code;
     afs_status_t tst = 0;
     rxdebug_peer_get_p t = (rxdebug_peer_get_p) rpc_specific;
+    opr_sockaddr remoteSA;
 
     /*
      * Get the next entry the list of peers
      */
+    remoteSA.u.in.sin_family = AF_INET;
+    remoteSA.u.in.sin_addr.s_addr = t->handle->ipAddr;
+    remoteSA.u.in.sin_port = t->handle->udpPort;
+    memset(&remoteSA.u.in.sin_zero, 0 , sizeof(remoteSA.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    remoteSA.u.in.sin_len = sizeof(remoteSA.u.in);
+#endif    
     code =
-	rx_GetServerPeers(t->handle->sock, t->handle->ipAddr,
-			  t->handle->udpPort, &t->index,
+	rx_GetServerPeersSA(t->handle->sock, &remoteSA,
+			  &t->index,
 			  t->handle->supportedStats, &t->items[slot].peer,
 			  &t->items[slot].supportedValues);
     if (code < 0) {

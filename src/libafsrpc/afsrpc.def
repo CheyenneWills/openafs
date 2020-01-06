@@ -370,3 +370,8 @@ EXPORTS
     rx_NewConnectionSA         @10001
     rx_NewServiceSA            @10002
     rx_InitSA                  @10003
+    rx_GetServerDebugSA        @10004 
+    rx_GetServerStatsSA        @10005
+    rx_GetServerVersionSA      @10006
+    rx_GetServerConnectionsSA  @10007
+    rx_GetServerPeersSA        @10008

@@ -7559,7 +7559,7 @@ rx_PrintPeerStats(FILE * file, struct rx_peer *peer)
 
 #if defined(RXDEBUG) || defined(MAKEDEBUGCALL)
 static int
-MakeDebugCall(osi_socket socket, afs_uint32 remoteAddr, afs_uint16 remotePort,
+MakeDebugCall(osi_socket socket, opr_sockaddr *remoteSA,
 	      u_char type, void *inputData, size_t inputLength,
 	      void *outputData, size_t outputLength)
 {
@@ -7569,7 +7569,7 @@ MakeDebugCall(osi_socket socket, afs_uint32 remoteAddr, afs_uint16 remotePort,
     char tbuffer[1500];
     afs_int32 code;
     struct timeval tv_now, tv_wake, tv_delta;
-    struct sockaddr_in taddr, faddr;
+    struct sockaddr_in faddr;
 #ifdef AFS_NT40_ENV
     int faddrLen;
 #else
@@ -7584,13 +7584,7 @@ MakeDebugCall(osi_socket socket, afs_uint32 remoteAddr, afs_uint16 remotePort,
     counter++;
     UNLOCK_RX_DEBUG;
     tp = &tbuffer[sizeof(struct rx_header)];
-    taddr.sin_family = AF_INET;
-    taddr.sin_port = remotePort;
-    taddr.sin_addr.s_addr = remoteAddr;
-    memset(&taddr.sin_zero, 0, sizeof(taddr.sin_zero));
-#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
-    taddr.sin_len = sizeof(struct sockaddr_in);
-#endif
+
     while (1) {
 	memset(&theader, 0, sizeof(theader));
 	theader.epoch = htonl(999);
@@ -7606,7 +7600,7 @@ MakeDebugCall(osi_socket socket, afs_uint32 remoteAddr, afs_uint16 remotePort,
 	memcpy(tp, inputData, inputLength);
 	code =
 	    sendto(socket, tbuffer, inputLength + sizeof(struct rx_header), 0,
-		   (struct sockaddr *)&taddr, sizeof(struct sockaddr_in));
+		   &remoteSA->u.in, sizeof(struct sockaddr_in));
 
 	/* see if there's a packet available */
 	gettimeofday(&tv_wake, NULL);
@@ -7674,6 +7668,21 @@ rx_GetServerDebug(osi_socket socket, afs_uint32 remoteAddr,
 		  afs_uint16 remotePort, struct rx_debugStats * stat,
 		  afs_uint32 * supportedValues)
 {
+    opr_sockaddr sa;
+    sa.u.in.sin_family = AF_INET;
+    sa.u.in.sin_addr.s_addr = remoteAddr;
+    sa.u.in.sin_port = remotePort;
+    memset(&sa.u.in.sin_zero, 0, sizeof(sa.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    sa.sin_len = sizeof(sa.u.in);
+#endif
+    return rx_GetServerDebugSA(socket, &sa, stat, supportedValues);
+}
+afs_int32
+rx_GetServerDebugSA(osi_socket socket, opr_sockaddr *remoteSA,
+		  struct rx_debugStats * stat,
+		  afs_uint32 * supportedValues)
+{
 #if defined(RXDEBUG) || defined(MAKEDEBUGCALL)
     afs_int32 rc = 0;
     struct rx_debugIn in;
@@ -7682,7 +7691,7 @@ rx_GetServerDebug(osi_socket socket, afs_uint32 remoteAddr,
     in.type = htonl(RX_DEBUGI_GETSTATS);
     in.index = 0;
 
-    rc = MakeDebugCall(socket, remoteAddr, remotePort, RX_PACKET_TYPE_DEBUG,
+    rc = MakeDebugCall(socket, remoteSA, RX_PACKET_TYPE_DEBUG,
 		       &in, sizeof(in), stat, sizeof(*stat));
 
     /*
@@ -7738,6 +7747,21 @@ rx_GetServerStats(osi_socket socket, afs_uint32 remoteAddr,
 		  afs_uint16 remotePort, struct rx_statistics * stat,
 		  afs_uint32 * supportedValues)
 {
+    opr_sockaddr sa;
+    sa.u.in.sin_family = AF_INET;
+    sa.u.in.sin_addr.s_addr = remoteAddr;
+    sa.u.in.sin_port = remotePort;
+    memset(&sa.u.in.sin_zero, 0, sizeof(sa.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    sa.sin_len = sizeof(sa.u.in);
+#endif
+    return rx_GetServerStatsSA(socket, &sa, stat, supportedValues);
+}
+afs_int32
+rx_GetServerStatsSA(osi_socket socket, opr_sockaddr *remoteSA,
+		  struct rx_statistics * stat,
+		  afs_uint32 * supportedValues)
+{
 #if defined(RXDEBUG) || defined(MAKEDEBUGCALL)
     afs_int32 rc = 0;
     struct rx_debugIn in;
@@ -7754,7 +7778,7 @@ rx_GetServerStats(osi_socket socket, afs_uint32 remoteAddr,
     in.index = 0;
     memset(stat, 0, sizeof(*stat));
 
-    rc = MakeDebugCall(socket, remoteAddr, remotePort, RX_PACKET_TYPE_DEBUG,
+    rc = MakeDebugCall(socket, remoteSA, RX_PACKET_TYPE_DEBUG,
 		       &in, sizeof(in), stat, sizeof(*stat));
 
     if (rc >= 0) {
@@ -7778,9 +7802,25 @@ rx_GetServerVersion(osi_socket socket, afs_uint32 remoteAddr,
 		    afs_uint16 remotePort, size_t version_length,
 		    char *version)
 {
+    opr_sockaddr sa;
+    sa.u.in.sin_family = AF_INET;
+    sa.u.in.sin_addr.s_addr = remoteAddr;
+    sa.u.in.sin_port = remotePort;
+    memset(&sa.u.in.sin_zero, 0, sizeof(sa.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    sa.sin_len = sizeof(sa.u.in);
+#endif
+    return rx_GetServerVersionSA(socket, &sa, version_length, version);
+}
+
+afs_int32
+rx_GetServerVersionSA(osi_socket socket, opr_sockaddr *remoteSA,
+		      size_t version_length,
+		      char *version)
+{
 #if defined(RXDEBUG) || defined(MAKEDEBUGCALL)
     char a[1] = { 0 };
-    return MakeDebugCall(socket, remoteAddr, remotePort,
+    return MakeDebugCall(socket, remoteSA,
 			 RX_PACKET_TYPE_VERSION, a, 1, version,
 			 version_length);
 #else
@@ -7791,6 +7831,26 @@ rx_GetServerVersion(osi_socket socket, afs_uint32 remoteAddr,
 afs_int32
 rx_GetServerConnections(osi_socket socket, afs_uint32 remoteAddr,
 			afs_uint16 remotePort, afs_int32 * nextConnection,
+			int allConnections, afs_uint32 debugSupportedValues,
+			struct rx_debugConn * conn,
+			afs_uint32 * supportedValues)
+{
+    opr_sockaddr sa;
+    sa.u.in.sin_family = AF_INET;
+    sa.u.in.sin_addr.s_addr = remoteAddr;
+    sa.u.in.sin_port = remotePort;
+    memset(&sa.u.in.sin_zero, 0, sizeof(sa.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    sa.sin_len = sizeof(sa.u.in);
+#endif
+    return rx_GetServerConnectionsSA(socket, &sa, nextConnection,
+				 allConnections, debugSupportedValues, conn,
+				 supportedValues);
+}
+
+afs_int32
+rx_GetServerConnectionsSA(osi_socket socket, opr_sockaddr *remoteSA,
+			afs_int32 * nextConnection,
 			int allConnections, afs_uint32 debugSupportedValues,
 			struct rx_debugConn * conn,
 			afs_uint32 * supportedValues)
@@ -7814,7 +7874,7 @@ rx_GetServerConnections(osi_socket socket, afs_uint32 remoteAddr,
     in.index = htonl(*nextConnection);
     memset(conn, 0, sizeof(*conn));
 
-    rc = MakeDebugCall(socket, remoteAddr, remotePort, RX_PACKET_TYPE_DEBUG,
+    rc = MakeDebugCall(socket, remoteSA, RX_PACKET_TYPE_DEBUG,
 		       &in, sizeof(in), conn, sizeof(*conn));
 
     if (rc >= 0) {
@@ -7881,6 +7941,24 @@ rx_GetServerPeers(osi_socket socket, afs_uint32 remoteAddr,
 		  afs_uint32 debugSupportedValues, struct rx_debugPeer * peer,
 		  afs_uint32 * supportedValues)
 {
+    opr_sockaddr sa;
+    sa.u.in.sin_family = AF_INET;
+    sa.u.in.sin_addr.s_addr = remoteAddr;
+    sa.u.in.sin_port = remotePort;
+    memset(&sa.u.in.sin_zero, 0, sizeof(sa.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    sa.sin_len = sizeof(sa.u.in);
+#endif
+    return rx_GetServerPeersSA(socket, &sa, nextPeer, debugSupportedValues,
+			       peer, supportedValues);
+}
+
+afs_int32
+rx_GetServerPeersSA(osi_socket socket, opr_sockaddr *remoteSA,
+		  afs_int32 * nextPeer,
+		  afs_uint32 debugSupportedValues, struct rx_debugPeer * peer,
+		  afs_uint32 * supportedValues)
+{
 #if defined(RXDEBUG) || defined(MAKEDEBUGCALL)
     afs_int32 rc = 0;
     struct rx_debugIn in;
@@ -7895,7 +7973,7 @@ rx_GetServerPeers(osi_socket socket, afs_uint32 remoteAddr,
     in.index = htonl(*nextPeer);
     memset(peer, 0, sizeof(*peer));
 
-    rc = MakeDebugCall(socket, remoteAddr, remotePort, RX_PACKET_TYPE_DEBUG,
+    rc = MakeDebugCall(socket, remoteSA, RX_PACKET_TYPE_DEBUG,
 		       &in, sizeof(in), peer, sizeof(*peer));
 
     if (rc >= 0) {
@@ -7939,14 +8017,29 @@ afs_int32
 rx_GetLocalPeers(afs_uint32 peerHost, afs_uint16 peerPort,
 		struct rx_debugPeer * peerStats)
 {
+    opr_sockaddr sa;
+    sa.u.in.sin_family = AF_INET;
+    sa.u.in.sin_addr.s_addr = peerHost;
+    sa.u.in.sin_port = peerPort;
+    memset(&sa.u.in.sin_zero, 0, sizeof(sa.u.in.sin_zero));
+#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
+    sa.sin_len = sizeof(sa.u.in);
+#endif
+    return rx_GetLocalPeersSA(&sa, peerStats);
+}
+
+afs_int32
+rx_GetLocalPeersSA(opr_sockaddr *peerSA,
+		struct rx_debugPeer * peerStats)
+{
 	struct rx_peer *tp;
 	afs_int32 error = 1; /* default to "did not succeed" */
-	afs_uint32 hashValue = PEER_HASH(peerHost, peerPort);
+	afs_uint32 hashValue = rx_hashPeerSA(peerSA);
 
 	MUTEX_ENTER(&rx_peerHashTable_lock);
 	for(tp = rx_peerHashTable[hashValue];
 	      tp != NULL; tp = tp->next) {
-		if (rx_HostOf(tp) == peerHost)
+		if (rx_HostOf(tp) == peerSA->u.in.sin_addr.s_addr)
 			break;
 	}
 
