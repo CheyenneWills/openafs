@@ -109,12 +109,12 @@ osi_HandleSocketError(osi_socket so, char *cmsgbuf, size_t cmsgbuf_len)
     struct msghdr msg;
     struct cmsghdr *cmsg;
     struct sock_extended_err *err;
-    struct sockaddr_in addr;
+    opr_sockaddr addr;
     int code;
     struct socket *sop = (struct socket *)so;
 
-    msg.msg_name = &addr;
-    msg.msg_namelen = sizeof(addr);
+    msg.msg_name = &addr.u.in;
+    msg.msg_namelen = sizeof(addr.u.in);
     msg.msg_control = cmsgbuf;
     msg.msg_controllen = cmsgbuf_len;
     msg.msg_flags = 0;
@@ -138,7 +138,7 @@ osi_HandleSocketError(osi_socket so, char *cmsgbuf, size_t cmsgbuf_len)
 	}
 
 	err = CMSG_DATA(cmsg);
-	rxi_ProcessNetError(err, addr.sin_addr.s_addr, addr.sin_port);
+	rxi_ProcessNetError(err, &addr);
     }
 
     return 1;

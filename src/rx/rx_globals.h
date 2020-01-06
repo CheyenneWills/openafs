@@ -531,6 +531,10 @@ EXT afs_kmutex_t rx_connHashTable_lock;
 #define CONN_HASH(host, port, cid, epoch, type) ((((cid)>>RX_CIDSHIFT)%rx_hashTableSize))
 
 #define PEER_HASH(host, port)  ((host ^ port) % rx_hashTableSize)
+static inline int
+rx_hashPeerSA(opr_sockaddr *sa) {
+    return (sa->u.in.sin_addr.s_addr ^ sa->u.in.sin_port) % rx_hashTableSize;
+}
 
 /* Forward definitions of internal procedures */
 

@@ -155,6 +155,7 @@ AFSAOBJS = \
 	rx_multi.o	\
 	rx_stats.o	\
 	opr_rbtree.o	\
+	opr_sockaddr.o \
 	xdr_rx.o	\
 	xdr_mem.o	\
 	xdr_len.o	\
@@ -264,6 +265,7 @@ AFSPAGOBJS = \
 	rx_stats.o	\
 	strcasecmp_pag.o	\
 	opr_rbtree.o	\
+	opr_sockaddr.o \
 	xdr_rx.o	\
 	xdr_mem.o	\
 	xdr_len.o	\
@@ -469,6 +471,8 @@ rx_stats.o: $(TOP_SRC_RX)/rx_stats.c
 	$(CRULE_NOOPT) $(TOP_SRC_RX)/rx_stats.c
 opr_rbtree.o: $(TOP_SRC_OPR)/rbtree.c
 	$(CRULE_OPT) $(TOP_SRC_OPR)/rbtree.c
+opr_sockaddr.o: $(TOP_SRC_OPR)/sockaddr.c
+	$(CRULE_OPT) $(TOP_SRC_OPR)/sockaddr.c
 CFLAGS-opr-rbtree.o = -I$(TOP_INCDIR)/opr
 xdr_rx.o: $(TOP_SRC_RX)/xdr_rx.c
 	$(CRULE_NOOPT) $(TOP_SRC_RX)/xdr_rx.c

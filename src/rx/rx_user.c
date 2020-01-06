@@ -692,7 +692,7 @@ rxi_InitPeerParams(struct rx_peer *pp)
 
     /* try to second-guess IP, and identify which link is most likely to
      * be used for traffic to/from this host. */
-    ppaddr = ntohl(pp->host);
+    ppaddr = ntohl(rx_HostOf(pp));
 
     pp->ifMTU = 0;
     rx_rto_setPeerTimeoutSecs(pp, 2);
@@ -723,11 +723,7 @@ rxi_InitPeerParams(struct rx_peer *pp)
 #ifdef AFS_ADAPT_PMTU
     sock=socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock != OSI_NULLSOCKET) {
-        addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = pp->host;
-        addr.sin_port = pp->port;
-        memset(&addr.sin_zero, 0, sizeof(addr.sin_zero));
-        if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
+        if (connect(sock, &pp->peerSA.u.in, sizeof(p->peerSA.u.in)) == 0) {
             int mtu=0;
             socklen_t s = sizeof(mtu);
             if (getsockopt(sock, SOL_IP, IP_MTU, &mtu, &s)== 0) {
@@ -786,12 +782,12 @@ rxi_HandleSocketError(int socket)
     struct msghdr msg;
     struct cmsghdr *cmsg;
     struct sock_extended_err *err;
-    struct sockaddr_in addr;
+    opr_sockaddr addr;
     char controlmsgbuf[256];
     int code;
 
-    msg.msg_name = &addr;
-    msg.msg_namelen = sizeof(addr);
+    msg.msg_name = &addr.u.in;
+    msg.msg_namelen = sizeof(addr.u.in);
     msg.msg_iov = NULL;
     msg.msg_iovlen = 0;
     msg.msg_control = controlmsgbuf;
@@ -805,7 +801,7 @@ rxi_HandleSocketError(int socket)
     for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 	if (cmsg->cmsg_level == SOL_IP && cmsg->cmsg_type == IP_RECVERR) {
 	    err = (struct sock_extended_err *)CMSG_DATA(cmsg);
-	    rxi_ProcessNetError(err, addr.sin_addr.s_addr, addr.sin_port);
+	    rxi_ProcessNetError(err, &addr);
 	}
     }
 
