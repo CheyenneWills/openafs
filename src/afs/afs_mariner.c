@@ -77,16 +77,16 @@ afs_MarinerLogFetch(struct vcache *avc, afs_int32 off,
 void
 afs_MarinerLog(char *astring, struct vcache *avc)
 {
-    struct sockaddr_in taddr;
+    opr_sockaddr taddr;
     char *tp, *tp1, *buf;
     struct iovec dvec;
 
     AFS_STATCNT(afs_MarinerLog);
-    taddr.sin_family = AF_INET;
-    taddr.sin_addr.s_addr = afs_marinerHost;
-    taddr.sin_port = htons(2106);
+    taddr.u.in.sin_family = AF_INET;
+    taddr.u.in.sin_addr.s_addr = afs_marinerHost;
+    taddr.u.in.sin_port = htons(2106);
 #ifdef  STRUCT_SOCKADDR_HAS_SA_LEN
-    taddr.sin_len = sizeof(taddr);
+    taddr.u.in.sin_len = sizeof(taddr.u.in);
 #endif
     tp = buf = osi_AllocSmallSpace(AFS_SMALLOCSIZ);
 

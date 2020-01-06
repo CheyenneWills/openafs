@@ -6524,7 +6524,7 @@ rxi_NatKeepAliveEvent(struct rxevent *event, void *arg1,
     struct rx_connection *conn = arg1;
     struct rx_header theader;
     char tbuffer[1 + sizeof(struct rx_header)];
-    struct sockaddr_in taddr;
+    opr_sockaddr *taddr;
     char *tp;
     char a[1] = { 0 };
     int resched = 0;
@@ -6535,13 +6535,8 @@ rxi_NatKeepAliveEvent(struct rxevent *event, void *arg1,
 
 
     tp = &tbuffer[sizeof(struct rx_header)];
-    taddr.sin_family = AF_INET;
-    taddr.sin_port = rx_PortOf(rx_PeerOf(conn));
-    taddr.sin_addr.s_addr = rx_HostOf(rx_PeerOf(conn));
-    memset(&taddr.sin_zero, 0, sizeof(taddr.sin_zero));
-#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
-    taddr.sin_len = sizeof(struct sockaddr_in);
-#endif
+    taddr = rx_SockaddrOf(rx_PeerOf(conn));
+    
     memset(&theader, 0, sizeof(theader));
     theader.epoch = htonl(999);
     theader.cid = 0;
@@ -6557,7 +6552,7 @@ rxi_NatKeepAliveEvent(struct rxevent *event, void *arg1,
     tmpiov[0].iov_base = tbuffer;
     tmpiov[0].iov_len = 1 + sizeof(struct rx_header);
 
-    rxi_NetSend(socket, &taddr, tmpiov, 1, 1 + sizeof(struct rx_header), 1);
+    rxi_NetSend(socket, taddr, tmpiov, 1, 1 + sizeof(struct rx_header), 1);
 
     MUTEX_ENTER(&conn->conn_data_lock);
     /* We ran, so the handle is no longer needed to try to cancel ourselves. */
@@ -9488,8 +9483,8 @@ int rx_DumpCalls(FILE *outputFile, char *cookie)
 #endif
 
 int
-rxi_NetSend(osi_socket socket, void *addr, struct iovec *dvec,
+rxi_NetSend(osi_socket socket, opr_sockaddr *sa, struct iovec *dvec,
 	    int nvecs, int length, int istack)
 {
-    return osi_NetSend(socket, addr, dvec, nvecs, length, istack);
+    return osi_NetSend(socket, &sa->u.in, dvec, nvecs, length, istack);
 }
