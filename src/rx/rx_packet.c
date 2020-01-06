@@ -1544,7 +1544,7 @@ rxi_ReadPacket(osi_socket socket, struct rx_packet *p, afs_uint32 * host,
  * last two pad bytes. */
 
 struct rx_packet *
-rxi_SplitJumboPacket(struct rx_packet *p, afs_uint32 host, short port,
+rxi_SplitJumboPacket(struct rx_packet *p,
 		     int first)
 {
     struct rx_packet *np;

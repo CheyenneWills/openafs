@@ -426,7 +426,6 @@ extern struct rx_packet *rxi_AllocSendPacket(struct rx_call *call,
 extern int rxi_ReadPacket(osi_socket socket, struct rx_packet *p,
 			  afs_uint32 * host, u_short * port);
 extern struct rx_packet *rxi_SplitJumboPacket(struct rx_packet *p,
-					      afs_uint32 host, short port,
 					      int first);
 #ifndef KERNEL
 extern int osi_NetSend(osi_socket socket, void *addr, struct iovec *dvec,
