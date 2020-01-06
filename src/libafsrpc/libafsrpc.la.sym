@@ -117,6 +117,7 @@ rx_SetServiceSpecific
 rx_SetSpecific
 rx_SlowReadPacket
 rx_SlowWritePacket
+rx_SockaddrOf
 rx_StartServer
 rx_StatsOnOff
 rx_UdpBufSize

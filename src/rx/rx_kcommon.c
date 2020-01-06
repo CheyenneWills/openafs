@@ -1098,10 +1098,9 @@ afs_rxevent_daemon(void)
 
 /* rxk_ReadPacket returns 1 if valid packet, 0 on error. */
 int
-rxk_ReadPacket(osi_socket so, struct rx_packet *p, int *host, int *port)
+rxk_ReadPacket(osi_socket so, struct rx_packet *p, opr_sockaddr *sa)
 {
     int code;
-    struct sockaddr_in from;
     int nbytes;
     afs_int32 rlen;
     afs_int32 tlen;
@@ -1137,7 +1136,7 @@ rxk_ReadPacket(osi_socket so, struct rx_packet *p, int *host, int *port)
 	AFS_GUNLOCK();
     }
 #endif
-    code = osi_NetReceive(rx_socket, &from, p->wirevec, p->niovecs, &nbytes);
+    code = osi_NetReceive(rx_socket, &sa->u.in, p->wirevec, p->niovecs, &nbytes);
 
 #ifdef RX_KERNEL_TRACE
     if (ICL_SETACTIVE(afs_iclSetp)) {
@@ -1154,22 +1153,23 @@ rxk_ReadPacket(osi_socket so, struct rx_packet *p, int *host, int *port)
 	p->length = nbytes - RX_HEADER_SIZE;;
 	if ((nbytes > tlen) || (p->length & 0x8000)) {	/* Bogus packet */
 	    if (nbytes <= 0) {
+#ifdef RXDEBUG
+		struct opr_sockaddr_str sockstr;
+#endif
                 if (rx_stats_active) {
                     MUTEX_ENTER(&rx_stats_mutex);
                     rx_atomic_inc(&rx_stats.bogusPacketOnRead);
-                    rx_stats.bogusHost = from.sin_addr.s_addr;
+                    rx_stats.bogusHost = sa->u.in.sin_addr.s_addr;
                     MUTEX_EXIT(&rx_stats_mutex);
                 }
-		dpf(("B: bogus packet from [%x,%d] nb=%d\n",
-		     from.sin_addr.s_addr, from.sin_port, nbytes));
+		dpf(("B: bogus packet from [%s] nb=%d\n",
+		     opr_sockaddr2str(sa, &sockstr), nbytes));
 	    }
 	    return -1;
 	} else {
 	    /* Extract packet header. */
 	    rxi_DecodePacketHeader(p);
 
-	    *host = from.sin_addr.s_addr;
-	    *port = from.sin_port;
 	    if (p->header.type > 0 && p->header.type < RX_N_PACKET_TYPES) {
                 if (rx_stats_active) {
                     rx_atomic_inc(&rx_stats.packetsRead[p->header.type - 1]);
@@ -1210,7 +1210,7 @@ rxk_Listener(void)
 {
     struct rx_packet *rxp = NULL;
     int code;
-    int host, port;
+    opr_sockaddr sa;
 
 #ifdef AFS_LINUX20_ENV
     rxk_ListenerPid = current->pid;
@@ -1242,8 +1242,8 @@ rxk_Listener(void)
 	    if (!rxp)
 		osi_Panic("rxk_Listener: No more Rx buffers!\n");
 	}
-	if (!(code = rxk_ReadPacket(rx_socket, rxp, &host, &port))) {
-	    rxp = rxi_ReceivePacket(rxp, rx_socket, host, port, 0, 0);
+	if (!(code = rxk_ReadPacket(rx_socket, rxp, &sa))) {
+	    rxp = rxi_ReceivePacket(rxp, rx_socket, &sa, 0, 0);
 	}
     }
 

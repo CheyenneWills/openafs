@@ -204,8 +204,7 @@ rxi_ReScheduleEvents(void)
 static void
 rxi_ListenerProc(osi_socket sock, int *tnop, struct rx_call **newcallp)
 {
-    unsigned int host;
-    u_short port;
+    opr_sockaddr sa;
     struct rx_packet *p = (struct rx_packet *)0;
 
     if (!(rx_enable_hot_thread && newcallp)) {
@@ -236,9 +235,9 @@ rxi_ListenerProc(osi_socket sock, int *tnop, struct rx_call **newcallp)
 	    }
 	}
 
-	if (rxi_ReadPacket(sock, p, &host, &port)) {
+	if (rxi_ReadPacket(sock, p, &sa)) {
 	    clock_NewTime();
-	    p = rxi_ReceivePacket(p, sock, host, port, tnop, newcallp);
+	    p = rxi_ReceivePacket(p, sock, &sa, tnop, newcallp);
 	    if (newcallp && *newcallp) {
 		if (p)
 		    rxi_FreePacket(p);

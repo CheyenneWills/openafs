@@ -3300,7 +3300,7 @@ rxi_AbortIfServerBusy(osi_socket socket, struct rx_connection *conn,
 	MUTEX_ENTER(&conn->conn_data_lock);
 	serial = ++conn->serial;
 	MUTEX_EXIT(&conn->conn_data_lock);
-	rxi_SendRawAbort(socket, rx_HostOf(conn->peer), rx_PortOf(conn->peer),
+	rxi_SendRawAbort(socket, rx_SockaddrOf(conn->peer),
 			 serial, rx_BusyError, np, 0);
 	if (rx_stats_active)
 	    rx_atomic_inc(&rx_stats.nBusies);
@@ -3453,31 +3453,24 @@ int (*rx_almostSent) (struct rx_packet *, struct sockaddr_in *) = 0;
 
 /* A packet has been received off the interface.  Np is the packet, socket is
  * the socket number it was received from (useful in determining which service
- * this packet corresponds to), and (host, port) reflect the host,port of the
+ * this packet corresponds to), and (sa) reflect the sockaddr of the
  * sender.  This call returns the packet to the caller if it is finished with
  * it, rather than de-allocating it, just as a small performance hack */
 
 struct rx_packet *
 rxi_ReceivePacket(struct rx_packet *np, osi_socket socket,
-		  afs_uint32 host, u_short port, int *tnop,
+		  opr_sockaddr *sa, int *tnop,
 		  struct rx_call **newcallp)
 {
-    opr_sockaddr sa;
     struct rx_call *call;
     struct rx_connection *conn;
     int type;
     int unknownService = 0;
 #ifdef RXDEBUG
     char *packetType;
+    struct opr_sockaddr_str sockstr;
 #endif
     struct rx_packet *tnp;
-
-    sa.u.in.sin_family = AF_INET;
-    sa.u.in.sin_addr.s_addr = host;
-    sa.u.in.sin_port = port;
-#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
-    sa.u.in.sin_len = sizeof(sa.u.in);
-#endif
 
 #ifdef RXDEBUG
 /* We don't print out the packet until now because (1) the time may not be
@@ -3486,8 +3479,8 @@ rxi_ReceivePacket(struct rx_packet *np, osi_socket socket,
  * this is the first time the packet has been seen */
     packetType = (np->header.type > 0 && np->header.type < RX_N_PACKET_TYPES)
 	? rx_packetTypes[np->header.type - 1] : "*UNKNOWN*";
-    dpf(("R %d %s: %x.%d.%d.%d.%d.%d.%d flags %d, packet %p\n",
-	 np->header.serial, packetType, ntohl(host), ntohs(port), np->header.serviceId,
+    dpf(("R %d %s: %s.%d.%d.%d.%d.%d flags %d, packet %p\n",
+	 np->header.serial, packetType, opr_sockaddr2str(sa, &sockstr), np->header.serviceId,
 	 np->header.epoch, np->header.cid, np->header.callNumber,
 	 np->header.seq, np->header.flags, np));
 #endif
@@ -3499,7 +3492,7 @@ rxi_ReceivePacket(struct rx_packet *np, osi_socket socket,
 	struct rx_peer *peer;
 
 	/* Try to look up the peer structure, but don't create one */
-	peer = rxi_FindPeer(&sa, 0);
+	peer = rxi_FindPeer(sa, 0);
 
 	/* Since this may not be associated with a connection, it may have
 	 * no refCount, meaning we could race with ReapConnections
@@ -3518,33 +3511,22 @@ rxi_ReceivePacket(struct rx_packet *np, osi_socket socket,
     }
 
     if (np->header.type == RX_PACKET_TYPE_VERSION) {
-	return rxi_ReceiveVersionPacket(np, socket, host, port, 1);
+	return rxi_ReceiveVersionPacket(np, socket, sa, 1);
     }
 
     if (np->header.type == RX_PACKET_TYPE_DEBUG) {
-	return rxi_ReceiveDebugPacket(np, socket, host, port, 1);
+	return rxi_ReceiveDebugPacket(np, socket, sa, 1);
     }
 #ifdef RXDEBUG
     /* If an input tracer function is defined, call it with the packet and
      * network address.  Note this function may modify its arguments. */
     if (rx_justReceived) {
-	struct sockaddr_in addr;
 	int drop;
-	addr.sin_family = AF_INET;
-	addr.sin_port = port;
-	addr.sin_addr.s_addr = host;
-	memset(&addr.sin_zero, 0, sizeof(addr.sin_zero));
-#ifdef STRUCT_SOCKADDR_HAS_SA_LEN
-	addr.sin_len = sizeof(addr);
-#endif
-	drop = (*rx_justReceived) (np, &addr);
+
+	drop = (*rx_justReceived) (np, &sa->u.in);
 	/* drop packet if return value is non-zero */
 	if (drop)
 	    return np;
-	port = addr.sin_port;	/* in case fcn changed addr */
-	host = addr.sin_addr.s_addr;
-	sa.u.in.sin_addr.s_addr = addr.sin_addr.s_addr;
-	sa.u.in.sin_port = addr.sin_port;
     }
 #endif
 
@@ -3555,7 +3537,7 @@ rxi_ReceivePacket(struct rx_packet *np, osi_socket socket,
     /* Find the connection (or fabricate one, if we're the server & if
      * necessary) associated with this packet */
     conn =
-	rxi_FindConnection(socket, &sa, np->header.serviceId,
+	rxi_FindConnection(socket, sa, np->header.serviceId,
 			   np->header.cid, np->header.epoch, type,
 			   np->header.securityIndex, &unknownService);
 
@@ -3563,7 +3545,7 @@ rxi_ReceivePacket(struct rx_packet *np, osi_socket socket,
        don't abort an abort. */
     if (!conn) {
         if (unknownService && (np->header.type != RX_PACKET_TYPE_ABORT))
-	    rxi_SendRawAbort(socket, host, port, 0, RX_INVALID_OPERATION,
+	    rxi_SendRawAbort(socket, sa, 0, RX_INVALID_OPERATION,
                              np, 0);
         return np;
     }

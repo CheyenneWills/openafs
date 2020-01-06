@@ -289,8 +289,7 @@ extern int rxi_GetIFInfo(void);
 extern int rxk_FreeSocket(struct socket *asocket);
 extern osi_socket *rxk_NewSocket(short aport);
 # endif
-extern int rxk_ReadPacket(osi_socket so, struct rx_packet *p, int *host,
-			  int *port);
+extern int rxk_ReadPacket(osi_socket so, struct rx_packet *p, opr_sockaddr *sa);
 # ifdef UKERNEL
 extern void *rx_ServerProc(void *);
 # endif
@@ -424,7 +423,7 @@ extern int rxi_FreePackets(int num_pkts, struct opr_queue *q);
 extern struct rx_packet *rxi_AllocSendPacket(struct rx_call *call,
 					     int want);
 extern int rxi_ReadPacket(osi_socket socket, struct rx_packet *p,
-			  afs_uint32 * host, u_short * port);
+			  opr_sockaddr *sa);
 extern struct rx_packet *rxi_SplitJumboPacket(struct rx_packet *p,
 					      int first);
 #ifndef KERNEL
@@ -435,18 +434,17 @@ extern int rxi_NetSend(osi_socket socket, void *addr, struct iovec *dvec,
 		       int nvecs, int length, int istack);
 extern struct rx_packet *rxi_ReceiveDebugPacket(struct rx_packet *ap,
 						osi_socket asocket,
-						afs_uint32 ahost, short aport,
+						opr_sockaddr *sa,
 						int istack);
 extern struct rx_packet *rxi_ReceiveVersionPacket(struct rx_packet
 						  *ap, osi_socket asocket,
-						  afs_uint32 ahost,
-						  short aport, int istack);
+						  opr_sockaddr *sa, int istack);
 extern void rxi_SendPacket(struct rx_call *call, struct rx_connection *conn,
 			   struct rx_packet *p, int istack);
 extern void rxi_SendPacketList(struct rx_call *call,
 			       struct rx_connection *conn,
 			       struct rx_packet **list, int len, int istack);
-extern void rxi_SendRawAbort(osi_socket socket, afs_uint32 host, u_short port,
+extern void rxi_SendRawAbort(osi_socket socket, opr_sockaddr *sa,
 			     afs_uint32 serial, afs_int32 error,
 			     struct rx_packet *source, int istack);
 extern struct rx_packet *rxi_SendSpecial(struct rx_call *call,

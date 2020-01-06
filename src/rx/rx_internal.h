@@ -30,8 +30,8 @@ extern void rxi_ProcessNetError(struct sock_extended_err *err,
 #endif
 extern struct rx_peer *rxi_FindPeer(opr_sockaddr *sa, int create);
 extern struct rx_packet *rxi_ReceivePacket(struct rx_packet *np,
-					   osi_socket socket, afs_uint32 host,
-					   u_short port, int *tnop,
+					   osi_socket socket, opr_sockaddr *sa,
+					   int *tnop,
 					   struct rx_call **newcallp);
 extern int rxi_IsConnInteresting(struct rx_connection *aconn);
 extern void rxi_PostDelayedAckEvent(struct rx_call *call, struct clock *now);

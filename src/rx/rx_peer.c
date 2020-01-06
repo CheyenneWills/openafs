@@ -18,6 +18,12 @@
 #include "rx_clock.h"
 #include "rx_peer.h"
 
+opr_sockaddr *
+rx_SockaddrOf(struct rx_peer *peer)
+{
+    return &peer->peerSA;
+}
+
 afs_uint32
 rx_HostOf(struct rx_peer *peer) {
     return peer->peerSA.u.in.sin_addr.s_addr;

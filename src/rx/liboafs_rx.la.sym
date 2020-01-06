@@ -97,6 +97,7 @@ rx_SlowGetInt32
 rx_SlowPutInt32
 rx_SlowReadPacket
 rx_SlowWritePacket
+rx_SockaddrOf
 rx_StartServer
 rx_UdpBufSize
 rx_WriteProc
