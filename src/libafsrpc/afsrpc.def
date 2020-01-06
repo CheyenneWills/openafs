@@ -375,3 +375,5 @@ EXPORTS
     rx_GetServerVersionSA      @10006
     rx_GetServerConnectionsSA  @10007
     rx_GetServerPeersSA        @10008
+    rx_ClearPeerRPCStatsSA     @10009
+    rx_CopyPeerRPCStatsSA      @10010
