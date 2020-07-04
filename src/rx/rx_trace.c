@@ -122,6 +122,7 @@ rxi_calltrace(unsigned int event, struct rx_call *call)
 
     case RX_CALL_ARRIVAL:
 	call->traceWait = now;
+	AFS_FALLTHROUGH;
     default:
 	break;
     }
