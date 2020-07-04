@@ -132,7 +132,7 @@ AC_DEFUN([AX_GCC_FUNC_ATTRIBUTE], [
                     int foo( void ) __attribute__(($1));
                 ],
                 [fallthrough], [
-                    int foo( void ) {switch (0) { case 1: __attribute__(($1)); case 2: break ; }};
+                    void foo( int x ) {switch (x) { case 1: __attribute__(($1)); case 2: break ; }};
                 ],
                 [flatten], [
                     int foo( void ) __attribute__(($1));
