@@ -39,6 +39,7 @@
 
 /* File system entry (used if mount.h doesn't define MOUNT_AFS */
 #define AFS_MOUNT_AFS    "afs"
+#define AFS_MOUNT_AFS_N	 	0x616673 /* 'afs' */
 
 /* Machine / Operating system information */
 #if defined(__ppc__)
@@ -188,6 +189,7 @@ struct rt_addrinfo {
 
 /* File system entry (used if mount.h doesn't define MOUNT_AFS */
 #define AFS_MOUNT_AFS    "afs"
+#define AFS_MOUNT_AFS_N	 	0x616673 /* 'afs' */
 
 /* Machine / Operating system information */
 #if defined(__ppc__)

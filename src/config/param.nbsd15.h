@@ -38,6 +38,7 @@
 #define AFS_ENV  	1
 
 #define AFS_MOUNT_AFS	"afs"
+#define AFS_MOUNT_AFS_N		0x616673 /* 'afs' */
 #define AFS_SYSCALL 210
 
 

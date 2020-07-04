@@ -44,6 +44,7 @@
 
 #define AFS_SYSCALL		208
 #define AFS_MOUNT_AFS		"afs"
+#define AFS_MOUNT_AFS_N		0x616673 /* 'afs' */
 
 #define RXK_LISTENER_ENV	1
 #define AFS_GCPAGS	        0	/* if nonzero, garbage collect PAGs */

@@ -8,6 +8,7 @@
 #define AFS_64BIT_CLIENT 1
 
 #define AFS_MOUNT_AFS "afs"	/* The name of the filesystem type. */
+#define AFS_MOUNT_AFS_N		0x616673 /* 'afs' */
 #define AFS_SYSCALL 210
 
 #ifndef	MOUNT_AFS
