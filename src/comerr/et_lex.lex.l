@@ -1,3 +1,9 @@
+%top{
+#ifdef __clang__
+# pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+}
+
 PC	[^\"]
 AN	[A-Z_a-z0-9]
 %%

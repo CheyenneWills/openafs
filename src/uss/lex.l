@@ -25,6 +25,12 @@ int line=1;
 void Replace(char *in, char *out);
 %}
 
+%top{
+#ifdef __clang__
+# pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+}
+
 /* definitions */
 C	#[^\n]*
 W	[ \t]+
