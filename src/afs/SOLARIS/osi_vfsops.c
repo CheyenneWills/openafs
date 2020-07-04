@@ -229,8 +229,11 @@ afs_statvfs(struct vfs *afsp, struct statvfs64 *abp)
     abp->f_bsize = afsp->vfs_bsize;
     abp->f_blocks = abp->f_bfree = abp->f_bavail = abp->f_files =
 	abp->f_favail = abp->f_ffree = AFS_VFS_FAKEFREE;
-    abp->f_fsid = (AFS_VFSMAGIC << 16) || AFS_VFSFSID;
-
+#ifdef AFS_VFSFSID_V
+    abp->f_fsid = AFS_VFSFSID_V;
+#else
+    abp->f_fsid = (AFS_VFSMAGIC << 16) | AFS_VFSFSID;
+#endif
     AFS_GUNLOCK();
     return 0;
 }

@@ -129,7 +129,11 @@ afs_statvfs(struct vfs *afsp, struct statvfs *abp)
     abp->f_fsid.val[0] = AFS_VFSMAGIC;
     abp->f_fsid.val[1] = AFS_VFSFSID;
 #else
-    abp->f_fsid = (AFS_VFSMAGIC << 16) || AFS_VFSFSID;
+# ifdef AFS_VFSFSID_V
+    abp->f_fsid = AFS_VFSFSID_V;
+# else
+    abp->f_fsid = (AFS_VFSMAGIC << 16) | AFS_VFSFSID;
+# endif
 #endif
 
     return 0;

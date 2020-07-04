@@ -47,13 +47,16 @@ extern enum afs_shutdown_state afs_shuttingdown;
  */
 #define	AFS_VFSMAGIC		0x1234
 #if defined(AFS_SUN5_ENV) || defined(AFS_HPUX90_ENV) || defined(AFS_LINUX20_ENV)
-#define	AFS_VFSFSID		99
+# define AFS_VFSFSID		99
 #else
-#if defined(AFS_SGI_ENV)
-#define AFS_VFSFSID		afs_fstype
-#else
-#define	AFS_VFSFSID		AFS_MOUNT_AFS
-#endif
+# if defined(AFS_SGI_ENV)
+#  define AFS_VFSFSID		afs_fstype
+# else
+#  define AFS_VFSFSID		AFS_MOUNT_AFS
+#  ifdef AFS_MOUNT_AFS_N
+#   define AFS_VFSFSID_V	((AFS_VFSMAGIC << 16) | (AFS_MOUNT_AFS_N))
+#  endif
+# endif
 #endif
 /* use this value for reporting total space, free space, etc.
  * fake a high number to satisfy programs that use the statfs call to make sure
