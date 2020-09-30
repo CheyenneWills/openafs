@@ -25,6 +25,7 @@
 #include "ptclient.h"
 #include "ptuser.h"
 #include "pterror.h"
+#include "prname.h"
 
 struct ubik_client *pruclient = 0;
 static afs_int32 lastLevel;	/* security level pruclient, if any */
@@ -376,7 +377,12 @@ pr_End(void)
  */
 static_inline int check_length(prname arg)
 {
-    if (strnlen(arg, PR_MAXNAMELEN) >= PR_MAXNAMELEN)
+    int len = strnlen(arg, PR_MAXNAMELEN);
+
+    if (pr_IsNameBlank(arg, len)) {
+	fprintf(stderr, "warning: name \"%s\" is blank\n", arg);
+    }
+    if (len >= PR_MAXNAMELEN)
 	return PRNAMETOOLONG;
     return 0;
 }
