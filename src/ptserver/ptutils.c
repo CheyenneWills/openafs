@@ -35,6 +35,7 @@
 #include "ptserver.h"
 #include "pterror.h"
 #include "ptprototypes.h"
+#include "prname.h"
 
 /* Foreign cells are represented by the group system:authuser@cell*/
 #define AUTHUSER_GROUP "system:authuser"
@@ -175,12 +176,15 @@ pt_hook_write(void)
  *   bogus. */
 
 static int
-CorrectUserName(char *name)
+CorrectUserName(char *name, int forbidBlank)
 {
+    int len = strnlen(name, PR_MAXNAMELEN);
     /* We accept foreign names, so we will deal with '@' later */
     if (strchr(name, ':') || strchr(name, '\n'))
 	return 0;
-    if (strlen(name) >= PR_MAXNAMELEN)
+    if (len > PR_MAXNAMELEN)
+	return 0;
+    if (forbidBlank && pr_IsNameBlank(name, len))
 	return 0;
     return 1;
 }
@@ -195,7 +199,8 @@ CorrectGroupName(struct ubik_trans *ut, char aname[PR_MAXNAMELEN],	/* name for g
 		 afs_int32 cid,		/* caller id */
 		 afs_int32 oid,		/* owner of group */
 		 afs_int32 admin,	/* non-zero if admin */
-		 char cname[PR_MAXNAMELEN])	/* correct name for group */
+		 char cname[PR_MAXNAMELEN],	/* correct name for group */
+		 int forbidBlank)		/* do not allow blank names */
 {
     afs_int32 code;
     char *prefix;		/* ptr to group owner part */
@@ -261,12 +266,16 @@ CorrectGroupName(struct ubik_trans *ut, char aname[PR_MAXNAMELEN],	/* name for g
   done:
     /* check for legal name with either group rules or user rules */
     if ((suffix = strchr(cname, ':'))) {
+	int len = strnlen(cname, PR_MAXNAMELEN);
 	/* check for confusing characters */
 	if (strchr(cname, '\n') ||	/* restrict so recreate can work */
 	    strchr(suffix + 1, ':'))	/* avoid multiple colons */
 	    return PRBADNAM;
+	if (forbidBlank && pr_IsNameBlank(cname, len)) {
+	    return PRBADNAM;
+	}
     } else {
-	if (!CorrectUserName(cname))
+	if (!CorrectUserName(cname, forbidBlank))
 	    return PRBADNAM;
     }
     return 0;
@@ -354,13 +363,13 @@ CreateEntry(struct ubik_trans *at, char aname[PR_MAXNAMELEN], afs_int32 *aid, af
     }
 
     if (flag & PRGRP) {
-	code = CorrectGroupName(at, aname, creator, oid, admin, tentry.name);
+	code = CorrectGroupName(at, aname, creator, oid, admin, tentry.name, 1);
 	if (code)
 	    return code;
 	if (strcmp(aname, tentry.name) != 0)
 	    return PRBADNAM;
     } else {			/* non-group must not have colon */
-	if (!CorrectUserName(aname))
+	if (!CorrectUserName(aname, 1))
 	    return PRBADNAM;
 	strcpy(tentry.name, aname);
     }
@@ -2119,7 +2128,8 @@ ChangeEntry(struct ubik_trans *at, afs_int32 aid, afs_int32 cid, char *name, afs
 	    if (tentry.owner == 0 || tentry.owner == ANONYMOUSID)
 		tentry.owner = cid;
 
-	    code = CorrectGroupName(at, name, cid, tentry.owner, admin, tentry.name);
+	    code = CorrectGroupName(at, name, cid, tentry.owner, admin,
+				    tentry.name, 0);
 	    if (code)
 		return code;
 
@@ -2143,7 +2153,7 @@ ChangeEntry(struct ubik_trans *at, afs_int32 aid, afs_int32 cid, char *name, afs
 		    || strcmp(atsign, newatsign))
 		    return PRPERM;
 	    }
-	    if (!CorrectUserName(name))
+	    if (!CorrectUserName(name, 0))
 		return PRBADNAM;
 	}
 

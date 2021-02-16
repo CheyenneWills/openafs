@@ -71,6 +71,9 @@ ptprocs.o: ${PTSERVER}/ptprocs.c ${INCLS}
 utils.o: ${PTSERVER}/utils.c ${INCLS}
 	$(AFS_CCRULE) $(PTSERVER)/utils.c
 
+prname.o: ${PTSERVER}/prname.c ${INCLS}
+	$(AFS_CCRULE) $(PTSERVER)/prname.c
+
 map.o: ${PTSERVER}/map.c ${INCLS}
 	$(AFS_CCRULE) $(PTSERVER)/map.c
 
@@ -87,9 +90,9 @@ ptint.ss.c: ptint.h
 ptint.xdr.c: ptint.h
 
 ptserver: ptserver.o ptutils.o ptprocs.o ptint.ss.o ptint.xdr.o utils.o map.o \
-	  $(LIBS_server)
+	  prname.o $(LIBS_server)
 	$(LT_LDRULE_static) ptserver.o ptutils.o ptprocs.o \
-		ptint.ss.o ptint.xdr.o utils.o map.o \
+		ptint.ss.o ptint.xdr.o utils.o map.o prname.o \
 		$(LIBS_server) \
 		$(LIB_hcrypto) $(LIB_roken) ${MT_LIBS}
 

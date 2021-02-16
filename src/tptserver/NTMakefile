@@ -72,7 +72,8 @@ $(PTUTILS_OBJ) $(UTILS_OBJ): $(SRC_DIR)\$$(@B).c
 PTSERVER_EXEOBJS =\
 	$(OUT)\ptint.ss.obj \
 	$(OUT)\ptserver.obj \
-	$(OUT)\ptprocs.obj
+	$(OUT)\ptprocs.obj \
+	$(OUT)\prname.obj
 
 MAP_OBJ = $(OUT)\map.obj
 

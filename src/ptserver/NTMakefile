@@ -54,6 +54,7 @@ PTSERVER_EXEOBJS =\
 	$(OUT)\ptprocs.obj \
 	$(OUT)\utils.obj \
         $(OUT)\map.obj \
+	$(OUT)\prname.obj \
 	$(OUT)\ptserver.res
 
 

@@ -104,9 +104,9 @@ ${TOP_INCDIR}/afs/ptserver.h: ptserver.h
 #
 # Build targets
 #
-ptserver: ptserver.o ptutils.o ptprocs.o ptint.ss.o ptint.xdr.lo utils.o $(LIBS) map.o
+ptserver: ptserver.o ptutils.o ptprocs.o ptint.ss.o ptint.xdr.lo utils.o $(LIBS) map.o prname.o
 	$(AFS_LDRULE) ptserver.o ptutils.o ptprocs.o ptint.ss.o .lwp/ptint.xdr.o \
-		utils.o map.o $(LIBS) $(LIB_roken) ${XLIBS}
+		utils.o map.o prname.o $(LIBS) $(LIB_roken) ${XLIBS}
 
 ptserver.o: ptserver.c ${INCLS} AFS_component_version_number.c
 
