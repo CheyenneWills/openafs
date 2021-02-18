@@ -11,7 +11,8 @@ der_copy_octet_string (const krb5_data *from, krb5_data *to)
     to->data   = malloc(to->length);
     if(to->length != 0 && to->data == NULL)
         return ENOMEM;
-    memcpy(to->data, from->data, to->length);
+    if (to->data != NULL)
+	memcpy(to->data, from->data, to->length);
     return 0;
 }
 
