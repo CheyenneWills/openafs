@@ -396,15 +396,16 @@ der_get_bmp_string (const unsigned char *p, size_t len,
 	gen_data_zero(data);
 	return ENOMEM;
     }
-
-    for (i = 0; i < data->length; i++) {
-	data->data[i] = (p[0] << 8) | p[1];
-	p += 2;
-	/* check for NUL in the middle of the string */
-	if (data->data[i] == 0 && i != (data->length - 1)) {
-	    free(data->data);
-	    gen_data_zero(data);
-	    return ASN1_BAD_CHARACTER;
+    if (data->data != NULL) {
+	for (i = 0; i < data->length; i++) {
+	    data->data[i] = (p[0] << 8) | p[1];
+	    p += 2;
+	    /* check for NUL in the middle of the string */
+	    if (data->data[i] == 0 && i != (data->length - 1)) {
+		free(data->data);
+		gen_data_zero(data);
+		return ASN1_BAD_CHARACTER;
+	    }
 	}
     }
     if (size) *size = len;
@@ -432,15 +433,16 @@ der_get_universal_string (const unsigned char *p, size_t len,
 	gen_data_zero(data);
 	return ENOMEM;
     }
-
-    for (i = 0; i < data->length; i++) {
-	data->data[i] = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
-	p += 4;
-	/* check for NUL in the middle of the string */
-	if (data->data[i] == 0 && i != (data->length - 1)) {
-	    free(data->data);
-	    gen_data_zero(data);
-	    return ASN1_BAD_CHARACTER;
+    if (data->data != NULL) {
+	for (i = 0; i < data->length; i++) {
+	    data->data[i] = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+	    p += 4;
+	    /* check for NUL in the middle of the string */
+	    if (data->data[i] == 0 && i != (data->length - 1)) {
+		free(data->data);
+		gen_data_zero(data);
+		return ASN1_BAD_CHARACTER;
+	    }
 	}
     }
     if (size) *size = len;
@@ -462,7 +464,8 @@ der_get_octet_string (const unsigned char *p, size_t len,
     data->data = malloc(len);
     if (data->data == NULL && data->length != 0)
 	return ENOMEM;
-    memcpy (data->data, p, len);
+    if (data->data != NULL)
+	memcpy (data->data, p, len);
     if(size) *size = len;
     return 0;
 }
@@ -591,7 +594,8 @@ der_get_heim_integer (const unsigned char *p, size_t len,
 		*size = 0;
 	    return ENOMEM;
 	}
-	memcpy(data->data, p, data->length);
+	if (data->data != NULL)
+	    memcpy(data->data, p, data->length);
     }
     if (size)
 	*size = len;
@@ -1984,7 +1988,8 @@ der_copy_bmp_string (const heim_bmp_string *from, heim_bmp_string *to)
     to->data   = malloc(to->length * sizeof(to->data[0]));
     if(to->length != 0 && to->data == NULL)
 	return ENOMEM;
-    memcpy(to->data, from->data, to->length * sizeof(to->data[0]));
+    if (to->data != NULL)
+	memcpy(to->data, from->data, to->length * sizeof(to->data[0]));
     return 0;
 }
 
@@ -1996,7 +2001,8 @@ der_copy_universal_string (const heim_universal_string *from,
     to->data   = malloc(to->length * sizeof(to->data[0]));
     if(to->length != 0 && to->data == NULL)
 	return ENOMEM;
-    memcpy(to->data, from->data, to->length * sizeof(to->data[0]));
+    if (to->data != NULL)
+	memcpy(to->data, from->data, to->length * sizeof(to->data[0]));
     return 0;
 }
 
@@ -2014,7 +2020,8 @@ der_copy_octet_string (const heim_octet_string *from, heim_octet_string *to)
     to->data   = malloc(to->length);
     if(to->length != 0 && to->data == NULL)
 	return ENOMEM;
-    memcpy(to->data, from->data, to->length);
+    if (to->data != NULL)
+	memcpy(to->data, from->data, to->length);
     return 0;
 }
 
@@ -2025,7 +2032,8 @@ der_copy_heim_integer (const heim_integer *from, heim_integer *to)
     to->data   = malloc(to->length);
     if(to->length != 0 && to->data == NULL)
 	return ENOMEM;
-    memcpy(to->data, from->data, to->length);
+    if (to->data != NULL)
+	memcpy(to->data, from->data, to->length);
     to->negative = from->negative;
     return 0;
 }
@@ -2037,8 +2045,9 @@ der_copy_oid (const heim_oid *from, heim_oid *to)
     to->components = malloc(to->length * sizeof(*to->components));
     if (to->length != 0 && to->components == NULL)
 	return ENOMEM;
-    memcpy(to->components, from->components,
-	   to->length * sizeof(*to->components));
+    if (to->components != NULL)
+	memcpy(to->components, from->components,
+	       to->length * sizeof(*to->components));
     return 0;
 }
 
@@ -2052,6 +2061,7 @@ der_copy_bit_string (const heim_bit_string *from, heim_bit_string *to)
     to->data   = malloc(len);
     if(len != 0 && to->data == NULL)
 	return ENOMEM;
-    memcpy(to->data, from->data, len);
+    if (to->data != NULL)
+	memcpy(to->data, from->data, len);
     return 0;
 }
