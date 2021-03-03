@@ -1,7 +1,6 @@
 opr_AssertionFailed
 opr_dict_Free
 opr_dict_Init
-opr_fmt
 opr_lcstring
 opr_procsize
 opr_rbtree_first
@@ -12,7 +11,6 @@ opr_rbtree_remove
 opr_rbtree_replace
 opr_rbtree_replace
 opr_stolower
-opr_stoupper
 opr_strcompose
 opr_threadname_set
 opr_ucstring

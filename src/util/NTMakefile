@@ -25,8 +25,7 @@ INCFILES =\
 	$(INCFILEDIR)\ktime.h \
 	$(INCFILEDIR)\fileutil.h \
 	$(INCFILEDIR)\afsutil_prototypes.h \
-	$(INCFILEDIR)\secutil_nt.h \
-	$(INCFILEDIR)\tabular_output.h
+	$(INCFILEDIR)\secutil_nt.h
 
 $(DESTDIR)\include\dirent.h: dirent_nt.h
 	$(COPY) $** $@
@@ -53,8 +52,7 @@ LIBOBJS = \
 	$(OUT)\errmap_nt.obj \
 	$(OUT)\dirpath.obj \
 	$(OUT)\fileutil.obj \
-	$(OUT)\secutil_nt.obj \
-	$(OUT)\tabular_output.obj
+	$(OUT)\secutil_nt.obj
 
 MT_LIBOBJS = \
 	$(OUT)\base32.obj \
@@ -71,8 +69,7 @@ MT_LIBOBJS = \
 	$(OUT)\errmap_nt.obj \
 	$(OUT)\dirpath_mt.obj \
 	$(OUT)\fileutil.obj \
-	$(OUT)\secutil_nt.obj \
-	$(OUT)\tabular_output.obj
+	$(OUT)\secutil_nt.obj
 
 $(LIBOBJS): $$(@B).c
     $(C2OBJ) $**
