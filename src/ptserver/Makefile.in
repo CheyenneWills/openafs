@@ -44,7 +44,7 @@ LIBS=   ${TOP_LIBDIR}/libubik.a \
 	${TOP_LIBDIR}/libafsrfc3961.a \
 	${TOP_LIBDIR}/libafshcrypto_lwp.a
 
-LT_objs = ptuser.lo pterror.lo ptint.cs.lo ptint.xdr.lo display.lo
+LT_objs = ptuser.lo pterror.lo ptint.cs.lo ptint.xdr.lo display.lo prname.lo
 
 LT_deps = $(top_builddir)/src/opr/liboafs_opr.la \
 	  $(top_builddir)/src/rx/liboafs_rx.la \
@@ -178,6 +178,7 @@ testpt.o testpt.lo: pterror.h
 utils.o utils.lo: pterror.h
 
 display.lo: $(INCLS)
+prname.lo: $(INCLS)
 ptuser.lo: $(LINCLS)
 
 liboafs_prot.la: liboafs_prot.la.sym $(LT_objs) $(LT_deps)

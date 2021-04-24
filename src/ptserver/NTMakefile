@@ -33,6 +33,7 @@ LIBFILE = $(DESTDIR)\lib\afs\afsprot.lib
 LIBOBJS =\
 	$(OUT)\ptuser.obj \
 	$(OUT)\pterror.obj \
+	$(OUT)\prname.obj \
 	$(OUT)\ptint.cs.obj \
 	$(OUT)\ptint.xdr.obj \
 	$(OUT)\AFS_component_version_number.obj

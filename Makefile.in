@@ -940,6 +940,7 @@ distclean: clean
 	tests/opr/Makefile \
 	tests/util/Makefile \
 	tests/volser/Makefile \
+	tests/ptserver/Makefile \
 	src/helper-splint.sh \
 	doc/xml/AdminGuide/Makefile \
 	doc/xml/QuickStartUnix/Makefile \

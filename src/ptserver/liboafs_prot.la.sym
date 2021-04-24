@@ -14,6 +14,7 @@ pr_IdToName
 pr_Initialize
 pr_Initialize2
 pr_IsAMemberOf
+pr_IsNameBlank
 pr_ListEntries
 pr_ListEntry
 pr_ListMaxGroupId

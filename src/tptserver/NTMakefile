@@ -37,6 +37,7 @@ LIBFILE = $(DESTDIR)\lib\afs\mtafsprot.lib
 LIBOBJS =\
 	$(OUT)\ptuser.obj \
 	$(OUT)\pterror.obj \
+	$(OUT)\prname.obj \
 	$(OUT)\ptint.cs.obj \
 	$(OUT)\AFS_component_version_number.obj
 
