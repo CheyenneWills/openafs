@@ -46,17 +46,47 @@ void * bozo_ShutdownAndExit(void *param) { return NULL; }
 int osi_audit(void ) { return 0; }
 int WriteBozoFile(char *aname) { return 0; }
 
+char *test1str = "one two   three four //abc 1234 -xyzzy";
+char *test1toks[] = {
+    "one",
+    "two",
+    "three",
+    "four",
+    "//abc",
+    "1234",
+    "-xyzzy"
+};
+#define NTOKENS (sizeof(test1toks) / sizeof(test1toks[0]))
 
+void
+test_bnode_ParseLine(void)
+{
+    int code;
+    int i;
+    struct bnode_token *toklist, *tok;
+
+    /* Ensure empty strings are handled */
+    toklist = (struct bnode_token *)-1;
+    code = bnode_ParseLine("", &toklist);
+    is_int(0, code, "empty string returns 0");
+    ok(toklist == NULL, "empty string sets toklist to NULL");
+
+    toklist = NULL;
+    code = bnode_ParseLine(test1str, &toklist);
+    is_int(0, code, "none empty string returned 1");
+    ok(toklist != NULL, "none empty string sets toklist to value");
+
+    for (i=0, tok=toklist; tok != NULL && i < NTOKENS; tok = tok-> next, i++) {
+	is_string(test1toks[i], tok->key, "token matchs");
+    }
+    is_int(NTOKENS, i, "all tokens matched");
+    ok(tok == NULL, "no extra tokens");
+    bnode_FreeTokens(toklist);
+}
 int
 main(int argc, char **argv)
 {
-    int code;
-    struct bnode_token *tokens = NULL;
-
-    plan(1);
-
-    code = bnode_ParseLine("", &tokens);
-    is_int(0, code, "parse-line");
-
+    plan(13);
+    test_bnode_ParseLine();
     return 0;
 }
