@@ -7,10 +7,35 @@
 
 srcdir=@srcdir@
 include @TOP_OBJDIR@/src/config/Makefile.config
+include @TOP_OBJDIR@/src/config/Makefile.lwp
 
-MODULE_CFLAGS=$(LDIRS) $(LIBS)
+top_builddir=../../..
 
-all: testproc
+MODULE_CFLAGS=$(LDIRS) $(LIBS) -I..
+
+LDLIBS=    \
+    ${TOP_LIBDIR}/libaudit.a \
+	${TOP_LIBDIR}/liblwp.a \
+	${TOP_LIBDIR}/libcmd.a \
+	${TOP_LIBDIR}/libkauth.a \
+	${TOP_LIBDIR}/libvolser.a \
+	${TOP_LIBDIR}/libvldb.a \
+	${TOP_LIBDIR}/libauth.a \
+	${TOP_LIBDIR}/librxstat.a \
+	${TOP_LIBDIR}/librxkad.a \
+	${TOP_LIBDIR}/libubik.a \
+	${TOP_LIBDIR}/librx.a \
+	${TOP_LIBDIR}/liblwp.a \
+	${TOP_LIBDIR}/libafscom_err.a \
+	${TOP_LIBDIR}/util.a \
+	${TOP_LIBDIR}/libopr.a \
+	${TOP_LIBDIR}/libsys.a \
+	${TOP_LIBDIR}/libprocmgmt.a \
+	${TOP_LIBDIR}/libafsrfc3961.a \
+	${TOP_LIBDIR}/libafshcrypto_lwp.a \
+	${TOP_LIBDIR}/librokenafs.a
+
+all: testproc testparseline
 
 install:
 
@@ -20,6 +45,9 @@ install:
 testproc: testproc.c
 	$(CC) $(AFS_LDFLAGS) $(AFS_CFLAGS) -o testproc testproc.c
 
+
+testparseline: testparseline.o
+	$(LT_LDRULE_static) testparseline.o $(LDIRS) $(LDLIBS)
 #
 # Misc targets
 #
