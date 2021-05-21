@@ -20,6 +20,7 @@
 #include <afs/audit.h>
 #include <afs/afsutil.h>
 #include <afs/fileutil.h>
+#include <afs/opr.h>
 #include <opr/queue.h>
 
 #include "bnode.h"
@@ -873,62 +874,55 @@ bnode_FreeTokens(struct bnode_token *alist)
     return 0;
 }
 
-static int
-space(int x)
-{
-    if (x == 0 || x == ' ' || x == '\t' || x == '\n')
-	return 1;
-    else
-	return 0;
-}
+/*!
+ * Parse a line into individual tokens
+ *
+ * Splits a line into tokens using whitespace delimiters
+ * Returns a linked list of bnode_tokens.  Caller is responsible
+ * for freeing the list via bnode_FreeTokens
+ *
+ * @param[in]  aline 	Pointer to input line
+ * @param[out] *alist   Pointer to 1st bnode_token (or NULL
+ *                      if no tokens)
+ *
+ * @returns  0 - *alist contains tokens
+ *          -1 - Empty string (*alist will be set to NULL)
+ */
 
 int
 bnode_ParseLine(char *aline, struct bnode_token **alist)
 {
-    char tbuffer[256];
-    char *tptr = NULL;
-    int inToken;
-    struct bnode_token *first, *last;
-    struct bnode_token *ttok;
-    int tc;
+    char *line, *sline;
+    char *token;
+    char *saveptr = NULL;
+    struct bnode_token *first = NULL, *last = NULL, *curtoken;
 
-    inToken = 0;		/* not copying token chars at start */
-    first = (struct bnode_token *)0;
-    last = (struct bnode_token *)0;
-    while (1) {
-	tc = *aline++;
-	if (tc == 0 || space(tc)) {	/* terminating null gets us in here, too */
-	    if (inToken) {
-		inToken = 0;	/* end of this token */
-		*tptr++ = 0;
-		ttok = malloc(sizeof(struct bnode_token));
-		ttok->next = (struct bnode_token *)0;
-		ttok->key = strdup(tbuffer);
-		if (last) {
-		    last->next = ttok;
-		    last = ttok;
-		} else
-		    last = ttok;
-		if (!first)
-		    first = ttok;
-	    }
-	} else {
-	    /* an alpha character */
-	    if (!inToken) {
-		tptr = tbuffer;
-		inToken = 1;
-	    }
-	    if (tptr - tbuffer >= sizeof(tbuffer))
-		return -1;	/* token too long */
-	    *tptr++ = tc;
-	}
-	if (tc == 0) {
-	    /* last token flushed 'cause space(0) --> true */
-	    if (last)
-		last->next = (struct bnode_token *)0;
+    sline = line = strdup(aline);
+    opr_Assert(line != NULL);
+
+    while(1) {
+	token = strtok_r(line, " \t", &saveptr);
+	if (token == NULL) {
 	    *alist = first;
+	    if (!first)
+		return -1;
+	    free(sline);
 	    return 0;
 	}
+	curtoken = calloc(sizeof(*curtoken), 1);
+	opr_Assert(curtoken != NULL);
+
+	curtoken->next = NULL;
+	curtoken->key = strdup(token);
+	opr_Assert(curtoken->key != NULL);
+
+	if (!first) {
+	    first = curtoken;
+	    line = NULL;
+	}
+	else
+	    last->next = curtoken;
+	last = curtoken;
     }
 }
 
