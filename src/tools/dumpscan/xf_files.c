@@ -193,8 +193,11 @@ xfopen_fd(XFILE * X, int flag, int fd)
     flag &= O_MODE_MASK;
     if (flag == O_WRONLY)
 	return ERROR_XFILE_WRONLY;
-    if (!(F = fdopen(fd, (flag == O_RDONLY) ? "r" : "r+")))
-	return errno;
+    if (!(F = fdopen(fd, (flag == O_RDONLY) ? "r" : "r+"))) {
+	int code = errno;
+	close(fd);
+	return code;
+    }
     prepare(X, F, flag);
     return 0;
 }

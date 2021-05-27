@@ -10,6 +10,7 @@
 #include <afsconfig.h>
 #include <afs/param.h>
 #include <afs/stds.h>
+#include <afs/opr.h>
 
 #include <roken.h>
 
@@ -449,6 +450,7 @@ afsconf_BuildServerSecurityObjects_int(struct afsconf_bsso_info *info,
     *numClasses = RX_SECIDX_GK+1;
 
     *classes = calloc(*numClasses, sizeof(**classes));
+    opr_Assert(*classes != NULL);
 
     (*classes)[RX_SECIDX_NULL] = rxnull_NewServerSecurityObject();
     (*classes)[RX_SECIDX_KAD] =

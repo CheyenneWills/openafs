@@ -421,6 +421,7 @@ ParseNetInfoFile_int(afs_uint32 outAddrs[], afs_uint32 outMask[], afs_uint32 out
 	    count++;
 	}
     }				/* while */
+    fclose(fp);
 
     /* in case of any error, we use all the interfaces present */
     if (count <= 0) {
