@@ -106,6 +106,7 @@ acl_NewACL(int nEntries, struct acl_accessList **acl)
     (*acl)->version = ACL_ACLVERSION;
     (*acl)->total = nEntries;
     (*acl)->positive = (*acl)->negative = 0;
+    /* see acl_FreeACL below for where the free should happen. */
     return (0);
 }
 
@@ -145,6 +146,7 @@ acl_NewExternalACL(int nEntries, char **r)
 
     *r = e->body;
     sprintf(*r, "0\n0\n");
+    /* See acl_FreeExternalACL below for where the free should happen. */
     return (0);
 }
 
@@ -182,6 +184,8 @@ acl_Externalize_pr(int (*func)(idlist *ids, namelist *names), struct acl_accessL
     acl_NewExternalACL(acl->total, elist);
     nextc = *elist;
     lids.idlist_val = calloc(ACL_MAXENTRIES, sizeof(afs_int32));
+    if (lids.idlist_val == NULL)
+	return ENOMEM;
     lids.idlist_len = acl->total;
     lnames.namelist_len = 0;
     lnames.namelist_val = (prname *) 0;
