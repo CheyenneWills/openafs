@@ -307,6 +307,8 @@ main(int argc, char **argv)
 	    sprintf(h_file, "%s.h", ename);
 	}
     }
+    free(ename);
+
     p = strrchr(filename, '.');
     if (p == NULL) {
 	p = xmalloc(strlen(filename) + 4);
