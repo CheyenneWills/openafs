@@ -172,6 +172,7 @@ unlog_ForgetCertainTokens(char **list, int listSize)
 
     if (code) {
 	printf("unlog: could not discard tickets, code %d\n", code);
+	free(tokenInfoP);
 	exit(1);
     }
 
@@ -187,6 +188,7 @@ unlog_ForgetCertainTokens(char **list, int listSize)
 	    }
 	}
     }
+    free(tokenInfoP);
     return 0;
 }
 
