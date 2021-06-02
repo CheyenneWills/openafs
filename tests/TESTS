@@ -6,6 +6,8 @@ auth/superuser
 auth/authcon
 auth/realms
 auth/writeoldkey
+bozo/bosconfig
+bozo/bos-man
 cmd/command
 opr/cache
 opr/dict
@@ -22,5 +24,4 @@ volser/vos-man
 volser/vos
 bucoord/backup-man
 kauth/kas-man
-bozo/bos-man
 venus/fs-man

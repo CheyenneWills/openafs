@@ -41,7 +41,6 @@ int bnode_StopProc(struct bnode_proc *aproc, int asignal);
 /* bosserver.c */
 void bozo_Log(const char *format, ... );
 int bozo_ReBozo(void);
-int WriteBozoFile(char *aname);
 int bozo_CreatePidFile(char *ainst, char *aname, pid_t apid);
 int bozo_DeletePidFile(char *ainst, char *aname);
 
@@ -50,6 +49,10 @@ int GetRequiredDirPerm(const char *path);
 void *bozo_ShutdownAndExit(void *arock /* really int asignal */);
 int initBosEntryStats(void);
 int DirAccessOK(void);
+
+/* bosconfig.c */
+int ReadBozoFile(char *aname);
+int WriteBozoFile(char *aname);
 
 /* inline functions */
 static_inline struct bozo_key *
