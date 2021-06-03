@@ -74,3 +74,26 @@ afstest_obj_path(char *path)
 {
     return path_from_tdir("C_TAP_BUILD", path);
 }
+
+/*!
+ *  Wrapper for mkdtemp
+ */
+char *
+afstest_mkdtemp(char *template)
+{
+#if defined(HAVE_MKDTEMP)
+    return mkdtemp(template);
+#else
+    /*
+     * Note that using the following is not a robust replacement
+     * for mkdtemp as there is a possible race condition between
+     * creating the name and creating the directory itself.  The
+     * use of this routine is limited to running tests.
+     */
+    if (mktemp(template) == NULL)
+	return NULL;
+    if (mkdir(template, 0700))
+	return NULL;
+    return template;
+#endif
+}
