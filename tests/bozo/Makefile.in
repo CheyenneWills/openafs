@@ -1,0 +1,35 @@
+
+srcdir=@srcdir@
+abs_top_srcdir=@abs_top_srcdir@
+abs_top_builddir=@abs_top_builddir@
+include @TOP_OBJDIR@/src/config/Makefile.config
+include @TOP_OBJDIR@/src/config/Makefile.lwp
+
+BINS = bosconfig-t
+
+MODULE_CFLAGS = \
+  -I$(TOP_OBJDIR) \
+  -I$(abs_top_srcdir)/src/bozo
+
+MODULE_LIBS = \
+  $(abs_top_builddir)/tests/common/libafstest_common.la \
+  $(abs_top_builddir)/src/cmd/liboafs_cmd.la \
+  $(abs_top_builddir)/src/comerr/liboafs_comerr.la \
+  $(abs_top_builddir)/src/opr/liboafs_opr.la \
+  $(abs_top_builddir)/lib/liblwp.a \
+  $(abs_top_builddir)/lib/libprocmgmt.a
+
+all check test tests: $(BINS)
+
+bosconfig-t: bosconfig-t.o \
+	         mock-bnode.o \
+	         $(abs_top_builddir)/src/bozo/bnode.o \
+	         $(abs_top_builddir)/src/bozo/bosconfig.o
+	$(LT_LDRULE_static) bosconfig-t.o mock-bnode.o\
+	  $(abs_top_builddir)/src/bozo/bnode.o \
+	  $(abs_top_builddir)/src/bozo/bosconfig.o \
+	  $(MODULE_LIBS)
+
+clean:
+	$(LT_CLEAN)
+	rm -f *.o $(BINS)

@@ -6,6 +6,7 @@ auth/superuser
 auth/authcon
 auth/realms
 auth/writeoldkey
+bozo/bosconfig
 cmd/command
 cmd/join
 cmd/split
