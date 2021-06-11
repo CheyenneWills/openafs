@@ -43,7 +43,7 @@ LIBS=   ${TOP_LIBDIR}/librx.a \
 	${TOP_LIBDIR}/libafshcrypto_lwp.a
 
 OBJS=bosserver.o bnode.o ezbnodeops.o fsbnodeops.o bosint.ss.o bosint.xdr.o \
-bosoprocs.o cronbnodeops.o
+bosoprocs.o cronbnodeops.o bosconfig.o
 
 all: bosserver ${TOP_INCDIR}/afs/bosint.h bos ${TOP_LIBDIR}/libbos.a bos_util
 
@@ -90,11 +90,14 @@ bnode.o: bnode.h
 bos.o: bnode.h
 bosoprocs.o: bnode.h
 bosserver.o: bnode.h
+bosconfig.o: bnode.h
 cronbnodeops.o: bnode.h
 ezbnodeops.o: bnode.h
 fsbnodeops.o: bnode.h
 
 bosserver.o: bosserver.c ${INCLS} AFS_component_version_number.o
+
+bosconfig.o: bosconfig.c ${INCLS}
 
 cronbnodeops.o: cronbnodeops.c ${INCLS}
 

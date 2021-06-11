@@ -41,10 +41,12 @@ int bnode_StopProc(struct bnode_proc *aproc, int asignal);
 /* bosserver.c */
 void bozo_Log(const char *format, ... );
 int bozo_ReBozo(void);
-int ReadBozoFile(const char *aname);
-int WriteBozoFile(const char *aname);
 int bozo_CreatePidFile(char *ainst, char *aname, pid_t apid);
 int bozo_DeletePidFile(char *ainst, char *aname);
+
+/* bosconfig.c */
+int ReadBozoFile(const char *aname);
+int WriteBozoFile(const char *aname);
 
 /* bosoprocs.c */
 int GetRequiredDirPerm(const char *path);

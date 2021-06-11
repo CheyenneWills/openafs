@@ -38,6 +38,7 @@ BOSSERVER_EXEFILE = $(DESTDIR)\root.server\usr\afs\bin\bosserver.exe
 
 BOSSERVER_EXEOBJS =\
 	$(OUT)\bosserver.obj \
+	$(OUT)\bosconfig.obj \
 	$(OUT)\bnode.obj \
 	$(OUT)\cronbnodeops.obj \
 	$(OUT)\ezbnodeops.obj \
