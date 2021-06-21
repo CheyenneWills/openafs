@@ -16,6 +16,7 @@
 
 #include <afsconfig.h>
 #include <afs/param.h>
+#include <afs/opr.h>
 
 #include <roken.h>
 
@@ -454,8 +455,10 @@ AttachVolume(struct VolInfoOpt *opt, struct DiskPartition64 *dp,
 		      LINKTABLEMAGIC, LINKTABLEVERSION);
     }
 #endif
-    if (ec)
+    if (ec) {
+	free(vp);
 	return (Volume *) 0;
+    }
     return vp;
 }
 
@@ -656,6 +659,7 @@ volinfo_AddVnodeHandler(int vnodeClass,
 			      struct VnodeDetails * vdp), const char *heading)
 {
     struct VnodeScanProc *entry = malloc(sizeof(struct VnodeScanProc));
+    opr_Assert(entry != NULL);
     entry->proc = proc;
     entry->heading = heading;
     opr_queue_Append(&VnodeScanLists[vnodeClass], (struct opr_queue *)entry);
