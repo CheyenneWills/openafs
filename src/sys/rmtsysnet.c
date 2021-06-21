@@ -10,6 +10,7 @@
 #include <afsconfig.h>
 #include <afs/param.h>
 #include <afs/afsutil.h>
+#include <afs/opr.h>
 
 #include <roken.h>
 
@@ -77,6 +78,7 @@ RParseAcl(char *astr)
     tname[MAXNAME] = '\0';
 
     ta = malloc(sizeof(struct Acl));
+    opr_Assert(ta != NULL);
     ta->nplus = nplus;
     ta->nminus = nminus;
 

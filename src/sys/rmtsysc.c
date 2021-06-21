@@ -228,6 +228,7 @@ pioctl(char *path, afs_int32 cmd, struct ViceIoctl *data, afs_int32 follow)
 	    /* assuming relative path name */
 	    if (getcwd(pathname, 256) == NULL) {
 		free(inbuffer);
+		free(OutData.rmtbulk_val);
 		printf("getwd failed\n");
 		return -1;
 	    }
