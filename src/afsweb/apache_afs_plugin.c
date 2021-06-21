@@ -181,7 +181,6 @@ afs_plugin_init(int tokenExpiration, char *weblogPath, char *error_fname,
 	perror("execlp");
 	close(pipe1[0]);
 	close(pipe2[1]);
-	fclose(fp);
 
 	/* exit by sending a SIGTERM to the httpd process (how to get the pid?)
 	 * since at this point the pid file is outdated and only if we sleep for
@@ -387,6 +386,7 @@ can_access(request_rec * r)
 		    return SERVER_ERROR;
 		}
 	    }
+	    fclose(f); /* Will open for real use below */
 	} else if (errno == ENOTDIR) {
 	    /*
 	     * maybe the special case of CGI PATH_INFO to be translated to
