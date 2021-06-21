@@ -407,6 +407,8 @@ ubik_ServerInitCommon(afs_uint32 myHost, short myPort,
     initialize_U_error_table();
 
     tdb = calloc(1, sizeof(*tdb));
+    if (tdb == NULL)
+	return ENOMEM;
     tdb->pathName = strdup(pathName);
 #ifdef AFS_PTHREAD_ENV
     opr_mutex_init(&tdb->versionLock);
@@ -465,6 +467,8 @@ ubik_ServerInitCommon(afs_uint32 myHost, short myPort,
     if (buildSecClassesProc == NULL) {
 	numClasses = 3;
 	ubik_sc = calloc(numClasses, sizeof(struct rx_securityClass *));
+	if (ubik_sc == NULL)
+	    return ENOMEM;
 	ubik_sc[0] = rxnull_NewServerSecurityObject();
 	if (ubik_SRXSecurityProc) {
 	    code = (*ubik_SRXSecurityProc) (ubik_SRXSecurityRock,
