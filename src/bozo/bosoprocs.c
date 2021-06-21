@@ -433,6 +433,8 @@ SBOZO_GetCellName(struct rx_call *acall, char **aname)
     if (code) {
 	/* must set output parameters even if aborting */
 	*aname = malloc(1);
+	if (*aname == NULL)
+	    return ENOMEM;
 	**aname = 0;
     } else {
 	*aname = strdup(tname);
