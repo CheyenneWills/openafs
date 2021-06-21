@@ -492,6 +492,8 @@ update_SendDirInfo(char *name,		/* Name of dir to enumerate */
 
 	    tfd = open(filename, O_RDONLY, 0);
 	    if (tfd < 0 || fstat(tfd, &tstatus) < 0) {
+		if (tfd)
+		    close(tfd);
 		printf("Failed to open %s\n", name);
 		error = UPDATE_ERROR;
 		goto fail;

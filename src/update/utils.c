@@ -28,6 +28,8 @@ AddToList(struct filestr **ah, char *aname)
 {
     struct filestr *tf;
     tf = malloc(sizeof(struct filestr));
+    if (tf == NULL)
+	return ENOMEM;
     tf->next = *ah;
     *ah = tf;
     tf->name = strdup(aname);
