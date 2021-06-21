@@ -27,6 +27,7 @@
 #include <afs/prs_fs.h>
 #include <afs/com_err.h>
 #include <afs/afs_consts.h>
+#include <afs/opr.h>
 #include <rx/xdr.h>
 
 #include "uss_acl.h"
@@ -373,6 +374,7 @@ EmptyAcl(void)
     struct Acl *tp;
 
     tp = malloc(sizeof(struct Acl));
+    opr_Assert(tp != NULL);
     tp->nplus = tp->nminus = 0;
     tp->pluslist = tp->minuslist = 0;
     return (tp);
@@ -424,6 +426,7 @@ ParseAcl(char *a_str)
      * Allocate and initialize the first entry.
      */
     ta = malloc(sizeof(struct Acl));
+    opr_Assert(ta != NULL);
     ta->nplus = nplus;
     ta->nminus = nminus;
 
@@ -436,6 +439,7 @@ ParseAcl(char *a_str)
 	sscanf(a_str, "%" AFS_STRINGIZE(MAXNAME) "s %d", tname, &trights);
 	a_str = SkipLine(a_str);
 	tl = malloc(sizeof(struct AclEntry));
+	opr_Assert(tl != NULL);
 	if (!first)
 	    first = tl;
 	strcpy(tl->name, tname);
@@ -456,6 +460,7 @@ ParseAcl(char *a_str)
 	sscanf(a_str, "%" AFS_STRINGIZE(MAXNAME) "s %d", tname, &trights);
 	a_str = SkipLine(a_str);
 	tl = malloc(sizeof(struct AclEntry));
+	opr_Assert(tl != NULL);
 	if (!first)
 	    first = tl;
 	strcpy(tl->name, tname);

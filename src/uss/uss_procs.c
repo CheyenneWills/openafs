@@ -551,6 +551,7 @@ Copy(char *a_from, char *a_to, int a_mode)
     }
     rc = close(fd1);
     if (rc) {
+	close(fd2);
 	uss_procs_PrintErr(line, "Failed to close '%s' %s\n", a_to,
 			   strerror(errno));
 	return (1);
