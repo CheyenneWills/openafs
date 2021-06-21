@@ -16,6 +16,7 @@
 #include <afs/param.h>
 #include <afs/stds.h>
 #include <afs/afsutil.h>
+#include <afs/opr.h>
 
 #include <roken.h>
 
@@ -240,6 +241,7 @@ ParseAcl(char *astr)
     tname[MAXNAME] = '\0';
 
     ta = malloc(sizeof(struct Acl));
+    opr_Assert(ta != NULL);
     ta->nplus = nplus;
 
     last = 0;
