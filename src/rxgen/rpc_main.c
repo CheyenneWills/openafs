@@ -293,6 +293,7 @@ open_input(char *infile, char *define)
 	if (fin == NULL)
 	    perror("popen");
 	pclose_fin = 1;
+	free(cpp_cmdline);
 
     } else {
 	if (infile == NULL) {

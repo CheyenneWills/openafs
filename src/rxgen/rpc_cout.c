@@ -349,6 +349,10 @@ emit_union(definition * def)
 	    object =
 		alloc(strlen(def->def_name) + strlen(format) +
 		      strlen(cs->name) + 1);
+	    if (object == NULL) {
+		f_print(fout, "\t\tRan out of memory, output incomplete");
+		break;
+	    }
 
 	    if (brief_flag)
 		s_print(object, briefformat, cs->name);
