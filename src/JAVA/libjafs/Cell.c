@@ -868,6 +868,7 @@ Java_org_openafs_jafs_Cell_getGroupsBeginAt (JNIEnv *env, jclass cls,
   groupName = malloc( sizeof(char)*PTS_MAX_NAME_LEN);
 
   if( !pts_GroupListBegin( (void *) cellHandle, &iterationId, &ast ) ) {
+    free( groupName );
     throwAFSException( env, ast );
     return 0;
   }

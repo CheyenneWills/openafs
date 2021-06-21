@@ -327,6 +327,7 @@ Java_org_openafs_jafs_User_unlock
   if( juserName != NULL ) {
       userName = (*env)->GetStringUTFChars(env, juserName, 0);
     if( !userName ) {
+	free( who );
 	throwAFSException( env, JAFSADMNOMEM );
 	return;    
     }
@@ -657,6 +658,7 @@ Java_org_openafs_jafs_User_setUserInfo
   if( jname != NULL ) {
       name = (*env)->GetStringUTFChars(env, jname, 0);
     if( !name ) {
+	free( who );
 	throwAFSException( env, JAFSADMNOMEM );
 	return;    
     }
@@ -820,6 +822,8 @@ Java_org_openafs_jafs_User_rename
     if( joldName != NULL ) {
 	oldName = (*env)->GetStringUTFChars(env, joldName, 0);
 	if( !oldName ) {
+	    free( whoOld );
+	    free( whoNew );
 	    throwAFSException( env, JAFSADMNOMEM );
 	    return;    
 	}
@@ -832,6 +836,8 @@ Java_org_openafs_jafs_User_rename
 	  if( oldName != NULL ) {
 	    (*env)->ReleaseStringUTFChars(env, joldName, oldName);
 	  }
+	  free( whoOld );
+	  free( whoNew );
 	  throwAFSException( env, JAFSADMNOMEM );
 	  return;    
 	}
@@ -1020,6 +1026,8 @@ Java_org_openafs_jafs_User_setPassword
   if( juserName != NULL ) {
       userName = (*env)->GetStringUTFChars(env, juserName, 0);
       if( !userName ) {
+	  free( who );
+	  free( newKey );
 	  throwAFSException( env, JAFSADMNOMEM );
 	  return;    
       }
@@ -1029,6 +1037,8 @@ Java_org_openafs_jafs_User_setPassword
   if( jnewPassword != NULL ) {
       newPassword = (*env)->GetStringUTFChars(env, jnewPassword, 0);
       if( !newPassword ) {
+	  free( who );
+	  free( newKey );
 	  throwAFSException( env, JAFSADMNOMEM );
 	  return;    
       }

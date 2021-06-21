@@ -173,6 +173,7 @@ Java_org_openafs_jafs_Key_create
     if( jkeyString != NULL ) {
       keyString = (*env)->GetStringUTFChars(env, jkeyString, 0);
       if( !keyString ) {
+	  free( key );
 	  throwAFSException( env, JAFSADMNOMEM );
 	  return;    
       }
