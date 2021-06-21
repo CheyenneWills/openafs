@@ -485,6 +485,8 @@ bc_ParseVolumeSet(void)
 	     * global configuration structure.
 	     */
 	    tvs = calloc(1, sizeof(struct bc_volumeSet));
+	    if (tvs == NULL)
+		return ENOMEM;
 	    tvs->name = strdup(vsname);
 
 	    /* append to the end */

@@ -425,6 +425,8 @@ bc_ParseDumpSchedule(void)
 	    return (BC_INTERNALERROR);
 	}
 	tds = calloc(1, sizeof(struct bc_dumpSchedule));
+        if (tds == NULL)
+	    return ENOMEM;
 
 	tds->next = (struct bc_dumpSchedule *)0;
 	tds->name = strdup(dsname);

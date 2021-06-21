@@ -788,7 +788,7 @@ printIfStatus(struct tciStatusS *statusPtr)
 {
     printf("Task %d: %s: ", statusPtr->taskId, statusPtr->taskName);
     if (statusPtr->nKBytes)
-	printf("%ld Kbytes transferred", (long unsigned int) statusPtr->nKBytes);
+	printf("%lu Kbytes transferred", (long unsigned int) statusPtr->nKBytes);
     if (strlen(statusPtr->volumeName) != 0) {
 	if (statusPtr->nKBytes)
 	    printf(", ");
@@ -1233,6 +1233,7 @@ bc_VolRestoreCmd(struct cmd_syndesc *as, void *arock)
 	for (ti = as->parms[5].items, i = 0; ti; ti = ti->next, i++) {
 	    ports[i] = getPortOffset(ti->data);
 	    if (ports[i] < 0)
+		free(ports);
 		return (BC_BADARG);
 	}
     }
@@ -1363,6 +1364,7 @@ bc_DiskRestoreCmd(struct cmd_syndesc *as, void *arock)
 	for (ti = as->parms[2].items, i = 0; ti; ti = ti->next, i++) {
 	    ports[i] = getPortOffset(ti->data);
 	    if (ports[i] < 0)
+		free(ports);
 		return (BC_BADARG);
 	}
     }
@@ -1525,6 +1527,7 @@ bc_VolsetRestoreCmd(struct cmd_syndesc *as, void *arock)
 
 	    tvol->name = malloc(VOLSER_MAXVOLNAME + 1);
 	    if (!tvol->name) {
+		fclose(fd);
 		afs_com_err(whoami, BC_NOMEM, NULL);
 		return BC_NOMEM;
 	    }
@@ -1558,6 +1561,7 @@ bc_VolsetRestoreCmd(struct cmd_syndesc *as, void *arock)
 	for (ti = as->parms[2].items, i = 0; ti; ti = ti->next, i++) {
 	    ports[i] = getPortOffset(ti->data);
 	    if (ports[i] < 0)
+		free(ports);
 		return (BC_BADARG);
 	}
     }
@@ -1712,6 +1716,7 @@ bc_DumpCmd(struct cmd_syndesc *as, void *arock)
 
 	    *portp = getPortOffset(as->parms[2].items->data);
 	    if (*portp < 0)
+		free(portp);
 		return (BC_BADARG);
 	}
 
@@ -1724,6 +1729,7 @@ bc_DumpCmd(struct cmd_syndesc *as, void *arock)
 	if (!tvs) {
 	    afs_com_err(whoami, 0,
 		    "Can't find volume set '%s' in backup database", vsName);
+	    free(portp);
 	    return (-1);
 	}
 	baseds = bc_FindDumpSchedule(bc_globalConfig, dumpPath);
