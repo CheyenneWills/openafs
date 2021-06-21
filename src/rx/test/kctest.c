@@ -168,7 +168,7 @@ main(argc, argv)
 	xdr.x_op = XDR_DECODE;
 	xdr_long(&xdr, &temp);
 	if (temp != 1989)
-	    printf("wrong value returned (%d)\n", temp);
+	    printf("wrong value returned (%ld)\n", temp);
 	rx_EndCall(tcall, 0);
     }
     endms = nowms();
