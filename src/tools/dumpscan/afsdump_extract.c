@@ -350,7 +350,7 @@ volhdr_cb(afs_vol_header * hdr, XFILE * X, void *refcon)
 static afs_uint32
 directory_cb(afs_vnode * v, XFILE * X, void *refcon)
 {
-    char *vnodepath;
+    char *vnodepath = NULL;
     int r, use = 0;
 
     /* Should we even use this? */
