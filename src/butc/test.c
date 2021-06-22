@@ -111,6 +111,7 @@ PerformDump(struct cmd_syndesc *as, void *arock)
 	fscanf(fp, "%u %u %u\n", &ptr->vid, &ptr->partition, &ptr->date);
 	ptr++;
     }
+    fclose(fp);
 
     aconn = UV_Bind(server, TCPORT);
     code =
@@ -159,6 +160,8 @@ PerformRestore(struct cmd_syndesc *as, void *arock)
 	ptr++;
 
     }
+    fclose(fp);
+
     code = TC_PerformRestore(aconn, tdumpSetName, &trestores, &tdumpID);
     if (code) {
 	printf("call to TC_PerformRestore failed %u\n", code);
