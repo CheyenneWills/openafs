@@ -1444,6 +1444,8 @@ DoBosExecutableRestartTimeSet(struct cmd_syndesc *as, void *arock)
     int have_weekly = 0;
     bos_RestartTime_t time;
 
+    time.mask = BOS_RESTART_TIME_DAY;
+
     if (as->parms[SERVER].items) {
 	if (!bos_ServerOpen
 	    (cellHandle, as->parms[SERVER].items->data, &bos_server, &st)) {
