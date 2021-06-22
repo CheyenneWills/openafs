@@ -1167,7 +1167,7 @@ print_cells(int pnt)
 	j++;
     }
     if (pnt)
-	printf("... found %d 'afs_cells' entries\n", j);
+	printf("... found %ld 'afs_cells' entries\n", j);
 
     return j;
 }
@@ -1200,7 +1200,7 @@ print_cellaliases(int pnt)
 	j++;
     }
     if (pnt)
-	printf("... found %d 'cell_alias' entries\n", j);
+	printf("... found %ld 'cell_alias' entries\n", j);
 
     return j;
 }
@@ -1230,7 +1230,7 @@ print_cellnames(int pnt)
 	j++;
     }
     if (pnt)
-	printf("... found %d 'cell_name' entries\n", j);
+	printf("... found %ld 'cell_name' entries\n", j);
 
     return j;
 }
@@ -1502,8 +1502,8 @@ print_vcaches(int pnt)
     if (pnt)
 	printf("\n\nPrinting afs_vcaches structures...\n");
     if (pnt)
-	printf("print_vcaches: sizeof(struct vcache) = %ld\n",
-	       (long)sizeof(struct vcache));
+	printf("print_vcaches: sizeof(struct vcache) = %lu\n",
+	       (unsigned long)sizeof(struct vcache));
     findsym("afs_vhashT", &symoff);
     kread(kmem, symoff, (char *)afs_vhashTable, sizeof afs_vhashTable);
     for (i = 0, j = 0; i < VCSIZE; i++) {
@@ -1747,7 +1747,7 @@ print_nfss(int pnt)
 	Sum_exps++;
     }
     if (pnt)
-	printf("... found %d 'afs_exporters' entries\n", j);
+	printf("... found %ld 'afs_exporters' entries\n", j);
 
     /* Handle the afs_nfsclientpags structs */
     if (pnt)
@@ -1762,7 +1762,7 @@ print_nfss(int pnt)
 	}
     }
     if (pnt)
-	printf("... found %d 'afs_nfsclientpags' entries\n", j);
+	printf("... found %ld 'afs_nfsclientpags' entries\n", j);
     return j;
 }
 
@@ -1852,59 +1852,59 @@ print_allocs(int pnt)
     j = (i * sizeof(struct cell)) + Sum_cellnames;
     T += j;
     printf
-	("%20s:\t%8d bytes\t[%d cells/%d bytes each + %d bytes for cell names]\n",
-	 "Cell package", j, i, sizeof(struct cell), Sum_cellnames);
+	("%20s:\t%8ld bytes\t[%ld cells/%lu bytes each + %d bytes for cell names]\n",
+	 "Cell package", j, i, (unsigned long)sizeof(struct cell), Sum_cellnames);
 
     Sum_cellaliases = 0;
     i = print_cellaliases(0);
     j = (i * sizeof(struct cell_alias)) + Sum_cellaliases;
     T += j;
     printf
-	("%20s:\t%8d bytes\t[%d cell_aliases/%d bytes each + %d bytes for cell names]\n",
-	 "Cell package", j, i, sizeof(struct cell_alias), Sum_cellaliases);
+	("%20s:\t%8ld bytes\t[%ld cell_aliases/%lu bytes each + %d bytes for cell names]\n",
+	 "Cell package", j, i, (unsigned long)sizeof(struct cell_alias), Sum_cellaliases);
 
     Sum_cellname_names = 0;
     i = print_cellnames(0);
     j = (i * sizeof(struct cell_name)) + Sum_cellname_names;
     T += j;
     printf
-	("%20s:\t%8d bytes\t[%d cell_names/%d bytes each + %d bytes for cell name strings]\n",
-	 "Cell package", j, i, sizeof(struct cell_name), Sum_cellname_names);
+	("%20s:\t%8ld bytes\t[%ld cell_names/%lu bytes each + %d bytes for cell name strings]\n",
+	 "Cell package", j, i, (unsigned long)sizeof(struct cell_name), Sum_cellname_names);
 
     Sum_userstp = 0;
     i = print_users(0);
     j = (i * sizeof(struct unixuser)) + Sum_userstp;
     T += j;
     printf
-	("%20s:\t%8d bytes\t[%d users/%d bytes each + %d bytes for secret tokens]\n",
-	 "User package", j, i, sizeof(struct unixuser), Sum_userstp);
+	("%20s:\t%8ld bytes\t[%ld users/%lu bytes each + %d bytes for secret tokens]\n",
+	 "User package", j, i, (unsigned long)sizeof(struct unixuser), Sum_userstp);
 
     i = print_servers(0);
     j = (i * sizeof(struct server));
     T += j;
-    printf("%20s:\t%8d bytes\t[%d servers/%d bytes each]\n", "Server package",
-	   j, i, sizeof(struct server));
+    printf("%20s:\t%8ld bytes\t[%ld servers/%lu bytes each]\n", "Server package",
+	   j, i, (unsigned long)sizeof(struct server));
     j = (Nconns * sizeof(struct afs_conn));
     T += j;
-    printf("%20s:\t%8d bytes\t[%d conns/%d bytes each]\n",
-	   "Connection package", j, Nconns, sizeof(struct afs_conn));
+    printf("%20s:\t%8ld bytes\t[%ld conns/%lu bytes each]\n",
+	   "Connection package", j, Nconns, (unsigned long)sizeof(struct afs_conn));
 
     i = (AFS_NCBRS * sizeof(struct afs_cbr)) * (j =
 						afs_cmperfstats.
 						CallBackAlloced);
     T += i;
     if (i)
-	printf("%20s:\t%8d bytes\t[%d cbs/%d bytes each]\n",
+	printf("%20s:\t%8ld bytes\t[%ld cbs/%lu bytes each]\n",
 	       "Server CB free pool", i, (j * AFS_NCBRS),
-	       sizeof(struct afs_cbr));
+	       (unsigned long)sizeof(struct afs_cbr));
 
     Sum_volnames = 0;
     i = print_volumes(0);
     j = (MAXVOLS * sizeof(struct volume)) + Sum_volnames;
     T += j;
     printf
-	("%20s:\t%8d bytes\t[%d volumes/%d bytes each + %d bytes for volnames - %d active entries]\n",
-	 "Volume package", j, MAXVOLS, sizeof(struct volume), Sum_volnames,
+	("%20s:\t%8ld bytes\t[%ld volumes/%lu bytes each + %d bytes for volnames - %ld active entries]\n",
+	 "Volume package", j, MAXVOLS, (unsigned long)sizeof(struct volume), Sum_volnames,
 	 i);
 
     Sum_vcachemvids = Sum_vcachelinkData = Sum_vcacheacc = Sum_vcachelocks =
@@ -1917,14 +1917,14 @@ print_allocs(int pnt)
     i = (tvs + Sum_vcachemvids + Sum_vcachelinkData +
 	 Sum_vcachelocks) * AFS_SMALLOCSIZ;
     printf
-	("%20s:\t%8d bytes\t[%d act gnodes, %d mount pnts, %d symbolic links, %d unix locks]\n",
+	("%20s:\t%8ld bytes\t[%ld act gnodes, %d mount pnts, %d symbolic links, %d unix locks]\n",
 	 "[VC use of sml fp]*", i, tvs, Sum_vcachemvids, Sum_vcachelinkData,
 	 Sum_vcachelocks);
 #else
     i = (Sum_vcachemvids + Sum_vcachelinkData +
 	 Sum_vcachelocks) * AFS_SMALLOCSIZ;
     printf
-	("%20s:\t8%d bytes\t[%d mount pnts, %d symbolic links, %d unix locks]\n",
+	("%20s:\t8%ld bytes\t[%d mount pnts, %d symbolic links, %d unix locks]\n",
 	 "[VC use of sml fp]*", i, Sum_vcachemvids, Sum_vcachelinkData,
 	 Sum_vcachelocks);
 #endif
@@ -1933,8 +1933,8 @@ print_allocs(int pnt)
 #ifdef	AFS32
     i = (NAXSs * sizeof(struct axscache));
     T += i;
-    printf("%20s:\t%8d bytes\t[%d access used by vcaches/%d bytes each]\n",
-	   "ACL List free pool", i, Sum_vcacheacc, sizeof(struct axscache));
+    printf("%20s:\t%8ld bytes\t[%d access used by vcaches/%lu bytes each]\n",
+	   "ACL List free pool", i, Sum_vcacheacc, (unsigned long)sizeof(struct axscache));
 #else
     {
 	struct axscache *xp, xpe, *nxp = &xpe;
@@ -1944,8 +1944,8 @@ print_allocs(int pnt)
 	j = i * (NAXSs * sizeof(struct axscache));
 	T += j;
 	printf
-	    ("%20s:\t%8d bytes\t[%d access used by vcaches/%d bytes each - %d blocks of %d]\n",
-	     "ACL List free pool", j, Sum_vcacheacc, sizeof(struct axscache),
+	    ("%20s:\t%8ld bytes\t[%d access used by vcaches/%d bytes each - %d blocks of %lu]\n",
+	     "ACL List free pool", j, Sum_vcacheacc, (unsigned long)sizeof(struct axscache),
 	     i, (NAXSs * sizeof(struct axscache)));
     }
 #endif
@@ -1955,15 +1955,15 @@ print_allocs(int pnt)
     j = (i * sizeof(struct dcache));
     T += j;
     printf
-	("%20s:\t%8d bytes\t[%d dcaches/%d bytes each - ONLY USED COUNTED]\n",
-	 "Dcache package", j, i, sizeof(struct dcache));
+	("%20s:\t%8ld bytes\t[%d dcaches/%lu bytes each - ONLY USED COUNTED]\n",
+	 "Dcache package", j, i, (unsigned long)sizeof(struct dcache));
 #else
     findsym("afs_dcentries", &symoff);
     kread(kmem, symoff, (char *)&i, sizeof i);
     j = (i * sizeof(struct dcache));
     T += j;
-    printf("%20s:\t%8d bytes\t[%d dcaches/%d bytes each]\n", "Dcache package",
-	   j, i, sizeof(struct dcache));
+    printf("%20s:\t%8ld bytes\t[%d dcaches/%lu bytes each]\n", "Dcache package",
+	   j, i, (unsigned long)sizeof(struct dcache));
 #endif
     findsym("afs_cacheFiles", &symoff);
     kread(kmem, symoff, (char *)&i, sizeof i);
@@ -1972,20 +1972,20 @@ print_allocs(int pnt)
 
     k = (j * sizeof(struct vcache));
     printf
-	("%20s:\t%8d bytes\t[%d free vcaches/%d bytes each - %d active entries]\n",
-	 "Vcache free list", k, j, sizeof(struct vcache), tvs);
-    printf("%20s:\t%8d bytes\t[%d entries/%d bytes each]\n",
+	("%20s:\t%8ld bytes\t[%d free vcaches/%lu bytes each - %d active entries]\n",
+	 "Vcache free list", k, j, (unsigned long)sizeof(struct vcache), tvs);
+    printf("%20s:\t%8ld bytes\t[%d entries/%d bytes each]\n",
 	   "Dcache Index Table", i * 4, i, 4);
 #ifndef	AFS32
-    printf("%20s:\t%8d bytes\t[%d entries/%d bytes each]\n",
+    printf("%20s:\t%8ld bytes\t[%d entries/%d bytes each]\n",
 	   "Dcache Index Times", i * 8, i, 8);
 #else
-    printf("%20s:\t%8d bytes\t[%d entries/%d bytes each]\n",
+    printf("%20s:\t%8ld bytes\t[%d entries/%d bytes each]\n",
 	   "Dcache Index Times", i * 4, i, 4);
 #endif
-    printf("%20s:\t%8d bytes\t[%d entries/%d bytes each]\n",
+    printf("%20s:\t%8ld bytes\t[%d entries/%d bytes each]\n",
 	   "Dcache Index Flags", i, i, 1);
-/*    printf("%20s:\t%8d bytes\t[%d entries/%d bytes each]\n", "Dcache free list", i, i, 1);*/
+/*    printf("%20s:\t%8ld bytes\t[%d entries/%d bytes each]\n", "Dcache free list", i, i, 1);*/
 #ifndef	AFS32
     T += k + (i * 4) + (i * 8) + i;
 #else
@@ -1994,12 +1994,12 @@ print_allocs(int pnt)
 
     i = (j = afs_cmperfstats.bufAlloced) * sizeof(struct buffer);
     T += i;
-    printf("%20s:\t%8d bytes\t[%d entries/%d bytes each]\n", "Buffer package",
-	   i, j, sizeof(struct buffer));
+    printf("%20s:\t%8ld bytes\t[%d entries/%lu bytes each]\n", "Buffer package",
+	   i, j, (unsigned long)sizeof(struct buffer));
 #define	AFS_BUFFER_PAGESIZE 2048
     i = j * AFS_BUFFER_PAGESIZE;
     T += i;
-    printf("%20s:\t%8d bytes\t[%d entries/%d bytes each]\n",
+    printf("%20s:\t%8ld bytes\t[%d entries/%d bytes each]\n",
 	   "Xtra Buffer pkg area", i, j, AFS_BUFFER_PAGESIZE);
 
     Sum_exps = 0;
@@ -2008,29 +2008,29 @@ print_allocs(int pnt)
     k = Sum_exps * sizeof(struct afs_exporter);
     T += k;
     if (k)
-	printf("%20s:\t%8d bytes\t[%d entries/%d bytes each]\n",
+	printf("%20s:\t%8ld bytes\t[%d entries/%lu bytes each]\n",
 	       "Xlator Exporter list", k, Sum_exps,
-	       sizeof(struct afs_exporter));
+	       (unsigned long)sizeof(struct afs_exporter));
 
     j = (i * sizeof(struct nfsclientpag)) + Sum_nfssysnames;
     T += j;
     if (j)
 	printf
-	    ("%20s:\t%8d bytes\t[%d entries/%d bytes each + %d for remote sysnames]\n",
-	     "Xlator Nfs clnt pkg", j, i, sizeof(struct nfsclientpag),
+	    ("%20s:\t%8ld bytes\t[%d entries/%lu bytes each + %d for remote sysnames]\n",
+	     "Xlator Nfs clnt pkg", j, i, (unsigned long)sizeof(struct nfsclientpag),
 	     Sum_nfssysnames);
 
     i = (j = afs_cmperfstats.LargeBlocksAlloced) * AFS_LRALLOCSIZ;
     T += i;
     printf
-	("%20s:\t%8d bytes\t[%d entries/%d bytes each - %d active entries]\n",
+	("%20s:\t%8ld bytes\t[%d entries/%d bytes each - %d active entries]\n",
 	 "Large Free Pool", i, j, AFS_LRALLOCSIZ,
 	 afs_cmperfstats.LargeBlocksActive);
 
     i = (j = afs_cmperfstats.SmallBlocksAlloced) * AFS_SMALLOCSIZ;
     T += i;
     printf
-	("%20s:\t%8d bytes\t[%d entries/%d bytes each - %d active entries]\n",
+	("%20s:\t%8ld bytes\t[%d entries/%d bytes each - %d active entries]\n",
 	 "Small Free Pool", i, j, AFS_SMALLOCSIZ,
 	 afs_cmperfstats.SmallBlocksActive);
 
@@ -2039,8 +2039,8 @@ print_allocs(int pnt)
     kread(kmem, symoff, (char *)&j, sizeof j);
     i = (j * sizeof(event_t));
     T += i;
-    printf("%20s:\t%8d bytes\t[%d entries/%d bytes each]\n",
-	   "afs glock Event Pool", i, j, sizeof(event_t));
+    printf("%20s:\t%8ld bytes\t[%d entries/%lu bytes each]\n",
+	   "afs glock Event Pool", i, j, (unsigned long)sizeof(event_t));
 /*    printf("XXXXXXX Count event queue allocs!!!! XXXXXX\n");*/
 
 #endif
@@ -2052,13 +2052,13 @@ print_allocs(int pnt)
     k = (i + j) * sizeof(struct rxevent);
     if (k) {
 	T += k;
-	printf("%20s:\t%8d bytes\t[%d free, %d posted/%d bytes each]\n",
-	       "Rx event pkg", k, j, i, sizeof(struct rxevent));
+	printf("%20s:\t%8ld bytes\t[%d free, %d posted/%lu bytes each]\n",
+	       "Rx event pkg", k, j, i, (unsigned long)sizeof(struct rxevent));
     } else {
 	T += (k = 20 * sizeof(struct rxevent));
 	printf
-	    ("%20s:\t%8d bytes\t[%d entries/%d bytes each - THIS IS MIN ALLOC/NOT ACTUAL]\n",
-	     "Rx event pkg", k, 20, sizeof(struct rxevent));
+	    ("%20s:\t%8ld bytes\t[%d entries/%lu bytes each - THIS IS MIN ALLOC/NOT ACTUAL]\n",
+	     "Rx event pkg", k, 20, (unsigned long)sizeof(struct rxevent));
     }
 
     findsym("rx_nFreePackets", &symoff);
@@ -2072,30 +2072,30 @@ print_allocs(int pnt)
     kread(kmem, symoff, (char *)&j, sizeof j);
     k = (j + i + 2) * sizeof(struct rx_packet);
     T += k;
-    printf("%20s:\t%8d bytes\t[%d free packets/%d bytes each]\n",
-	   "Rx packet freelist", k, count, sizeof(struct rx_packet));
+    printf("%20s:\t%8ld bytes\t[%d free packets/%lu bytes each]\n",
+	   "Rx packet freelist", k, count, (unsigned long)sizeof(struct rx_packet));
 #define rx_hashTableSize 256	/* XXX */
     i = (rx_hashTableSize * sizeof(struct rx_connection *));
     j = (rx_hashTableSize * sizeof(struct rx_peer *));
     k = i + j;
     T += k;
-    printf("%20s:\t%8d bytes\t[%d entries/%d bytes each]\n",
+    printf("%20s:\t%8ld bytes\t[%d entries/%lu bytes each]\n",
 	   "Rx conn/peer tables", k, rx_hashTableSize,
-	   sizeof(struct rx_connection *));
+	   (unsigned long)sizeof(struct rx_connection *));
 
     findsym("rxi_Alloccnt", &symoff);
     kread(kmem, symoff, (char *)&j, sizeof j);
     findsym("rxi_Allocsize", &symoff);
     kread(kmem, symoff, (char *)&i, sizeof i);
     T += i;
-    printf("%20s:\t%8d bytes\t[%d outstanding allocs]\n", "RX misc allocs", i,
+    printf("%20s:\t%8ld bytes\t[%d outstanding allocs]\n", "RX misc allocs", i,
 	   j);
 
 
     j = afs_cmperfstats.OutStandingMemUsage;
-    printf("\n\n%20s:\t%8d bytes\n", "Mem used by afs", j);
-    printf("%20s:\t%8d bytes\n", "Accounted-for mem", T);
-    printf("%20s:\t%8d bytes\n", "Non acc'd-for mem", j - T);
+    printf("\n\n%20s:\t%8ld bytes\n", "Mem used by afs", j);
+    printf("%20s:\t%8ld bytes\n", "Accounted-for mem", T);
+    printf("%20s:\t%8ld bytes\n", "Non acc'd-for mem", j - T);
 
     printf
 	("\n\nNOTE:\n\tAll [...]* entries above aren't counted towards the total mem since they're redundant\n");

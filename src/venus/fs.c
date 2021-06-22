@@ -3206,6 +3206,7 @@ SetPrefCmd(struct cmd_syndesc *as, void *arock)
 		if (code)
 		    error = code;
 	    }
+	    fclose(infd);
 	}
     }
 
