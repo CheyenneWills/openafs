@@ -1252,7 +1252,7 @@ CheckPrDatabase(struct misc_data *misc)	/* info & statistics */
     afs_int32 code;
     afs_int32 eof;
     int n;
-    char *map;			/* map of each entry in db */
+    char *map = NULL;			/* map of each entry in db */
 
     eof = ntohl(cheader.eofPtr);
     eof -= sizeof(cheader);
@@ -1262,8 +1262,6 @@ CheckPrDatabase(struct misc_data *misc)	/* info & statistics */
 	afs_com_err(whoami, code,
 		    "eof ptr no good: eof=%d, sizeof(prentry)=%" AFS_SIZET_FMT,
 		eof, sizeof(struct prentry));
-      abort:
-	return code;
     }
     if (misc->verbose)
 	printf("Database has %d entries\n", n);
@@ -1382,8 +1380,9 @@ CheckPrDatabase(struct misc_data *misc)	/* info & statistics */
 	       misc->nforeigns, misc->ngroups);
     }
 
-    free(map);
-    return code;
+    abort:
+	free(map);
+	return code;
 }
 
 #include "AFS_component_version_number.c"

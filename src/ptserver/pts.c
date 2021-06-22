@@ -103,6 +103,7 @@ pts_Source(struct cmd_syndesc *as, void *arock)
     }
     sp = malloc(sizeof *sp);
     if (!sp) {
+	fclose(fd);
 	return errno ? errno : ENOMEM;
     } else {
 	sp->s_next = shead;

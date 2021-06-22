@@ -154,7 +154,7 @@ main(int argc, char **argv)
     afs_int32 code;
     char op[8];
     char name[PR_MAXNAMELEN];
-    afs_int32 id, oid = ANONYMOUSID, gid;
+    afs_int32 id = ANONYMOUSID, oid = ANONYMOUSID, gid = ANONYMOUSID;
     afs_int32 pos;
     unsigned int i;
     int n;
@@ -258,7 +258,7 @@ main(int argc, char **argv)
 	    if (CodeOk(code))
 		afs_com_err(whoami, code, "on %s %s %d %d", op, name, id, oid);
 	} else if (!strcmp(op, "sf")) {
-	    afs_int32 mask, access, gq, uq;
+	    afs_int32 mask = 0, access = 0, gq = 0, uq = 0;
 	    if (GetInt32(&id) || GetXInt32(&mask) || GetXInt32(&access)
 		|| GetInt32(&gq) || GetInt32(&uq))
 		code = PRBADARG;
@@ -271,7 +271,7 @@ main(int argc, char **argv)
 			access, gq, uq);
 	} else if (!strcmp(op, "ce")) {
 	    char newname[PR_MAXNAMELEN];
-	    afs_int32 newid;
+	    afs_int32 newid = ANONYMOUSID;
 	    if (GetInt32(&id) || GetString(newname, sizeof(newname))
 		|| GetInt32(&oid) || GetInt32(&newid))
 		code = PRBADARG;

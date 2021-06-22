@@ -188,7 +188,7 @@ pr_Initialize2(IN afs_int32 secLevel, IN const char *confDir, IN char *cell,
     static struct afsconf_dir *tdir = NULL;	/* only do this once */
     static char tconfDir[100] = "";
     static char tcell[64] = "";
-    afs_int32 scIndex;
+    afs_int32 scIndex = RX_SECIDX_NULL;
     afs_int32 secFlags;
     static struct afsconf_cell info;
     afs_int32 i;
@@ -620,6 +620,8 @@ pr_SIdToName(afs_int32 id, prname name)
 
     lids.idlist_len = 1;
     lids.idlist_val = malloc(sizeof(afs_int32));
+    if (lids.idlist_val == NULL)
+	return ENOMEM;
     *lids.idlist_val = id;
     lnames.namelist_len = 0;
     lnames.namelist_val = 0;
