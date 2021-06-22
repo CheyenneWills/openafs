@@ -279,6 +279,8 @@ EvalMountPoint(struct vcache *avc, struct vcache *advc,
 
     if (avc->mvid.target_root == NULL)
 	avc->mvid.target_root = osi_AllocSmallSpace(sizeof(struct VenusFid));
+    osi_Assert(avc->mvid.target_root != NULL);
+
     avc->mvid.target_root->Cell = (*avolpp)->cell;
     avc->mvid.target_root->Fid.Volume = (*avolpp)->volume;
     avc->mvid.target_root->Fid.Vnode = avnoid;
@@ -532,6 +534,7 @@ Check_AtSys(struct vcache *avc, const char *aname,
     if (AFS_EQ_ATSYS(aname)) {
 	state->offset = 0;
 	state->name = osi_AllocLargeSpace(MAXSYSNAME);
+	osi_Assert(state->name != NULL);
 	state->allocked = 1;
 	state->index =
 	    afs_getsysname(areq, avc, state->name, &num, sysnamelist);

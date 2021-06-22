@@ -136,6 +136,8 @@ afs_fid(OSI_VC_DECL(avc), struct fid **fidpp)
 #else
     /* malloc a fid pointer ourselves. */
     *fidpp = (struct fid *)AFS_KALLOC(SizeOfSmallFid + 2);
+    if (*fidpp == NULL)
+	return ENOMEM;
     (*fidpp)->fid_len = SizeOfSmallFid;
     if (afs_NFSRootOnly) {
 	if (rootvp) {

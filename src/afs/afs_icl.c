@@ -180,6 +180,7 @@ Afscall_icl(long opcode, long p1, long p2, long p3, long p4, long *retval)
 	    return ENOENT;
 #define	BUFFERSIZE	AFS_LRALLOCSIZ
 	lp = osi_AllocLargeSpace(AFS_LRALLOCSIZ);
+	osi_Assert(lp != NULL);
 	elts = BUFFERSIZE / sizeof(afs_int32);
 	if (p3 < elts)
 	    elts = p3;

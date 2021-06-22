@@ -48,8 +48,7 @@ afs_read(struct vcache *avc, struct uio *auio, afs_ucred_t *acred,
     afs_size_t totalLength;
     afs_size_t transferLength;
     afs_size_t filePos;
-    afs_size_t offset, tlen;
-    afs_size_t len = 0;
+    afs_size_t offset = 0, tlen = 0, len = 0;
     afs_int32 trimlen;
     struct dcache *tdc = 0;
     afs_int32 error, trybusy = 1;

@@ -93,6 +93,7 @@ afsio_partialcopy(struct uio *auio, size_t len) {
 
     /* Allocate a block that can contain both the UIO and the iovec */
     space = osi_AllocSmallSpace(space_len);
+    osi_Assert(space != NULL);
     memset(space, 0, space_len);
 
     newuio = (struct uio *) space;

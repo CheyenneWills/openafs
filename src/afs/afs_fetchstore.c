@@ -188,6 +188,7 @@ rxfs_storePadd(void *rock, afs_uint32 size)
 
     if (!v->tbuffer)
 	v->tbuffer = osi_AllocLargeSpace(AFS_LRALLOCSIZ);
+    osi_Assert(v->tbuffer != NULL);
     memset(v->tbuffer, 0, AFS_LRALLOCSIZ);
 
     while (size) {

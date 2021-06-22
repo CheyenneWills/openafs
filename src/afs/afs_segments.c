@@ -210,6 +210,7 @@ afs_StoreAllSegments(struct vcache *avc, struct vrequest *areq,
     if (AFS_IS_DISCONNECTED && !AFS_IN_SYNC) {
 	/* This will probably make someone sad ... */
 	/*printf("Net down in afs_StoreSegments\n");*/
+	osi_FreeLargeSpace(dcList);
 	return ENETDOWN;
     }
 
