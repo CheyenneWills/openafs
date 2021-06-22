@@ -609,17 +609,24 @@ rx_InitHost(u_int host, u_int port)
 	if (getsockname((intptr_t)rx_socket, (struct sockaddr *)&addr, &addrlen)) {
 	    rxi_Finalize_locked();
 	    osi_Free(htable, rx_hashTableSize * sizeof(struct rx_connection *));
+	    osi_Free(ptable, rx_hashTableSize * sizeof(struct rx_peer *));
 	    goto error;
 	}
 	rx_port = addr.sin_port;
 #endif
     }
     rx_stats.minRtt.sec = 9999999;
-    if (RAND_bytes(&rx_epoch, sizeof(rx_epoch)) != 1)
+    if (RAND_bytes(&rx_epoch, sizeof(rx_epoch)) != 1) {
+	osi_Free(htable, rx_hashTableSize * sizeof(struct rx_connection *));
+	osi_Free(ptable, rx_hashTableSize * sizeof(struct rx_peer *));
 	goto error;
+    }
     rx_epoch  = (rx_epoch & ~0x40000000) | 0x80000000;
-    if (RAND_bytes(&rx_nextCid, sizeof(rx_nextCid)) != 1)
+    if (RAND_bytes(&rx_nextCid, sizeof(rx_nextCid)) != 1) {
+	osi_Free(htable, rx_hashTableSize * sizeof(struct rx_connection *));
+	osi_Free(ptable, rx_hashTableSize * sizeof(struct rx_peer *));
 	goto error;
+    }
     rx_nextCid &= RX_CIDMASK;
     MUTEX_ENTER(&rx_quota_mutex);
     rxi_dataQuota += rx_extraQuota; /* + extra pkts caller asked to rsrv */
@@ -8494,8 +8501,7 @@ void *
 rx_CopyProcessRPCStats(afs_uint64 op)
 {
     rx_interface_stat_p rpc_stat;
-    rx_function_entry_v1_p rpcop_stat =
-	rxi_Alloc(sizeof(rx_function_entry_v1_t));
+    rx_function_entry_v1_p rpcop_stat;
     int currentFunc = (op & MAX_AFS_UINT32);
     afs_int32 rxInterface = (op >> 32);
 
@@ -8505,6 +8511,7 @@ rx_CopyProcessRPCStats(afs_uint64 op)
     if (rxInterface == -1)
         return NULL;
 
+    rpcop_stat = rxi_Alloc(sizeof(rx_function_entry_v1_t));
     if (rpcop_stat == NULL)
         return NULL;
 
@@ -8526,8 +8533,7 @@ void *
 rx_CopyPeerRPCStats(afs_uint64 op, afs_uint32 peerHost, afs_uint16 peerPort)
 {
     rx_interface_stat_p rpc_stat;
-    rx_function_entry_v1_p rpcop_stat =
-	rxi_Alloc(sizeof(rx_function_entry_v1_t));
+    rx_function_entry_v1_p rpcop_stat;
     int currentFunc = (op & MAX_AFS_UINT32);
     afs_int32 rxInterface = (op >> 32);
     struct rx_peer *peer;
@@ -8538,12 +8544,13 @@ rx_CopyPeerRPCStats(afs_uint64 op, afs_uint32 peerHost, afs_uint16 peerPort)
     if (rxInterface == -1)
         return NULL;
 
-    if (rpcop_stat == NULL)
-        return NULL;
-
     peer = rxi_FindPeer(peerHost, peerPort, 0);
     if (!peer)
         return NULL;
+
+    rpcop_stat = rxi_Alloc(sizeof(rx_function_entry_v1_t));
+    if (rpcop_stat == NULL)
+	return NULL;
 
     MUTEX_ENTER(&rx_rpc_stats);
     rpc_stat = rxi_FindRpcStat(&peer->rpcStats, rxInterface, 0, 1,
