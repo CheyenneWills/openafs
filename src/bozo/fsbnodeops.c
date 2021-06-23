@@ -20,6 +20,7 @@
 #include <opr/queue.h>
 
 #include "bnode.h"
+#include "bosint.h"
 #include "bnode_internal.h"
 #include "bosprototypes.h"
 
@@ -419,24 +420,24 @@ fs_create(char *ainstance, char *afilecmd, char *avolcmd, char *asalcmd,
     te = NULL;
 
     /* construct local paths from canonical (wire-format) paths */
-    if (ConstructLocalBinPath(afilecmd, &fileCmdpath)) {
+    if (ConstructLocalBinPathMax(afilecmd, &fileCmdpath, BOZO_BSSIZE)) {
 	bozo_Log("BNODE: command path invalid '%s'\n", afilecmd);
 	bailout = 1;
 	goto done;
     }
-    if (ConstructLocalBinPath(avolcmd, &volCmdpath)) {
+    if (ConstructLocalBinPathMax(avolcmd, &volCmdpath, BOZO_BSSIZE)) {
 	bozo_Log("BNODE: command path invalid '%s'\n", avolcmd);
 	bailout = 1;
 	goto done;
     }
-    if (ConstructLocalBinPath(asalcmd, &salCmdpath)) {
+    if (ConstructLocalBinPathMax(asalcmd, &salCmdpath, BOZO_BSSIZE)) {
 	bozo_Log("BNODE: command path invalid '%s'\n", asalcmd);
 	bailout = 1;
 	goto done;
     }
 
     if (ascancmd && strlen(ascancmd)) {
-	if (ConstructLocalBinPath(ascancmd, &scanCmdpath)) {
+	if (ConstructLocalBinPathMax(ascancmd, &scanCmdpath, BOZO_BSSIZE)) {
 	    bozo_Log("BNODE: command path invalid '%s'\n", ascancmd);
 	    bailout = 1;
 	    goto done;
@@ -554,29 +555,29 @@ dafs_create(char *ainstance, char *afilecmd, char *avolcmd,
     te = NULL;
 
     /* construct local paths from canonical (wire-format) paths */
-    if (ConstructLocalBinPath(afilecmd, &fileCmdpath)) {
+    if (ConstructLocalBinPathMax(afilecmd, &fileCmdpath, BOZO_BSSIZE)) {
 	bozo_Log("BNODE: command path invalid '%s'\n", afilecmd);
 	bailout = 1;
 	goto done;
     }
-    if (ConstructLocalBinPath(avolcmd, &volCmdpath)) {
+    if (ConstructLocalBinPathMax(avolcmd, &volCmdpath, BOZO_BSSIZE)) {
 	bozo_Log("BNODE: command path invalid '%s'\n", avolcmd);
 	bailout = 1;
 	goto done;
     }
-    if (ConstructLocalBinPath(asalsrvcmd, &salsrvCmdpath)) {
+    if (ConstructLocalBinPathMax(asalsrvcmd, &salsrvCmdpath, BOZO_BSSIZE)) {
 	bozo_Log("BNODE: command path invalid '%s'\n", asalsrvcmd);
 	bailout = 1;
 	goto done;
     }
-    if (ConstructLocalBinPath(asalcmd, &salCmdpath)) {
+    if (ConstructLocalBinPathMax(asalcmd, &salCmdpath, BOZO_BSSIZE)) {
 	bozo_Log("BNODE: command path invalid '%s'\n", asalcmd);
 	bailout = 1;
 	goto done;
     }
 
     if (ascancmd && strlen(ascancmd)) {
-	if (ConstructLocalBinPath(ascancmd, &scanCmdpath)) {
+	if (ConstructLocalBinPathMax(ascancmd, &scanCmdpath, BOZO_BSSIZE)) {
 	    bozo_Log("BNODE: command path invalid '%s'\n", ascancmd);
 	    bailout = 1;
 	    goto done;

@@ -701,6 +701,26 @@ ConstructLocalBinPath(const char *cpath, char **fullPathBufp)
 			      fullPathBufp);
 }
 
+/*
+ * ConstructLocalBinPathMax() -- A convenience wrapper for ConstructLocalPath()
+ *     that specifies the canonical AFS server binary directory as the relative
+ *     directory and a maximum allowed string length.
+ */
+int
+ConstructLocalBinPathMax(const char *cpath, char **fullPathBufp, int maxlen)
+{
+    int code;
+
+    code = ConstructLocalPath(cpath, AFSDIR_SERVER_BIN_DIRPATH, fullPathBufp);
+    if (code == 0) {
+        if (strlen(*fullPathBufp) > maxlen) {
+            free(*fullPathBufp);
+            *fullPathBufp = NULL;
+            code = E2BIG;
+        }
+    }
+    return code;
+}
 
 /*
  * ConstructLocalLogPath() -- A convenience wrapper for ConstructLocalPath()

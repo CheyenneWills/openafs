@@ -21,6 +21,7 @@
 #include <opr/queue.h>
 
 #include "bnode.h"
+#include "bosint.h"
 #include "bnode_internal.h"
 #include "bosprototypes.h"
 
@@ -157,8 +158,13 @@ cron_create(char *ainstance, char *acommand, char *awhen,
     afs_int32 code;
     char *cmdpath;
 
+    if (strlen(awhen) > BOZO_BSSIZE) {
+	bozo_Log("BNODE: cron 'when' parameter exceeds length limit: %s\n", awhen);
+	return NULL;
+    }
+
     /* construct local path from canonical (wire-format) path */
-    if (ConstructLocalBinPath(acommand, &cmdpath)) {
+    if (ConstructLocalBinPathMax(acommand, &cmdpath, BOZO_BSSIZE)) {
 	bozo_Log("BNODE: command path invalid '%s'\n", acommand);
 	return NULL;
     }

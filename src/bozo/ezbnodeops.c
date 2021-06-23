@@ -20,6 +20,7 @@
 #include <opr/queue.h>
 
 #include "bnode.h"
+#include "bosint.h"
 #include "bnode_internal.h"
 #include "bosprototypes.h"
 
@@ -109,7 +110,7 @@ ez_create(char *ainstance, char *acommand, char *unused1, char *unused2,
     struct ezbnode *te;
     char *cmdpath;
 
-    if (ConstructLocalBinPath(acommand, &cmdpath)) {
+    if (ConstructLocalBinPathMax(acommand, &cmdpath, BOZO_BSSIZE)) {
 	bozo_Log("BNODE: command path invalid '%s'\n", acommand);
 	return NULL;
     }

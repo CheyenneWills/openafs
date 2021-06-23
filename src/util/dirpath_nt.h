@@ -84,6 +84,8 @@ extern int
 extern int
   ConstructLocalBinPath(const char *cpath, char **fullPathBufp);
 extern int
+  ConstructLocalBinPathMax(const char *cpath, char **fullPathBufp, int maxlen);
+extern int
   ConstructLocalLogPath(const char *cpath, char **fullPathBufp);
 
 

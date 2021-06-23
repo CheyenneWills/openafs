@@ -23,6 +23,7 @@
 #include <opr/queue.h>
 
 #include "bnode.h"
+#include "bosint.h"
 #include "bnode_internal.h"
 #include "bosprototypes.h"
 
@@ -386,7 +387,7 @@ bnode_Create(char *atype, char *ainstance, struct bnode ** abp, char *ap1,
 
     if (notifier && strcmp(notifier, NONOTIFIER)) {
 	/* construct local path from canonical (wire-format) path */
-	if (ConstructLocalBinPath(notifier, &notifierpath)) {
+	if (ConstructLocalBinPathMax(notifier, &notifierpath, BOZO_BSSIZE)) {
 	    bozo_Log("BNODE-Create: Notifier program path invalid '%s'\n",
 		     notifier);
 	    return BZNOCREATE;
@@ -506,6 +507,12 @@ int
 bnode_InitBnode(struct bnode *abnode, struct bnode_ops *abnodeops,
 		char *aname)
 {
+    /* The instance name must fit on the wire. */
+    if (strlen(aname) > BOZO_BSSIZE) {
+	bozo_Log("Bnode instance name exceeds length limit: %s\n", aname);
+	return BZNOCREATE;
+    }
+
     /* format the bnode properly */
     memset(abnode, 0, sizeof(struct bnode));
     opr_queue_Init(&abnode->q);
