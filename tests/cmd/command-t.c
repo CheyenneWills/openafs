@@ -514,8 +514,7 @@ main(int argc, char **argv)
     memset(large, 'x', LARGE_TOKEN_LENGTH - 1);
     large[LARGE_TOKEN_LENGTH - 1] = '\0';
     code = cmd_ParseLine(large, tv, &tc, 5);
-    is_int(CMD_TOOBIG, code,
-	   "cmd_ParseLine fails with CMD_TOOBIG when token size is exceeded");
+    is_int(0, code, "cmd_ParseLine succeeds when parsing large tokens");
     free(large);
     cmd_FreeArgv(tv);
 

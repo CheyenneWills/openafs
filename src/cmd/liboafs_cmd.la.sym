@@ -31,3 +31,6 @@ cmd_SetAfterProc
 cmd_SetBeforeProc
 cmd_SetCommandName
 initialize_CMD_error_table
+cmd_Tokenize
+cmd_Split
+cmd_FreeSplit
