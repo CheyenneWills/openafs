@@ -7,7 +7,7 @@
  * directory or online at http://www.openafs.org/dl/license10.html
  */
 
-const BOZO_BSSIZE = 256;
+const BOZO_BSSIZE = 4194304;
 %#undef min
 struct bozo_netKTime {
     int mask;
