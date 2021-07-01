@@ -620,6 +620,8 @@ cmd_AddParmAlias(struct cmd_syndesc *as, int pos, char *alias)
 	return CMD_EXCESSPARMS;
 
     item = calloc(1, sizeof(struct cmd_item));
+    if (item == NULL)
+	return ENOMEM;
     item->data = strdup(alias);
     item->next = as->parms[pos].aliases;
     as->parms[pos].aliases = item;
@@ -1444,8 +1446,14 @@ cmd_OptionAsList(struct cmd_syndesc *syn, int pos, struct cmd_item **value)
     start = str;
     while ((end = strchr(start, ' '))) {
 	item = calloc(1, sizeof(struct cmd_item));
+	if (item == NULL)
+	    return ENOMEM;
 	len = end - start + 1;
 	item->data = malloc(len);
+	if (item->data == NULL) {
+	    free(item);
+	    return ENOMEM;
+	}
 	strlcpy(item->data, start, len);
 	*last = item;
 	last = &item->next;
@@ -1455,8 +1463,14 @@ cmd_OptionAsList(struct cmd_syndesc *syn, int pos, struct cmd_item **value)
     /* Catch the final element */
     if (*start != '\0') {
 	item = calloc(1, sizeof(struct cmd_item));
+	if (item == NULL)
+	    return ENOMEM;
 	len = strlen(start) + 1;
 	item->data = malloc(len);
+	if (item->data == NULL) {
+	    free(item);
+	    return ENOMEM;
+	}
 	strlcpy(item->data, start, len);
 	*last = item;
     }
