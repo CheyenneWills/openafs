@@ -481,9 +481,11 @@ readfile(const char *filename, afs_uint32 ** readwrite, afs_uint32 * size)
     char *buf;
 
     *readwrite = malloc(sizeof(afs_uint32) * len);
-    buf = malloc(RXPERF_BUFSIZE);
-
     if (*readwrite == NULL)
+	err(1, "malloc");
+
+    buf = malloc(RXPERF_BUFSIZE);
+    if (buf == NULL)
 	err(1, "malloc");
 
     f = fopen(filename, "r");
