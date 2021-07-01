@@ -308,11 +308,13 @@ parseServerList(struct cmd_item *itemPtr)
     code =
 	ubik_ParseServerList(nservers + 2, serverArgs, &globalConfPtr->myHost,
 			     globalConfPtr->serverList);
-    if (code)
-	ERROR(code);
 
     /* free space for the server args */
     free(serverArgs);
+
+    if (code)
+	ERROR(code);
+
 
   error_exit:
     return (code);
@@ -341,6 +343,7 @@ truncateDatabase(void)
 	code = errno;
     } else {
 	if (ftruncate(fd, 0) != 0) {
+	    close(fd);
 	    code = errno;
 	} else
 	    close(fd);
