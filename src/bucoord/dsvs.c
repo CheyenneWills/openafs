@@ -191,6 +191,8 @@ bc_CreateVolumeSet(struct bc_config *aconfig, char *avolName,
     /* move to end of the list */
 
     nset = calloc(1, sizeof(struct bc_volumeSet));
+    if (nset == NULL)
+	return ENOMEM;
     nset->flags = aflags;
     nset->name = strdup(avolName);
     if (aflags & VSFLAG_TEMPORARY) {
@@ -303,17 +305,23 @@ bc_AddVolumeItem(struct bc_config *aconfig, char *avolName, char *ahost,
     /* move to end of the list */
     for (tentry = *tlast; tentry; tlast = &tentry->next, tentry = *tlast);
     tentry = calloc(1, sizeof(struct bc_volumeEntry));
+    if (tentry == NULL)
+	return ENOMEM;
     tentry->serverName = strdup(ahost);
     tentry->partname = strdup(apart);
     tentry->name = strdup(avol);
 
     code = bc_ParseHost(tentry->serverName, &tentry->server);
-    if (code)
+    if (code) {
+	free(tentry);
 	return (code);
+    }
 
     code = bc_GetPartitionID(tentry->partname, &tentry->partition);
-    if (code)
+    if (code) {
+	free(tentry);
 	return (code);
+    }
 
     *tlast = tentry;		/* thread on the list */
     return 0;
@@ -365,6 +373,8 @@ bc_CreateDumpSchedule(struct bc_config *aconfig, char *adumpName,
 	return -2;		/* name specification error */
 
     tdump = calloc(1, sizeof(struct bc_dumpSchedule));
+    if (tdump == NULL)
+	return ENOMEM;
 
     /* prepend this node to the dump schedule list */
     tdump->next = aconfig->dsched;
@@ -534,11 +544,11 @@ FindDump(struct bc_config *aconfig, char *nodeString,
     *nodeptr = 0;
 
     /* ensure first char is correct separator */
-    if ((nodeString[0] != '/')
+    if ((nodeString == NULL) || (nodeString[0] != '/')
 	|| (strlen(&nodeString[0]) <= 1)
 	) {
 	printf("FindDump: %s, error in dump name specification\n",
-	       nodeString);
+	       nodeString != NULL ? nodeString : "NULL" );
 	return (-3);
     }
 

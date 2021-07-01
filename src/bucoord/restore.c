@@ -471,14 +471,14 @@ bc_Restorer(afs_int32 aindex)
 			    tle = calloc(1, sizeof(struct bc_tapeList));
 			    if (!tle) {
 				afs_com_err(whoami, BC_NOMEM, NULL);
-				return (BC_NOMEM);
+				ERROR(BC_NOMEM);
 			    }
 
 			    tle->tapeName = strdup(volumeEntries[ve].tape);
 			    if (!tle->tapeName) {
 				free(tle);
 				afs_com_err(whoami, BC_NOMEM, NULL);
-				return (BC_NOMEM);
+				ERROR(BC_NOMEM);
 			    }
 
 			    tle->dumpID = dlevels[lv].DumpId;
@@ -521,14 +521,14 @@ bc_Restorer(afs_int32 aindex)
 			    ti = calloc(1, sizeof(struct bc_tapeItem));
 			    if (!ti) {
 				afs_com_err(whoami, BC_NOMEM, NULL);
-				return (BC_NOMEM);
+				ERROR(BC_NOMEM);
 			    }
 
 			    ti->volumeName = strdup(volumeEntries[ve].name);
 			    if (!ti->volumeName) {
 				free(ti);
 				afs_com_err(whoami, BC_NOMEM, NULL);
-				return (BC_NOMEM);
+				ERROR(BC_NOMEM);
 			    }
 
 			    ti->server = vi->server;
@@ -683,7 +683,7 @@ bc_Restorer(afs_int32 aindex)
 
 	code = ConnectButc(dumpTaskPtr->config, port, &aconn);
 	if (code)
-	    return (code);
+	    ERROR(code);
 
 	if (tcarray[startentry].dumpLevel == 0)
 	    printf("\nFull restore being processed on port %d\n", port);
