@@ -928,7 +928,7 @@ auth_to_cell(krb5_context context, const char *config,
     int status = AKLOG_SUCCESS;
     int isForeign = 0;
     char *username = NULL;	/* To hold client username structure */
-    afs_int32 viceId;		/* AFS uid of user */
+    afs_int32 viceId = ANONYMOUSID;	/* AFS uid of user */
 
     char *local_cell = NULL;
     struct ktc_tokenUnion *rxkadToken = NULL;
