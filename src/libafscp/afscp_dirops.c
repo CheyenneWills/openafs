@@ -49,7 +49,7 @@ afscp_CreateFile(const struct afscp_venusfid *dir, char *name,
     struct AFSFid ff;
     struct afscp_server *server;
     struct rx_connection *c;
-    time_t now;
+    time_t now = 0;
 
     if (dir == NULL || name == NULL || sst == NULL) {
 	fprintf(stderr,
@@ -107,7 +107,7 @@ afscp_MakeDir(const struct afscp_venusfid *dir, char *name,
     struct AFSFid ff;
     struct afscp_server *server;
     struct rx_connection *c;
-    time_t now;
+    time_t now = 0;
 
     vol = afscp_VolumeById(dir->cell, dir->fid.Volume);
     if (vol == NULL) {

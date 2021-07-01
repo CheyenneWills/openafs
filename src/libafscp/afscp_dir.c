@@ -508,6 +508,7 @@ afscp_HandleLink(struct afscp_venusfid *in,
 	return in;
     }
     linkbuf = malloc(s->Length + 1);
+    osi_Assert(linkbuf != NULL);
     code = afscp_PRead(in, linkbuf, s->Length, 0);
     if (code < 0) {
 	free(linkbuf);
