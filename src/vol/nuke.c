@@ -79,6 +79,8 @@ NukeProc(struct ViceInodeInfo *ainfo, VolumeId avolid, void *arock)
     /* record the info */
     if (!*allInodes || (*allInodes)->freePtr >= MAXATONCE) {
 	ti = calloc(1, sizeof(struct ilist));
+	if (ti == NULL)
+	    return ENOMEM;
 	ti->next = *allInodes;
 	*allInodes = ti;
     } else

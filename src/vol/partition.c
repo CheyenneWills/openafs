@@ -194,6 +194,7 @@ VInitPartition_r(char *path, char *devname, Device dev)
     struct DiskPartition64 *dp, *op;
 
     dp = malloc(sizeof(struct DiskPartition64));
+    osi_Assert(dp != NULL);
     /* Add it to the end, to preserve order when we print statistics */
     for (op = DiskPartitionList; op; op = op->next) {
 	if (!op->next)
@@ -209,6 +210,7 @@ VInitPartition_r(char *path, char *devname, Device dev)
 #if defined(AFS_NAMEI_ENV) && !defined(AFS_NT40_ENV)
     /* Create a lockfile for the partition, of the form /vicepa/Lock/vicepa */
     dp->devName = malloc(2 * strlen(path) + 6);
+    osi_Assert(dp->devName != NULL);
     strcpy(dp->devName, path);
     strcat(dp->devName, OS_DIRSEP);
     strcat(dp->devName, "Lock");

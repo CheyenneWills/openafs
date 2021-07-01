@@ -399,6 +399,7 @@ FSYNC_backgroundSalvage(Volume *vp)
     VCreateReservation_r(vp);
 
     node = malloc(sizeof(struct fsync_salv_node));
+    osi_Assert(node != NULL);
     node->vp = vp;
 
     /* Save this value, to know if we should VUpdateSalvagePriority_r.
