@@ -16,6 +16,7 @@
 
 #include <afsconfig.h>
 #include <afs/param.h>
+#include <afs/opr.h>
 
 #ifdef IGNORE_SOME_GCC_WARNINGS
 # pragma GCC diagnostic warning "-Wformat"
@@ -91,6 +92,7 @@ AttachVolume(struct DiskPartition64 * dp, char *volname,
     afs_int32 ec = 0;
 
     vp = (Volume *) calloc(1, sizeof(Volume));
+    opr_Assert(vp != NULL);
     vp->specialStatus = 0;
     vp->device = dp->device;
     vp->partition = dp;
@@ -125,8 +127,11 @@ AttachVolume(struct DiskPartition64 * dp, char *volname,
 		      LINKTABLEMAGIC, LINKTABLEVERSION);
     }
 #endif
-    if (ec)
+    if (ec) {
+	free(vp->header);
+	free(vp);
 	return (Volume *) 0;
+    }
     return vp;
 }
 

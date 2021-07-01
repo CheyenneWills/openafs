@@ -713,6 +713,8 @@ split_volume(struct rx_call *call, Volume *vol, Volume *newvol,
     struct Msg *m;
 
     m = calloc(1, sizeof(struct Msg));
+    if (m == NULL)
+	return ENOMEM;
     m->call = call;
     m->verbose = verbose;
 
@@ -735,6 +737,7 @@ split_volume(struct rx_call *call, Volume *vol, Volume *newvol,
 		"ExtractVnodes failed for %" AFS_VOLID_FMT " for directories with code %d\n",
 	        afs_printable_VolumeId_lu(V_id(vol)), code);
 	rx_Write(m->call, m->line, strlen(m->line));
+	free(m);
 	return code;
     }
 
@@ -750,6 +753,7 @@ split_volume(struct rx_call *call, Volume *vol, Volume *newvol,
 		"splitvolume: could'nt find name of %u in directory %" AFS_VOLID_FMT ".%u.%u.\n",
 		where, afs_printable_VolumeId_lu(V_id(vol)), parent, parVnode->uniquifier);
 	rx_Write(m->call, m->line, strlen(m->line));
+	free(m);
 	return code;
     }
     if (verbose) {
@@ -767,6 +771,7 @@ split_volume(struct rx_call *call, Volume *vol, Volume *newvol,
 	sprintf(m->line,
 		"FindVnodes for directories failed with code %d\n", code);
 	rx_Write(m->call, m->line, strlen(m->line));
+	free(m);
 	return code;
     }
 
@@ -780,6 +785,7 @@ split_volume(struct rx_call *call, Volume *vol, Volume *newvol,
 		"ExtractVnodes failed for %" AFS_VOLID_FMT " for files with code %d\n",
 		afs_printable_VolumeId_lu(V_id(vol)), code);
 	rx_Write(m->call, m->line, strlen(m->line));
+	free(m);
 	return code;
     }
     if (verbose) {
@@ -804,6 +810,7 @@ split_volume(struct rx_call *call, Volume *vol, Volume *newvol,
     if (code) {
 	sprintf(m->line, "copyVnodes for files failed with code %d\n", code);
 	rx_Write(m->call, m->line, strlen(m->line));
+	free(m);
 	return code;
     }
 
@@ -821,6 +828,7 @@ split_volume(struct rx_call *call, Volume *vol, Volume *newvol,
     if (code) {
 	sprintf(m->line, "copyVnodes for directories failed with code %d\n", code);
 	rx_Write(m->call, m->line, strlen(m->line));
+	free(m);
 	return code;
     }
 
@@ -857,6 +865,7 @@ split_volume(struct rx_call *call, Volume *vol, Volume *newvol,
     if (code) {
 	sprintf(m->line, "createMountpoint failed with code %d\n", code);
 	rx_Write(m->call, m->line, strlen(m->line));
+	free(m);
 	return code;
     }
     /*

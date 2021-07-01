@@ -9,6 +9,7 @@
 
 #include <afsconfig.h>
 #include <afs/param.h>
+#include <afs/opr.h>
 
 #include <roken.h>
 
@@ -126,6 +127,7 @@ qPut(struct tqHead *ahead, afs_uint32 volid)
     struct tqElem *elem;
 
     elem = malloc(sizeof(struct tqElem));
+    opr_Assert(elem != NULL);
     elem->next = ahead->next;
     elem->volid = volid;
     ahead->next = elem;
