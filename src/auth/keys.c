@@ -84,6 +84,8 @@ listToArray(struct kvnoList *kvnoEntry, struct afsconf_typedKeyList **keys)
 
     /* Allocate space for the keys we've got stored */
     retval = malloc(sizeof(struct afsconf_typedKeyList));
+    if (retval == NULL)
+	return ENOMEM;
     retval->nkeys = opr_queue_Count(&kvnoEntry->subTypeList);
 
     if (retval->nkeys > 0) {

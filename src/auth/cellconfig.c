@@ -1582,6 +1582,7 @@ afsconf_GetCellInfo(struct afsconf_dir *adir, char *acellName, char *aservice,
  *
  * @return status
  *    @retval 0 success
+ *    @retval AFSCONF_NOTFOUND adir is a NULL pointer
  *    @retval AFSCONF_NOCELLNAME cannot determine local cell name
  *
  * @internal
@@ -1592,6 +1593,9 @@ _afsconf_GetLocalCell(struct afsconf_dir *adir, char **pname, int check)
     static int afsconf_showcell = 0;
     char *afscell_path;
     afs_int32 code = 0;
+
+    if (!adir)
+	return AFSCONF_NOTFOUND;
 
     /*
      * If a cell switch was specified in a command, then it should override the

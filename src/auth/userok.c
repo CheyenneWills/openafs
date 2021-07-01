@@ -191,6 +191,7 @@ afsconf_DeleteIdentity(struct afsconf_dir *adir, struct rx_identity *user)
     }
     code = stat(filename, &tstat);
     if (code < 0) {
+	fclose(tf);
 	UNLOCK_GLOBAL_MUTEX;
 	free(filename);
 	free(nfilename);
