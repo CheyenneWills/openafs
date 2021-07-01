@@ -278,8 +278,7 @@ rxkad_CheckResponse(struct rx_securityClass *aobj,
     struct ktc_principal client;
     struct ktc_encryptionKey sessionkey;
     afs_int32 host;
-    afs_uint32 start;
-    afs_uint32 end;
+    afs_uint32 start = 0, end = 0;
     unsigned int pos;
     struct rxkad_serverinfo *rock;
 
