@@ -438,6 +438,7 @@ int readCacheParms(char *afsMountPoint, char *afsConfDir, char *afsCacheDir,
     else if (strncmp(line, "LogFile", len1) == 0)
        strcpy(logFile, p);
   }
+  fclose(f);
   return 0;
 }
 
