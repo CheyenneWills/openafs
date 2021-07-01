@@ -2527,7 +2527,7 @@ Print_CM_CB(void)
 	    j = 0;
 	    while (j < numCM) {
 	        for (k = 0; k < MAX_NUM_CM_COLLECTIONS; k++) {
-		    if (!cmlist->empty[k]) {
+		    if (cmlist && !cmlist->empty[k]) {
 			fprintf(debugFD,
 				"\t %d) probeNum = %d host = %s cn = %d",
 				j,
@@ -2541,7 +2541,8 @@ Print_CM_CB(void)
 		    } else
 		        fprintf(debugFD, "\t %d) -- empty --\n", j);
 		}
-		cmlist = cmlist->next;
+		if (cmlist && cmlist->next)
+		    cmlist = cmlist->next;
 		j++;
 	    }
 	    if (cmlist != (struct afsmon_cm_Results_list *)0)
@@ -3349,6 +3350,8 @@ init_fs_buffers(void)
 
     afsmon_fs_ResultsCB = (struct afsmon_fs_Results_CBuffer *)
 	malloc(sizeof(struct afsmon_fs_Results_CBuffer) * num_bufSlots);
+    if (afsmon_fs_ResultsCB == NULL)
+	return ENOMEM;
 
     /* initialize the fs circular buffer */
     for (i = 0; i < num_bufSlots; i++) {
@@ -3712,9 +3715,9 @@ afsmon_execute(void)
 {				/* afsmon_execute() */
     static char rn[] = "afsmon_execute";	/* routine name */
     static char fullhostname[128];	/* full host name */
-    struct sockaddr_in *FSSktArray;	/* fs socket array */
+    struct sockaddr_in *FSSktArray = NULL;	/* fs socket array */
     int FSsktbytes;		/* num bytes in above */
-    struct sockaddr_in *CMSktArray;	/* cm socket array */
+    struct sockaddr_in *CMSktArray = NULL;	/* cm socket array */
     int CMsktbytes;		/* num bytes in above */
     struct sockaddr_in *curr_skt;	/* ptr to current socket */
     struct afsmon_hostEntry *curr_FS;	/* ptr to FS name list */
@@ -3759,6 +3762,7 @@ afsmon_execute(void)
 	    if (he == NULL) {
 		fprintf(stderr, "[ %s ] Cannot get host info for %s\n", rn,
 			fullhostname);
+		free(FSSktArray);
 		return (-1);
 	    }
 	    strncpy(curr_FS->hostName, he->h_name, HOST_NAME_LEN);	/* complete name */
@@ -3808,10 +3812,12 @@ afsmon_execute(void)
 
 	if (code) {
 	    fprintf(stderr, "[ %s ] xstat_fs_init returned error\n", rn);
+	    free(FSSktArray);
 	    afsmon_Exit(125);
 	}
 
     }
+    free(FSSktArray);
 
 
     /* end of process fileserver entries */
@@ -3842,6 +3848,7 @@ afsmon_execute(void)
 	    if (he == NULL) {
 		fprintf(stderr, "[ %s ] Cannot get host info for %s\n", rn,
 			fullhostname);
+		free(CMSktArray);
 		return (-1);
 	    }
 	    strncpy(curr_CM->hostName, he->h_name, HOST_NAME_LEN);	/* complete name */
@@ -3879,9 +3886,11 @@ afsmon_execute(void)
 
 	if (code) {
 	    fprintf(stderr, "[ %s ] xstat_cm_init returned error\n", rn);
+	    free(CMSktArray);
 	    afsmon_Exit(130);
 	}
     }
+    free(CMSktArray);
 
 
 
