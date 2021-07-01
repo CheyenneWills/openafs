@@ -5432,6 +5432,8 @@ SRXAFS_GetXStats(struct rx_call *a_call, afs_int32 a_clientVersionNum,
 	FillPerfValues(&afs_perfstats);
 	dataBytes = sizeof(struct afs_PerfStats);
 	dataBuffP = calloc(1, dataBytes);
+	if (dataBuffP == NULL)
+	    return ENOMEM;
 	memcpy(dataBuffP, &afs_perfstats, dataBytes);
 	a_dataP->AFS_CollData_len = dataBytes / sizeof(afs_int32);
 	a_dataP->AFS_CollData_val = dataBuffP;
@@ -5452,6 +5454,8 @@ SRXAFS_GetXStats(struct rx_call *a_call, afs_int32 a_clientVersionNum,
 	FillPerfValues(&afs_FullPerfStats.overall);
 	dataBytes = sizeof(struct fs_stats_FullPerfStats);
 	dataBuffP = calloc(1, dataBytes);
+	if (dataBuffP == NULL)
+	    return ENOMEM;
 	memcpy(dataBuffP, &afs_FullPerfStats, dataBytes);
 	a_dataP->AFS_CollData_len = dataBytes / sizeof(afs_int32);
 	a_dataP->AFS_CollData_val = dataBuffP;
@@ -5462,6 +5466,8 @@ SRXAFS_GetXStats(struct rx_call *a_call, afs_int32 a_clientVersionNum,
 
 	dataBytes = sizeof(struct cbcounters);
 	dataBuffP = calloc(1, dataBytes);
+	if (dataBuffP == NULL)
+	    return ENOMEM;
 	{
 	    extern struct cbcounters cbstuff;
 	    dataBuffP[0]=cbstuff.DeleteFiles;
