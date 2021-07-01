@@ -900,6 +900,7 @@ CreateCacheFile(char *fname, struct stat *statp)
     if (statp != NULL) {
 	closeResult = fstat(cfd, statp);
 	if (closeResult) {
+	    close(cfd);
 	    printf
 		("%s: Can't stat newly-created AFS cache file '%s' (code %d)\n",
 		 rn, fname, errno);
@@ -3274,6 +3275,7 @@ fork_syscall_impl(int rx, int wait, const char *rn, int syscall, va_list ap)
     struct afsd_syscall_args *args;
 
     args = malloc(sizeof(*args));
+    opr_Assert(args != NULL);
     afsd_syscall_populate(args, syscall, ap);
     args->rxpri = rx;
     args->rn = rn;
