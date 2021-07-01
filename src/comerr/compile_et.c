@@ -307,6 +307,8 @@ main(int argc, char **argv)
 	    sprintf(h_file, "%s.h", ename);
 	}
     }
+    free(ename);
+
     p = strrchr(filename, '.');
     if (p == NULL) {
 	p = xmalloc(strlen(filename) + 4);
@@ -371,6 +373,7 @@ main(int argc, char **argv)
 	    } while (count > 0);
 	    fprintf(hfile, "\n/* End of prolog file %s. */\n\n",
 		    prolog_h_file);
+	    fclose(prolog_hfile);
 	}
     }
 
