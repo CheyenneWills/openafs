@@ -1025,6 +1025,9 @@ afsclient_NullCellOpen(void **cellHandleP, afs_status_p st)
 
   fail_afsclient_NullCellOpen:
 
+    if (rc == 0)
+	free(cellHandleP);
+
     if (st != NULL) {
 	*st = tst;
     }

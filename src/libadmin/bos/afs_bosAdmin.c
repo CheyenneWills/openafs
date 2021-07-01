@@ -2729,6 +2729,8 @@ bos_ExecutableCreate(const void *serverHandle, const char *sourceFile,
 
     if (fstat(fd, &estat)) {
 	tst = ADMBOSCANTSTATSOURCEFILE;
+        close(fd);
+
 	goto fail_bos_ExecutableCreate;
     }
 
@@ -2744,6 +2746,7 @@ bos_ExecutableCreate(const void *serverHandle, const char *sourceFile,
 
     if (tst) {
 	tst = rx_EndCall(tcall, tst);
+        close(fd);
 	goto fail_bos_ExecutableCreate;
     }
 
@@ -2758,6 +2761,7 @@ bos_ExecutableCreate(const void *serverHandle, const char *sourceFile,
 	if (len < 0) {
 	    tst = ADMBOSCANTREADSOURCEFILE;
 	    rx_EndCall(tcall, len);
+            close(fd);
 	    goto fail_bos_ExecutableCreate;
 	}
 	if (len == 0) {
@@ -2768,9 +2772,11 @@ bos_ExecutableCreate(const void *serverHandle, const char *sourceFile,
 	if (tst != len) {
 	    tst = ADMBOSSENDSOURCEFILE;
 	    rx_EndCall(tcall, tst);
+            close(fd);
 	    goto fail_bos_ExecutableCreate;
 	}
     }
+    close(fd);
 
     /*
      * Terminate the rpc to the server

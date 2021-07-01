@@ -3842,6 +3842,8 @@ GroupEntries(struct rx_connection *server, volintInfo * pntr, afs_int32 count,
 		}
 	    } else {		/*create a fresh entry */
 		qPtr = malloc(sizeof(struct aqueue));
+		if (qPtr == NULL)
+		    return ENOMEM;
 		if (pntr->type == RWVOL) {
 		    qPtr->isValid[RWVOL] = 1;
 		    qPtr->isValid[BACKVOL] = 0;

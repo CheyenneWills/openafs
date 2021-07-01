@@ -874,15 +874,10 @@ vos_ServerOpen(const void *cellHandle, const char *serverName,
     int rc = 0;
     afs_status_t tst = 0;
     afs_cell_handle_p c_handle = (afs_cell_handle_p) cellHandle;
-    file_server_p f_server = malloc(sizeof(file_server_t));
+    file_server_p f_server = NULL;
     int server_address;
     struct rx_securityClass *sc[3];
     int scIndex;
-
-    if (f_server == NULL) {
-	tst = ADMNOMEM;
-	goto fail_vos_ServerOpen;
-    }
 
     /*
      * Validate arguments
@@ -902,6 +897,12 @@ vos_ServerOpen(const void *cellHandle, const char *serverName,
 	goto fail_vos_ServerOpen;
     }
 
+    f_server = malloc(sizeof(file_server_t));
+    if (f_server == NULL) {
+        tst = ADMNOMEM;
+        goto fail_vos_ServerOpen;
+    }
+
     scIndex = c_handle->tokens->sc_index;
     sc[scIndex] = c_handle->tokens->afs_sc[scIndex];
     f_server->serv =
@@ -916,10 +917,15 @@ vos_ServerOpen(const void *cellHandle, const char *serverName,
 	rc = 1;
     } else {
 	tst = ADMVOSSERVERNOCONNECTION;
+	free(f_server);
+	f_server = NULL;
 	goto fail_vos_ServerOpen;
     }
 
   fail_vos_ServerOpen:
+
+    if (rc == 0)
+	free(f_server);
 
     if (st != NULL) {
 	*st = tst;
@@ -2183,10 +2189,8 @@ vos_VLDBGetBegin(const void *cellHandle, const void *serverHandle,
 	if (iter != NULL) {
 	    free(iter);
 	}
-	if (entry->entries.nbulkentries_val != NULL) {
-	    free(entry->entries.nbulkentries_val);
-	}
 	if (entry != NULL) {
+	    free(entry->entries.nbulkentries_val);
 	    free(entry);
 	}
     }

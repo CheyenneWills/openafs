@@ -1860,8 +1860,8 @@ util_CMGetServerPrefsBegin(struct rx_connection *conn, void **iterationIdP,
 {
     int rc = 0;
     afs_status_t tst = 0;
-    afs_admin_iterator_p iter;
-    cm_srvr_pref_get_p pref;
+    afs_admin_iterator_p iter = NULL;
+    cm_srvr_pref_get_p pref = NULL;
 
     if (conn == NULL) {
 	tst = ADMRXCONNNULL;
@@ -1876,7 +1876,6 @@ util_CMGetServerPrefsBegin(struct rx_connection *conn, void **iterationIdP,
 
     pref = malloc(sizeof(cm_srvr_pref_get_t));
     if (pref == NULL) {
-	free(iter);
 	tst = ADMNOMEM;
 	goto fail_util_CMGetServerPrefsBegin;
     }
@@ -1886,14 +1885,17 @@ util_CMGetServerPrefsBegin(struct rx_connection *conn, void **iterationIdP,
     if (!IteratorInit
 	(iter, (void *)pref, GetServerPrefsRPC, GetServerPrefsFromCache, NULL,
 	 NULL, &tst)) {
-	free(iter);
-	free(pref);
 	goto fail_util_CMGetServerPrefsBegin;
     }
     *iterationIdP = (void *)iter;
     rc = 1;
 
   fail_util_CMGetServerPrefsBegin:
+
+    if (rc == 0) {
+	free(iter);
+	free(pref);
+    }
 
     if (st != NULL) {
 	*st = tst;
@@ -2092,8 +2094,8 @@ util_CMListCellsBegin(struct rx_connection *conn, void **iterationIdP,
 {
     int rc = 0;
     afs_status_t tst = 0;
-    afs_admin_iterator_p iter;
-    cm_list_cell_get_p cell;
+    afs_admin_iterator_p iter = NULL;
+    cm_list_cell_get_p cell = NULL;
 
     if (conn == NULL) {
 	tst = ADMRXCONNNULL;
@@ -2108,7 +2110,6 @@ util_CMListCellsBegin(struct rx_connection *conn, void **iterationIdP,
 
     cell = malloc(sizeof(cm_list_cell_get_t));
     if (cell == NULL) {
-	free(iter);
 	tst = ADMNOMEM;
 	goto fail_util_CMListCellsBegin;
     }
@@ -2118,14 +2119,17 @@ util_CMListCellsBegin(struct rx_connection *conn, void **iterationIdP,
     if (!IteratorInit
 	(iter, (void *)cell, ListCellsRPC, ListCellsFromCache, NULL, NULL,
 	 &tst)) {
-	free(iter);
-	free(cell);
 	goto fail_util_CMListCellsBegin;
     }
     *iterationIdP = (void *)iter;
     rc = 1;
 
   fail_util_CMListCellsBegin:
+
+    if (rc == 0) {
+	free(iter);
+	free(cell);
+    }
 
     if (st != NULL) {
 	*st = tst;
@@ -2703,8 +2707,8 @@ util_RXDebugConnectionsBegin(rxdebugHandle_p handle, int allconns,
     int trc;
     afs_uint32 tsupported;
     afs_status_t tst = 0;
-    afs_admin_iterator_p iter;
-    rxdebug_conn_get_p t;
+    afs_admin_iterator_p iter = NULL;
+    rxdebug_conn_get_p t = NULL;
 
     if (handle == NULL) {
 	tst = ADMRXDEBUGHANDLENULL;
@@ -2732,7 +2736,6 @@ util_RXDebugConnectionsBegin(rxdebugHandle_p handle, int allconns,
 
     t = malloc(sizeof(rxdebug_conn_get_t));
     if (t == NULL) {
-	free(iter);
 	tst = ADMNOMEM;
 	goto fail_util_RXDebugConnectionsBegin;
     }
@@ -2749,6 +2752,11 @@ util_RXDebugConnectionsBegin(rxdebugHandle_p handle, int allconns,
     rc = 1;
 
   fail_util_RXDebugConnectionsBegin:
+
+    if (rc == 0) {
+	free(iter);
+	free(t);
+    }
 
     if (st != NULL) {
 	*st = tst;
@@ -2966,8 +2974,8 @@ util_RXDebugPeersBegin(rxdebugHandle_p handle, void **iterationIdP,
     int trc;
     afs_uint32 tsupported;
     afs_status_t tst = 0;
-    afs_admin_iterator_p iter;
-    rxdebug_peer_get_p t;
+    afs_admin_iterator_p iter = NULL;
+    rxdebug_peer_get_p t = NULL;
 
     if (handle == NULL) {
 	tst = ADMRXDEBUGHANDLENULL;
@@ -2995,7 +3003,6 @@ util_RXDebugPeersBegin(rxdebugHandle_p handle, void **iterationIdP,
 
     t = malloc(sizeof(rxdebug_peer_get_t));
     if (t == NULL) {
-	free(iter);
 	tst = ADMNOMEM;
 	goto fail_util_RXDebugPeersBegin;
     }
@@ -3011,6 +3018,11 @@ util_RXDebugPeersBegin(rxdebugHandle_p handle, void **iterationIdP,
     rc = 1;
 
   fail_util_RXDebugPeersBegin:
+
+    if (rc == 0) {
+	free(iter);
+	free(t);
+    }
 
     if (st != NULL) {
 	*st = tst;
