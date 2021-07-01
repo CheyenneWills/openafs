@@ -9,9 +9,10 @@ MODULE_CFLAGS = -I$(TOP_OBJDIR)
 
 LIBS = ../tap/libtap.a \
        $(abs_top_builddir)/lib/util.a \
-       $(abs_top_builddir)/lib/libopr.a
+       $(abs_top_builddir)/lib/libopr.a \
+       $(abs_top_builddir)/lib/librokenafs.a
 
-BINS = ktime-t exec-alt-t volutil-t
+BINS = ktime-t exec-alt-t volutil-t tabular-output-t
 
 all check test tests: $(BINS)
 
@@ -24,7 +25,13 @@ exec-alt-t: exec-alt-t.o $(LIBS)
 volutil-t: volutil-t.o $(LIBS)
 	$(AFS_LDRULE) volutil-t.o $(LIBS) $(LIB_roken) $(XLIBS)
 
+tabular-output-t: tabular-output-t.o $(LIBS)
+	$(AFS_LDRULE) tabular-output-t.o $(LIBS) $(XLIBS)
+
 install:
+
+memtest: tabular-output-t
+	valgrind --leak-check=full --track-origins=yes ./tabular-output-t
 
 clean distclean:
 	$(RM) -f $(BINS) *.o core

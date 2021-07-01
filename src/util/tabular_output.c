@@ -72,6 +72,7 @@ int printTableHeader_HTML(struct util_Table* Table);
 int printTableRow_HTML(struct util_Table* Table, struct util_TableRow *aTableRow);
 int findRowIndex(struct util_Table* Table, struct util_TableRow *aRow);
 int do_setTableRow(struct util_Table *Table, struct util_TableRow *aRow, char **Contents);
+int freeTableRow(struct util_Table *Table, struct util_TableRow *aRow);
 
 
 /*
@@ -90,7 +91,7 @@ util_setTableBodyRow(struct util_Table *Table, int RowIndex, char **Contents) {
 }
 
 int util_setTableFooter(struct util_Table * Table, char ** Contents) {
-    if (Table->Footer != NULL)
+    if (Table->Footer == NULL)
         Table->Footer = newTableRow(Table);
     return do_setTableRow(Table,Table->Footer,Contents);
 }
@@ -115,6 +116,7 @@ util_addTableBodyRow(struct util_Table *Table, char **Contents) {
             Table->Body[Table->numRows+i]=newTableRow(Table);
         }
     }
+    /* Create a temporary row for the index look up. */
     aRow=newTableRow(Table);
     do_setTableRow(Table,aRow,Contents);
     if (Table->sortByColumn >= 0)  {
@@ -129,6 +131,7 @@ util_addTableBodyRow(struct util_Table *Table, char **Contents) {
     } else {
       indx=Table->numRows;
     }
+    freeTableRow(Table, aRow);
     Table->numRows += 1;
     for (i=0;i<Table->numColumns;i++) {
         strncpy(Table->Body[indx]->CellContents[i],Contents[i],\
@@ -369,6 +372,7 @@ util_newTable(int Type, int numColumns, char **ColumnHeaders, int *ColumnContent
     Table->numColumns=numColumns;
     Table->numRows=0;
     Table->numAllocatedRows=0;
+    Table->sortByColumn = 0;
     if (sortByColumn < 0 || sortByColumn > numColumns) {
         fprintf(stderr,"Invalid Table Sortkey: %d.\n", sortByColumn);
 	errno=EINVAL;
@@ -434,10 +438,14 @@ int
 freeTableRow( struct util_Table* Table, struct util_TableRow *aRow) {
     int i;
 
+    if (aRow == NULL) {
+	return 0; /* no operation */
+    }
     for (i=0;i<Table->numColumns;i++) {
         free(aRow->CellContents[i]);
     }
     free(aRow->CellContents);
+    free(aRow);
     return 0;
 }
 
@@ -445,11 +453,15 @@ int
 util_freeTable(struct util_Table *Table) {
     int i;
 
+    if (Table == NULL) {
+	return 0; /* no operation */
+    }
     freeTableRow(Table, Table->Header);
     freeTableRow(Table, Table->Footer);
-    for(i=0;i<Table->numRows;i++) {
+    for (i = 0; i < Table->numAllocatedRows; i++) {
         freeTableRow(Table, Table->Body[i]);
     }
+    free(Table->Body);
     free(Table);
     return 0;
 }
