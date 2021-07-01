@@ -326,6 +326,8 @@ usd_FileOpen(const char *path, int flags, int mode, usd_handle_t * usdP)
 	return errno;
 
     usd = calloc(1, sizeof(*usd));
+    if (usd == NULL)
+	return ENOMEM;
     usd->handle = (void *)(intptr_t)fd;
     usd->read = usd_FileRead;
     usd->write = usd_FileWrite;
@@ -393,6 +395,8 @@ usd_FileStandardInput(usd_handle_t * usdP)
     usd_handle_t usd;
 
     usd = calloc(1, sizeof(*usd));
+    if (usd == NULL)
+	return ENOMEM;
     usd->handle = (void *)((unsigned long)0);
     usd->read = usd_FileRead;
     usd->write = usd_FileWrite;
@@ -418,6 +422,8 @@ usd_FileStandardOutput(usd_handle_t * usdP)
     usd_handle_t usd;
 
     usd = calloc(1, sizeof(*usd));
+    if (usd == NULL)
+	return ENOMEM;
     usd->handle = (void *)((unsigned long)1);
     usd->read = usd_FileRead;
     usd->write = usd_FileWrite;
