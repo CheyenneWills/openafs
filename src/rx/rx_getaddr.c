@@ -394,8 +394,10 @@ rx_getAllAddr_internal(afs_uint32 buffer[], int maxSize, int loopbacks)
     ifc.ifc_len = sizeof(ifs);
     ifc.ifc_buf = (caddr_t) ifs;
     i = ioctl(s, SIOCGIFCONF, &ifc);
-    if (i < 0)
+    if (i < 0) {
+	close(s);
 	return 0;
+    }
     len = ifc.ifc_len / sizeof(struct ifreq);
     if (len > NIFS)
 	len = NIFS;

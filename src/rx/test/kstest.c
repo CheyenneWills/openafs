@@ -94,7 +94,7 @@ main(argc, argv)
     }
     code = rx_Init(port);
     if (code) {
-	printf("init failed code %d\n", code);
+	printf("init failed code %ld\n", code);
 	exit(1);
     }
     signal(SIGINT, SigInt);
