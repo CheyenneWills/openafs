@@ -676,6 +676,7 @@ TestManyMembers(struct cmd_syndesc *as, void *arock)
 	    }
 	}
     }
+    free(glist);
 
     /* cleanup by deleting all the users and groups */
     printf("Starting deletion of users and groups\n");
@@ -687,6 +688,12 @@ TestManyMembers(struct cmd_syndesc *as, void *arock)
     printf
 	("Created/deleted %d/%d users and %d/%d groups; added %d and removed %d.\n",
 	 nUsers, nUDels, nGroups, nGDels, nAdds, nRems);
+
+    free(users);
+    free(groups);
+    free(filled);
+    free(cleaned);
+    free(population);
     return 0;
 }
 

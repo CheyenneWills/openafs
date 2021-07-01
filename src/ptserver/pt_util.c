@@ -13,6 +13,7 @@
 
 #include <afsconfig.h>
 #include <afs/param.h>
+#include <afs/opr.h>
 
 #include <roken.h>
 
@@ -425,6 +426,7 @@ add_group(long id)
     i = grp_count++ % 1024;
     if (i == 0) {
 	g = malloc(sizeof(struct grp_list));
+	opr_Assert(g != NULL);
 	g->next = grp_head;
 	grp_head = g;
     }

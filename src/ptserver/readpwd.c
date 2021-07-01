@@ -109,5 +109,6 @@ main(afs_int32 argc, char **argv)
 	    fprintf(stderr, "%s (%d).\n", pr_ErrorMsg(code), code);
 	}
     }
+    fclose(fp);
     return 0;
 }
