@@ -235,6 +235,8 @@ GetCellName(struct rx_connection *aconn, afs_int32 cellnum)
     if (sl.serverList_val)
 	free(sl.serverList_val);
     tcp = malloc(sizeof(struct cell_cache));
+    if (tcp == NULL)
+	return NULL;
     tcp->next = cache;
     tcp->cellnum = cellnum;
     tcp->cellname = cellname;

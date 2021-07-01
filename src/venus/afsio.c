@@ -281,7 +281,7 @@ int
 main(int argc, char **argv)
 {
     struct cmd_syndesc *ts;
-    char *baseName;
+    char *baseName = NULL;
     int code;
 
     /* try to get only the base name of this executable for use in logs */

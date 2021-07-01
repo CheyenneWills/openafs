@@ -656,6 +656,8 @@ icl_DumpKernel(FILE *outFilep, char *setname)
 	    if (dummy > bufferSize)	/* find biggest log */
 		bufferSize = dummy;
 	    lip = calloc(1, sizeof(struct logInfo));
+	    if (lip == NULL)
+		return ENOMEM;
 	    lip->nextp = allInfo;
 	    allInfo = lip;
 	    lip->name = strdup(tname);
