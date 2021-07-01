@@ -318,6 +318,7 @@ usr_crcopy(struct usr_ucred *credp)
     struct usr_ucred *newcredp;
 
     newcredp = afs_osi_Alloc(sizeof(struct usr_ucred));
+    osi_Assert(newcredp != NULL);
     *newcredp = *credp;
     newcredp->cr_ref = 1;
     return newcredp;
@@ -329,6 +330,7 @@ usr_crget(void)
     struct usr_ucred *newcredp;
 
     newcredp = afs_osi_Alloc(sizeof(struct usr_ucred));
+    osi_Assert(newcredp != NULL);
     newcredp->cr_ref = 1;
     return newcredp;
 }

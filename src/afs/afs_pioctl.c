@@ -925,6 +925,7 @@ afs_xioctl(void)
 		struct afs_ioctl *datap;
 		AFS_GLOCK();
 		datap = osi_AllocSmallSpace(AFS_SMALLOCSIZ);
+		osi_Assert(datap != NULL);
 		code=copyin_afs_ioctl((char *)uap->arg, datap);
 		if (code) {
 		    osi_FreeSmallSpace(datap);
@@ -2741,6 +2742,7 @@ Prefetch(uparmtype apath, struct afs_ioctl *adata, int afollow,
     if (!apath)
 	return EINVAL;
     tp = osi_AllocLargeSpace(1024);
+    osi_Assert(tp != NULL);
     AFS_COPYINSTR(apath, tp, 1024, &bufferSize, code);
     if (code) {
 	osi_FreeLargeSpace(tp);
@@ -4975,7 +4977,7 @@ DECL_PIOCTL(PRxStatPeer)
 DECL_PIOCTL(PPrefetchFromTape)
 {
     afs_int32 code;
-    afs_int32 outval;
+    afs_int32 outval = 0;
     struct afs_conn *tc;
     struct rx_call *tcall;
     struct AFSVolSync tsync;
