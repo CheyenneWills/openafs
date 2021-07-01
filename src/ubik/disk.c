@@ -213,7 +213,11 @@ udisk_Init(int abuffers)
     int i;
     struct buffer *tb;
     Buffers = calloc(abuffers, sizeof(struct buffer));
+    if (Buffers == NULL)
+	return ENOMEM;
     BufferData = malloc(abuffers * UBIK_PAGESIZE);
+    if (BufferData == NULL)
+	return ENOMEM;
     nbuffers = abuffers;
     for (i = 0; i < PHSIZE; i++)
 	phTable[i] = 0;
@@ -395,6 +399,7 @@ GetTrunc(void)
     struct ubik_trunc *tt;
     if (!freeTruncList) {
 	freeTruncList = malloc(sizeof(struct ubik_trunc));
+	osi_Assert(freeTruncList != NULL);
 	freeTruncList->next = (struct ubik_trunc *)0;
     }
     tt = freeTruncList;
@@ -810,6 +815,8 @@ udisk_begin(struct ubik_dbase *adbase, int atype, struct ubik_trans **atrans)
 	    return code;
     }
     tt = calloc(1, sizeof(struct ubik_trans));
+    if (tt == NULL)
+	return ENOMEM;
     tt->dbase = adbase;
     tt->next = adbase->activeTrans;
     adbase->activeTrans = tt;
