@@ -394,6 +394,7 @@ Install(struct cmd_syndesc *as, void *arock)
 	}
 	code = fstat(fd, &tstat);
 	if (code) {
+	    close(fd);
 	    fprintf(stderr, "bos: failed to stat file %s, errno is %d\n", ti->data,
 		   errno);
 	    return 1;
@@ -408,6 +409,7 @@ Install(struct cmd_syndesc *as, void *arock)
 	    code = CopyBytes(fd, tcall);
 	}
 	code = rx_EndCall(tcall, code);
+	close(fd);
 	if (code) {
 	    fprintf(stderr, "bos: failed to install %s (%s)\n", ti->data, em(code));
 	    return 1;
@@ -1109,6 +1111,8 @@ DoSalvage(struct rx_connection * aconn, char * aparm1, char * aparm2,
 	    if ((strlen(tbuffer) + 9 + strlen(partName) + 1 + strlen(aparm2) +
 		 1) > BOZO_BSSIZE) {
 		fprintf(stderr, "bos: command line too big\n");
+		if (closeIt && outFile)
+		    fclose(outFile);
 		return (E2BIG);
 	    }
 
@@ -1122,6 +1126,8 @@ DoSalvage(struct rx_connection * aconn, char * aparm1, char * aparm2,
 	    if ((strlen(tbuffer) + 1 + strlen(partName) + 1 + strlen(aparm2) +
 		 1) > BOZO_BSSIZE) {
 		fprintf(stderr, "bos: command line too big\n");
+		if (outFile)
+		    fclose(outFile);
 		return (E2BIG);
 	    }
 
@@ -1135,6 +1141,8 @@ DoSalvage(struct rx_connection * aconn, char * aparm1, char * aparm2,
 	strncpy(tbuffer, AFSDIR_CANONICAL_SERVER_SALVAGER_FILEPATH, BOZO_BSSIZE);
 	if ((strlen(tbuffer) + 4 + strlen(partName) + 1) > BOZO_BSSIZE) {
 	    fprintf(stderr, "bos: command line too big\n");
+	    if (outFile)
+	        fclose(outFile);
 	    return (E2BIG);
 	}
 	strcat(tbuffer, " -force ");
@@ -1151,6 +1159,8 @@ DoSalvage(struct rx_connection * aconn, char * aparm1, char * aparm2,
 	if (parallel != NULL) {
 	    if ((strlen(tbuffer) + 11 + strlen(parallel) + 1) > BOZO_BSSIZE) {
 		fprintf(stderr, "bos: command line too big\n");
+		if (outFile)
+		    fclose(outFile);
 		return (E2BIG);
 	    }
 	    strcat(tbuffer, " -parallel ");
@@ -1161,6 +1171,8 @@ DoSalvage(struct rx_connection * aconn, char * aparm1, char * aparm2,
 	if (atmpDir != NULL) {
 	    if ((strlen(tbuffer) + 9 + strlen(atmpDir) + 1) > BOZO_BSSIZE) {
 		fprintf(stderr, "bos: command line too big\n");
+		if (outFile)
+		    fclose(outFile);
 		return (E2BIG);
 	    }
 	    strcat(tbuffer, " -tmpdir ");
@@ -1171,6 +1183,8 @@ DoSalvage(struct rx_connection * aconn, char * aparm1, char * aparm2,
 	if (orphans != NULL) {
 	    if ((strlen(tbuffer) + 10 + strlen(orphans) + 1) > BOZO_BSSIZE) {
 		fprintf(stderr, "bos: command line too big\n");
+		if (outFile)
+		    fclose(outFile);
 		return (E2BIG);
 	    }
 	    strcat(tbuffer, " -orphans ");
@@ -1180,6 +1194,8 @@ DoSalvage(struct rx_connection * aconn, char * aparm1, char * aparm2,
 	if (dodirs) {
 	    if (strlen(tbuffer) + 14 > BOZO_BSSIZE) {
 		fprintf(stderr, "bos: command line too big\n");
+		if (outFile)
+		    fclose(outFile);
 		return (E2BIG);
 	    }
 	    strcat(tbuffer, " -salvagedirs");

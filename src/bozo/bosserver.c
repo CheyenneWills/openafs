@@ -174,6 +174,7 @@ MakeDirParents(const char *adir, int areqPerm)
     /* strip trailing slashes */
     len = strlen(tdir);
     if (!len) {
+	free(tdir);
 	return 0;
     }
     p = tdir + len - 1;

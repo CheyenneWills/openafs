@@ -399,6 +399,7 @@ PathToExecutable(char *cmd)
     }
     cmdname = strsep(&cmdcopy, " ");
     if (*cmdname == '\0') {
+	free(cmdcopy);
 	free(cmdname);
 	return NULL;
     }
