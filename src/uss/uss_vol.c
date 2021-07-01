@@ -754,8 +754,10 @@ uss_vol_CreateVol(char *a_volname, char *a_server, char *a_partition,
      * Set the volume disk quota.
      */
     if (!uss_DryRun) {
-	if ((code = uss_acl_SetDiskQuota(a_mpoint, atoi(a_quota))))
+	if ((code = uss_acl_SetDiskQuota(a_mpoint, atoi(a_quota)))) {
+	    free(Oldmpoint);
 	    return (code);
+	}
     } /*Dry run */
     else {
 	fprintf(stderr,

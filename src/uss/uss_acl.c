@@ -17,6 +17,7 @@
  */
 #include <afsconfig.h>
 #include <afs/param.h>
+#include <afs/afsutil.h>
 
 #include <roken.h>
 
@@ -26,6 +27,7 @@
 #include <afs/prs_fs.h>
 #include <afs/com_err.h>
 #include <afs/afs_consts.h>
+#include <afs/opr.h>
 #include <rx/xdr.h>
 
 #include "uss_acl.h"
@@ -372,6 +374,7 @@ EmptyAcl(void)
     struct Acl *tp;
 
     tp = malloc(sizeof(struct Acl));
+    opr_Assert(tp != NULL);
     tp->nplus = tp->nminus = 0;
     tp->pluslist = tp->minuslist = 0;
     return (tp);
@@ -404,9 +407,11 @@ ParseAcl(char *a_str)
 {				/*ParseAcl */
 
     int nplus, nminus, i, trights;
-    char tname[MAXNAME];
+    char tname[MAXNAME + 1];
     struct AclEntry *first, *last, *tl;
     struct Acl *ta;
+
+    tname[MAXNAME] = '\0';
 
     /*
      * Pull out the number of positive & negative entries in the externalized
@@ -421,6 +426,7 @@ ParseAcl(char *a_str)
      * Allocate and initialize the first entry.
      */
     ta = malloc(sizeof(struct Acl));
+    opr_Assert(ta != NULL);
     ta->nplus = nplus;
     ta->nminus = nminus;
 
@@ -430,9 +436,10 @@ ParseAcl(char *a_str)
     last = 0;
     first = 0;
     for (i = 0; i < nplus; i++) {
-	sscanf(a_str, "%100s %d", tname, &trights);
+	sscanf(a_str, "%" AFS_STRINGIZE(MAXNAME) "s %d", tname, &trights);
 	a_str = SkipLine(a_str);
 	tl = malloc(sizeof(struct AclEntry));
+	opr_Assert(tl != NULL);
 	if (!first)
 	    first = tl;
 	strcpy(tl->name, tname);
@@ -450,9 +457,10 @@ ParseAcl(char *a_str)
     last = 0;
     first = 0;
     for (i = 0; i < nminus; i++) {
-	sscanf(a_str, "%100s %d", tname, &trights);
+	sscanf(a_str, "%" AFS_STRINGIZE(MAXNAME) "s %d", tname, &trights);
 	a_str = SkipLine(a_str);
 	tl = malloc(sizeof(struct AclEntry));
+	opr_Assert(tl != NULL);
 	if (!first)
 	    first = tl;
 	strcpy(tl->name, tname);

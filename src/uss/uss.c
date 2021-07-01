@@ -1345,6 +1345,7 @@ HandleBulk(struct cmd_syndesc *a_as, void *a_rock)
 	    fprintf(stderr,
 		    "%s: Password Expiration must be in [0..255] days\n",
 		    uss_whoami);
+	    fclose(infile);
 	    return (-1);
 	}
     } else
@@ -1354,8 +1355,10 @@ HandleBulk(struct cmd_syndesc *a_as, void *a_rock)
      * Initialize uss_AccountCreator().
      */
     code = uss_kauth_InitAccountCreator();
-    if (code)
+    if (code) {
+	fclose(infile);
 	return (code);
+    }
 
     /*
      * Process all the lines in the bulk command file.
@@ -1470,6 +1473,7 @@ HandleBulk(struct cmd_syndesc *a_as, void *a_rock)
 */
 	}			/*Bad bulk line */
     }				/*Process a line in the bulk file */
+    fclose(infile);
 
     /* Last line. */
     if (line_no) {

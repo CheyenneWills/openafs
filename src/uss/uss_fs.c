@@ -575,6 +575,7 @@ uss_fs_UnlogToken(char *celln)
 	}
     }
     if ((code = ktc_ForgetAllTokens())) {
+	free(tokenInfoP);
 	printf("uss_fs_UnlogToken: could not discard tickets, code %d\n",
 	       code);
 	exit(1);
@@ -590,5 +591,6 @@ uss_fs_UnlogToken(char *celln)
 	    }
 	}
     }
+    free(tokenInfoP);
     return 0;
 }
