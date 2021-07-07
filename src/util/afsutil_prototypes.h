@@ -179,7 +179,8 @@ extern afs_int32 util_GetInt64(char *as, afs_int64 * aval);
 extern afs_uint32 util_GetUInt64(char *as, afs_uint64 * aval);
 extern afs_int32 util_GetHumanInt32(char *as, afs_int32 * aval);
 
-/* winsock_nt.c */
-
+/* getline.c */
+extern ssize_t afs_getdelim(char **buf, size_t *bufsiz, int delimiter, FILE * fp);
+extern ssize_t afs_getline(char **buf, size_t *bufsiz, FILE * fp);
 
 #endif /* _AFSUTIL_PROTOTYPES_H */

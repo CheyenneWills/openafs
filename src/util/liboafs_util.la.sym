@@ -60,3 +60,5 @@ volutil_GetPartitionID
 volutil_PartitionName
 volutil_PartitionName2_r
 volutil_PartitionName_r
+afs_getdelim
+afs_getline

@@ -121,6 +121,15 @@ extern int re_exec(const char *p1);
 /* b64_string_t is 8 bytes, in stds.h */
      typedef char lb64_string_t[12];
 
+/*
+ * Supply an implementation of POSIX getdelim() and getline() when not
+ * available.
+ */
+#ifndef HAVE_GETLINE
+# define getdelim afs_getdelim
+# define getline afs_getline
+#endif
+
 #include <afs/ktime.h>
 #include "afsutil_prototypes.h"
 

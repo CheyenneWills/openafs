@@ -12,7 +12,7 @@ LIBS = $(abs_top_builddir)/tests/common/libafstest_common.la \
        $(abs_top_builddir)/src/util/liboafs_util.la \
        $(abs_top_builddir)/src/opr/liboafs_opr.la
 
-BINS = ktime-t exec-alt-t volutil-t
+BINS = ktime-t exec-alt-t volutil-t getline-t
 
 all: $(BINS)
 
@@ -24,6 +24,9 @@ exec-alt-t: exec-alt-t.lo $(LIBS)
 
 volutil-t: volutil-t.lo $(LIBS)
 	$(LT_LDRULE_static) volutil-t.lo $(LIBS) $(XLIBS)
+
+getline-t: getline-t.lo $(LIBS)
+	$(LT_LDRULE_static) getline-t.lo $(LIBS) $(XLIBS)
 
 install:
 

@@ -1,5 +1,6 @@
 util/ktime
 util/exec-alt
+util/getline
 util/volutil
 auth/keys
 auth/superuser

@@ -9,6 +9,7 @@ AC_CHECK_FUNCS([ \
     getegid \
     geteuid \
     getgid \
+    getline \
     getuid \
     getrlimit \
     issetugid \
