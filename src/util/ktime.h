@@ -38,8 +38,8 @@ struct ktime_date {
 struct ktime {
     int mask;
     short hour;			/* 0 - 23 */
-    short min;			/* 0 - 60 */
-    short sec;			/* 0 - 60 */
+    short min;			/* 0 - 59 */
+    short sec;			/* 0 - 59 */
     short day;			/* 0 is sunday */
 };
 

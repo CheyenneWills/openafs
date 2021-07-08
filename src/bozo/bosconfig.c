@@ -27,22 +27,454 @@ struct bztemp {
     FILE *file;
 };
 
-/* strip the \\n from the end of the line, if it is present */
-static int
-StripLine(char *abuffer)
-{
-    char *tp;
+/**
+ * Bnode information read from file.
+ */
+struct bnode_info {
+    char *type;      /**< The bnode type name */
+    char *instance;  /**< The instance name */
+    int fileGoal;    /**< The saved run goal */
+    char *notifier;  /**< The optional notifier program */
+    int nparms;      /**< The number of parms read */
+    char *parm[5];   /**< Size is limited by bnode_Create() */
+};
 
-    tp = abuffer + strlen(abuffer);	/* starts off pointing at the null  */
-    if (tp == abuffer)
-	return 0;		/* null string, no last character to check */
-    tp--;			/* aim at last character */
-    if (*tp == '\n')
-	*tp = 0;
+/**
+ * Free a bnode_info.
+ *
+ * @param abi address of the bnode_info to be freed.
+ */
+void
+free_bnode_info(struct bnode_info **abi)
+{
+    struct bnode_info *bi = *abi;
+    int i;
+
+    if (bi == NULL)
+	return;
+    free(bi->type);
+    free(bi->instance);
+    free(bi->notifier);
+    for (i = 0; i < bi->nparms; i++)
+	free(bi->parm[i]);
+    free(bi);
+    *abi = NULL;
+}
+
+/**
+ * Parse an integer value.
+ *
+ * @param text  input string
+ * @param rock  pointer to an integer to be set
+ * @param file  filename for diagnostic messages
+ * @param line  line number for diagnostic messages
+ * @return 0 on success
+ */
+static int
+parse_int(char *text, void *rock, const char *file, int line)
+{
+    int code;
+    int *value = rock;
+    int tvalue;
+    char junk; /* To catch trailing characters. */
+
+    code = sscanf(text, "%d%c", &tvalue, &junk);
+    if (code != 1) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "invalid integer value: %s\n", file, line, text);
+	return BZSYNTAX;
+    }
+    *value = tvalue;
     return 0;
 }
 
-/* write one bnode's worth of entry into the file */
+/**
+ * Parse a boolean value.
+ *
+ * @note Currently, we only support '0' and '1' to represent boolean values.
+ *
+ * @param text  input string
+ * @param rock  pointer to an integer to be set
+ * @param file  filename for diagnostic messages
+ * @param line  line number for diagnostic messages
+ * @return 0 on success
+ */
+static int
+parse_bool(char *text, void *rock, const char *file, int line)
+{
+    int code;
+    int *value = rock;
+    int tvalue;
+
+    code = parse_int(text, &tvalue, file, line);
+    if (code != 0)
+	return code;
+    if (tvalue != 0 && tvalue != 1) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "invalid boolean value: %s\n", file, line, text);
+	return BZSYNTAX;
+    }
+    *value = tvalue;
+    return 0;
+}
+
+/**
+ * Parse a ktime value.
+ *
+ * @param text  input string
+ * @param rock  pointer to a struct ktime to be set
+ * @param file  filename for diagnostic messages
+ * @param line  line number for diagnostic messages
+ * @return 0 on success
+ */
+static int
+parse_ktime(char *text, void *rock, const char *file, int line)
+{
+    struct ktime *value = rock;
+    int code;
+    int mask;
+    short hour, min, sec, day;
+    char junk; /* To catch trailing characters. */
+
+    code = sscanf(text, "%d %hd %hd %hd %hd%c",
+		  &mask, &day, &hour, &min, &sec, &junk);
+    if (code != 5) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "unable to parse time values\n", file, line);
+	return BZSYNTAX;
+    }
+
+    /* Range checks. */
+     if (day < 0 || 6 < day) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "day is out of range: %hd\n", file, line, day);
+	return BZSYNTAX;
+    }
+    if (hour < 0 || 23 < hour) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "hour is out of range: %hd\n", file, line, hour);
+	return BZSYNTAX;
+    }
+    if (min < 0 || 59 < min) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "min is out of range: %hd\n", file, line, min);
+	return BZSYNTAX;
+    }
+    if (sec < 0 || 59 < sec) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "sec is out of range: %hd\n", file, line, sec);
+	return BZSYNTAX;
+    }
+
+    value->mask = mask;
+    value->day = day;
+    value->hour = hour;
+    value->min = min;
+    value->sec = sec;
+    return 0;
+}
+
+/**
+ * Process a 'bnode' tag.
+ *
+ * Extract the bnode type name, instance name, goal, and optional notifier
+ * program. Save the parsed values in the current bnode info structure for the
+ * 'end' tag.
+ *
+ * @param text  input string
+ * @param rock  pointer to a struct bnode_info context object
+ * @param file  filename for diagnostic messages
+ * @param line  line number for diagnostic messages
+ * @return 0 on success
+ */
+static int
+parse_bnode(char *text, void *rock, const char *file, int line)
+{
+    int code;
+    struct bnode_info **value = rock;
+    struct bnode_info *bi;
+    char *save = NULL;
+    char *type;
+    char *instance;
+    char *goal_token;
+    char *notifier;
+    int goal;
+
+    if (*value != NULL) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "unexpected 'bnode' tag\n", file, line);
+	return BZSYNTAX;
+    }
+
+    /* Extract the type, instance, goal, and notifier values. */
+    type = strtok_r(text, " ", &save);
+    instance = strtok_r(NULL, " ", &save);
+    goal_token = strtok_r(NULL, " ", &save);
+    notifier = strtok_r(NULL, "", &save); /* Optional. */
+
+    if (type == NULL || *type == '\0' ) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "missing type\n", file, line);
+	return BZSYNTAX;
+    }
+
+    if (instance == NULL || *instance == '\0') {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "missing instance\n", file, line);
+	return BZSYNTAX;
+    }
+
+    /*
+     * Valid fileGoal values are BSTAT_NORMAL (1) and BSTAT_SHUTDOWN (0).
+     * However, convert any other non-zero value to BSTAT_NORMAL since
+     * historically non-zero values are accepted as BSTAT_NORMAL.
+     */
+    if (goal_token == NULL) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "missing goal\n", file, line);
+	return BZSYNTAX;
+    }
+    code = parse_int(goal_token, &goal, file, line);
+    if (code != 0)
+	return code;
+    if (goal != BSTAT_NORMAL && goal != BSTAT_SHUTDOWN) {
+	bozo_Log("Warning: file %s, line %d; "
+		 "converting non-zero goal to 1\n", file, line);
+	goal = BSTAT_NORMAL;
+    }
+
+    if (notifier != NULL && *notifier == '\0') {
+	notifier = NULL;  /* Treat an empty notifier string as none. */
+    }
+
+    /* Save the bnode information for the 'end' line. */
+    bi = calloc(1, sizeof(*bi));
+    if (bi == NULL) {
+	bozo_Log("Out of memory\n");
+	return ENOMEM;
+    }
+    bi->type = strdup(type);
+    if (bi->type == NULL)
+	goto fail;
+    bi->instance = strdup(instance);
+    if (bi->instance == NULL)
+	goto fail;
+    bi->fileGoal = goal;
+    if (notifier != NULL) {
+	bi->notifier = strdup(notifier);
+	if (bi->notifier == NULL)
+	    goto fail;
+    }
+    bi->nparms = 0;
+    *value = bi;
+    return 0;
+
+  fail:
+    bozo_Log("Out of memory\n");
+    free_bnode_info(&bi);
+    return ENOMEM;
+}
+
+/**
+ * Save the 'parm' tag contents.
+ *
+ * Save the parm string in the current bnode info structure for the 'end' tag.
+ *
+ * @param text  input string
+ * @param rock  pointer to a struct bnode_info context object
+ * @param file  filename for diagnostic messages
+ * @param line  line number for diagnostic messages
+ * @return 0 on success
+ */
+static int
+parse_parm(char *text, void *rock, const char *file, int line)
+{
+    struct bnode_info **value = rock;
+    struct bnode_info *bi;
+    char *parm;
+
+    if (*value == NULL) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "unexpected 'parm' tag\n", file, line);
+	return BZSYNTAX;
+    }
+    bi = *value;
+    if (bi->nparms >= sizeof(bi->parm)/sizeof(*bi->parm)) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "maximum number of parameters exceeded\n", file, line);
+	return BZSYNTAX;
+    }
+    parm = strdup(text);
+    if (parm == NULL) {
+	bozo_Log("Out of memory");
+	return ENOMEM;
+    }
+    bi->parm[bi->nparms++] = parm;
+    return 0;
+}
+
+/**
+ * Process an 'end' tag.
+ *
+ * Create a bnode with the information gathered from the previous bnode
+ * and parm tags.
+ *
+ * @param text  input string
+ * @param rock  pointer to a struct bnode_info context object
+ * @param file  filename for diagnostic messages
+ * @param line  line number for diagnostic messages
+ * @return 0 on success
+ */
+static int
+parse_end(char *text, void *rock, const char *file, int line)
+{
+    int code;
+    struct bnode_info **value = rock;
+    struct bnode_info *bi;
+    struct bnode *bnode;
+
+    if (*text != '\0') {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "characters after 'end' tag\n", file, line);
+	return BZSYNTAX;
+    }
+    if (*value == NULL) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "unexpected 'end' tag\n", file, line);
+	return BZSYNTAX;
+    }
+
+    bi = *value;
+    code = bnode_Create(bi->type, bi->instance, &bnode,
+			bi->parm[0], bi->parm[1], bi->parm[2], bi->parm[3],
+			bi->parm[4], bi->notifier, bi->fileGoal, 0);
+    if (code != 0) {
+	bozo_Log("Failed to create bnode '%s'; code=%d\n", bi->instance, code);
+	return code;
+    }
+
+    /*
+     * Bnode is created in the 'temporarily shutdown' state. Check to see if we
+     * are supposed to run this guy, and if so, start the process up.
+     */
+    if (bi->fileGoal == BSTAT_NORMAL)
+	bnode_SetStat(bnode, BSTAT_NORMAL); /* Takes effect immediately. */
+    else
+	bnode_SetStat(bnode, BSTAT_SHUTDOWN);
+
+    /* Reset for the next bnode..end sequence. */
+    free_bnode_info(value);
+    return 0;
+}
+
+/**
+ * Handle an invalid tag.
+ *
+ * @param text  input string
+ * @param rock  not used
+ * @param file  filename for diagnostic messages
+ * @param line  line number for diagnostic messages
+ * @return 0 on success
+ */
+static int
+invalid_tag(char *text, void *rock, const char *file, int line)
+{
+    bozo_Log("Syntax error in file %s, line %d; "
+	     "invalid tag: %s\n", file, line, text);
+    return BZSYNTAX;
+}
+
+/**
+ * Read the BosConfig file.
+ *
+ * Read and parse the BosConfig file to set the bosserver time options and the
+ * list of bnodes controlled by the bosserver.
+ *
+ * @param[in] BosConfig file path.
+ */
+int
+ReadBozoFile(const char *file)
+{
+    int code;
+    FILE *fp = NULL;
+    char *buffer = NULL;
+    size_t bufsize = 0;
+    ssize_t len;
+    int line = 1;
+    int state = 0;
+    struct bnode_info *bnode_info = NULL;
+    struct parser {
+	int state;
+	int next;
+	char *tag;
+	size_t len;
+	int (*parse)(char *text, void *rock, const char *file, int line);
+	void *rock;
+    } *p, parsers[] = {
+	{0, 0, "restrictmode ", 0, parse_bool, &bozo_isrestricted},
+	{0, 0, "restarttime ", 0, parse_ktime, &bozo_nextRestartKT},
+	{0, 0, "checkbintime ", 0, parse_ktime, &bozo_nextDayKT},
+	{0, 1, "bnode ", 0, parse_bnode, &bnode_info},
+	{1, 1, "parm ", 0, parse_parm, &bnode_info},
+	{1, 0, "end", 0, parse_end, &bnode_info},
+	{0, 0, "", 0, invalid_tag, NULL}, /* None of the above. */
+	{1, 1, "", 0, invalid_tag, NULL}, /* None of the above. */
+	{-1, -1, NULL, 0, NULL, NULL}
+    };
+
+    /* Calculate the tag lengths once. */
+    for (p = parsers; p->tag; p++)
+	p->len = strlen(p->tag);
+
+    fp = fopen(file, "r");
+    if (fp == NULL) {
+	if (errno == ENOENT) {
+	    code = 0; /* Assume a cold startup. */
+	    goto done;
+	}
+	bozo_Log("Failed to open file %s; errno %d\n", file, errno);
+	code = errno;
+	goto done;
+    }
+
+    /* Parse the contents by line and save the values. */
+    while ((len = getline(&buffer, &bufsize, fp)) != -1) {
+	if (buffer[len - 1] == '\n')
+	    buffer[len - 1] = '\0';
+	for (p = parsers; p->tag; p++) {
+	    if (state == p->state && strncmp(buffer, p->tag, p->len) == 0) {
+		code = p->parse(buffer + p->len, p->rock, file, line);
+		if (code != 0)
+		    goto done;
+		state = p->next;
+		break;
+	    }
+	}
+	line++;
+    }
+    if (bnode_info != NULL) {
+	bozo_Log("Syntax error in file %s, line %d; "
+		 "missing 'end' tag\n", file, line);
+	code = BZSYNTAX;
+	goto done;
+    }
+    code = 0;
+
+  done:
+    if (fp != NULL)
+	fclose(fp);
+    free_bnode_info(&bnode_info);
+    free(buffer);
+    return code;
+}
+
+/**
+ * Write one bnode's worth of entry into the file.
+ *
+ * @param abonde  bnode to be written
+ * @param arock   struct bztemp context
+ * @return 0 on success
+ */
 static int
 bzwrite(struct bnode *abnode, void *arock)
 {
@@ -71,175 +503,12 @@ bzwrite(struct bnode *abnode, void *arock)
     return 0;
 }
 
-#define	MAXPARMS    20
-int
-ReadBozoFile(const char *aname)
-{
-    FILE *tfile;
-    char tbuffer[BOZO_BSSIZE];
-    char *tp;
-    char *instp = NULL, *typep = NULL, *notifier = NULL, *notp = NULL;
-    afs_int32 code;
-    afs_int32 ktmask, ktday, kthour, ktmin, ktsec;
-    afs_int32 i, goal;
-    struct bnode *tb;
-    char *parms[MAXPARMS];
-    char *thisparms[MAXPARMS];
-    int rmode;
-
-    for (code = 0; code < MAXPARMS; code++)
-	parms[code] = NULL;
-    tfile = fopen(aname, "r");
-    if (!tfile)
-	return 0;		/* -1 */
-    instp = malloc(BOZO_BSSIZE);
-    if (!instp) {
-	code = ENOMEM;
-	goto fail;
-    }
-    typep = malloc(BOZO_BSSIZE);
-    if (!typep) {
-	code = ENOMEM;
-	goto fail;
-    }
-    notp = malloc(BOZO_BSSIZE);
-    if (!notp) {
-	code = ENOMEM;
-	goto fail;
-    }
-    while (1) {
-	/* ok, read lines giving parms and such from the file */
-	tp = fgets(tbuffer, sizeof(tbuffer), tfile);
-	if (tp == (char *)0)
-	    break;		/* all done */
-
-	if (strncmp(tbuffer, "restarttime", 11) == 0) {
-	    code =
-		sscanf(tbuffer, "restarttime %d %d %d %d %d", &ktmask, &ktday,
-		       &kthour, &ktmin, &ktsec);
-	    if (code != 5) {
-		code = -1;
-		goto fail;
-	    }
-	    /* otherwise we've read in the proper ktime structure; now assign
-	     * it and continue processing */
-	    bozo_nextRestartKT.mask = ktmask;
-	    bozo_nextRestartKT.day = ktday;
-	    bozo_nextRestartKT.hour = kthour;
-	    bozo_nextRestartKT.min = ktmin;
-	    bozo_nextRestartKT.sec = ktsec;
-	    continue;
-	}
-
-	if (strncmp(tbuffer, "checkbintime", 12) == 0) {
-	    code =
-		sscanf(tbuffer, "checkbintime %d %d %d %d %d", &ktmask,
-		       &ktday, &kthour, &ktmin, &ktsec);
-	    if (code != 5) {
-		code = -1;
-		goto fail;
-	    }
-	    /* otherwise we've read in the proper ktime structure; now assign
-	     * it and continue processing */
-	    bozo_nextDayKT.mask = ktmask;	/* time to restart the system */
-	    bozo_nextDayKT.day = ktday;
-	    bozo_nextDayKT.hour = kthour;
-	    bozo_nextDayKT.min = ktmin;
-	    bozo_nextDayKT.sec = ktsec;
-	    continue;
-	}
-
-	if (strncmp(tbuffer, "restrictmode", 12) == 0) {
-	    code = sscanf(tbuffer, "restrictmode %d", &rmode);
-	    if (code != 1) {
-		code = -1;
-		goto fail;
-	    }
-	    if (rmode != 0 && rmode != 1) {
-		code = -1;
-		goto fail;
-	    }
-	    bozo_isrestricted = rmode;
-	    continue;
-	}
-
-	if (strncmp("bnode", tbuffer, 5) != 0) {
-	    code = -1;
-	    goto fail;
-	}
-	notifier = notp;
-	code =
-	    sscanf(tbuffer, "bnode %s %s %d %s", typep, instp, &goal,
-		   notifier);
-	if (code < 3) {
-	    code = -1;
-	    goto fail;
-	} else if (code == 3)
-	    notifier = NULL;
-
-	memset(thisparms, 0, sizeof(thisparms));
-
-	for (i = 0; i < MAXPARMS; i++) {
-	    /* now read the parms, until we see an "end" line */
-	    tp = fgets(tbuffer, sizeof(tbuffer), tfile);
-	    if (!tp) {
-		code = -1;
-		goto fail;
-	    }
-	    StripLine(tbuffer);
-	    if (!strncmp(tbuffer, "end", 3))
-		break;
-	    if (strncmp(tbuffer, "parm ", 5)) {
-		code = -1;
-		goto fail;	/* no "parm " either */
-	    }
-	    if (!parms[i]) {	/* make sure there's space */
-		parms[i] = malloc(BOZO_BSSIZE);
-		if (parms[i] == NULL) {
-		    code = ENOMEM;
-		    goto fail;
-		}
-	    }
-	    strcpy(parms[i], tbuffer + 5);	/* remember the parameter for later */
-	    thisparms[i] = parms[i];
-	}
-
-	/* ok, we have the type and parms, now create the object */
-	code =
-	    bnode_Create(typep, instp, &tb, thisparms[0], thisparms[1],
-			 thisparms[2], thisparms[3], thisparms[4], notifier,
-			 goal ? BSTAT_NORMAL : BSTAT_SHUTDOWN, 0);
-	if (code)
-	    goto fail;
-
-	/* bnode created in 'temporarily shutdown' state;
-	 * check to see if we are supposed to run this guy,
-	 * and if so, start the process up */
-	if (goal) {
-	    bnode_SetStat(tb, BSTAT_NORMAL);	/* set goal, taking effect immediately */
-	} else {
-	    bnode_SetStat(tb, BSTAT_SHUTDOWN);
-	}
-    }
-    /* all done */
-    code = 0;
-
-  fail:
-    if (instp)
-	free(instp);
-    if (typep)
-	free(typep);
-    if (notp)
-	free(notp);
-    for (i = 0; i < MAXPARMS; i++)
-	if (parms[i])
-	    free(parms[i]);
-    if (tfile)
-	fclose(tfile);
-    return code;
-}
-
-/* write a new bozo file */
+/**
+ * Write a new bozo file.
+ *
+ * @param aname filename of file to be written
+ * @return 0 on success
+ */
 int
 WriteBozoFile(const char *aname)
 {
