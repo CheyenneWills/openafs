@@ -337,35 +337,6 @@ ReadBozoFile(char *aname)
     char *thisparms[MAXPARMS];
     int rmode;
 
-    /* rename BozoInit to BosServer for the user */
-    if (!aname) {
-	/* if BozoInit exists and BosConfig doesn't, try a rename */
-	if (access(AFSDIR_SERVER_BOZINIT_FILEPATH, 0) == 0
-	    && access(AFSDIR_SERVER_BOZCONF_FILEPATH, 0) != 0) {
-	    code = rk_rename(AFSDIR_SERVER_BOZINIT_FILEPATH,
-			     AFSDIR_SERVER_BOZCONF_FILEPATH);
-	    if (code < 0)
-		perror("bosconfig rename");
-	}
-	if (access(AFSDIR_SERVER_BOZCONFNEW_FILEPATH, 0) == 0) {
-	    code = rk_rename(AFSDIR_SERVER_BOZCONFNEW_FILEPATH,
-			     AFSDIR_SERVER_BOZCONF_FILEPATH);
-	    if (code < 0)
-		perror("bosconfig rename");
-	}
-    }
-
-    /* don't do server restarts by default */
-    bozo_nextRestartKT.mask = KTIME_NEVER;
-    bozo_nextRestartKT.hour = 0;
-    bozo_nextRestartKT.min = 0;
-    bozo_nextRestartKT.day = 0;
-
-    /* restart processes at 5am if their binaries have changed */
-    bozo_nextDayKT.mask = KTIME_HOUR | KTIME_MIN;
-    bozo_nextDayKT.hour = 5;
-    bozo_nextDayKT.min = 0;
-
     for (code = 0; code < MAXPARMS; code++)
 	parms[code] = NULL;
     if (!aname)
@@ -1169,7 +1140,44 @@ main(int argc, char **argv, char **envp)
     }
 #endif
 
-    /* Read init file, starting up programs. Also starts watcher threads. */
+    /*
+     * Rename BozoInit to BosConfig on startup, only when the BosConfig is not
+     * present.  The BozoInit file is obsolete, but this renaming feature is
+     * present for compatibility with old bosservers. See the BosConfig.new
+     * file below to update the BosConfig on startup.
+     */
+    if (access(AFSDIR_SERVER_BOZINIT_FILEPATH, 0) == 0
+	&& access(AFSDIR_SERVER_BOZCONF_FILEPATH, 0) != 0) {
+	code = rk_rename(AFSDIR_SERVER_BOZINIT_FILEPATH,
+			 AFSDIR_SERVER_BOZCONF_FILEPATH);
+	if (code < 0)
+	    bozo_Log("Failed to rename BozoInit: errno %d\n", errno);
+    }
+
+    /*
+     * When a BosConfig.new file is found on startup, rename BosConfig.new
+     * to BosConfig, even if BosConfig is already present. This allows
+     * admins to prepare a new BosConfig to be loaded when the bosserver
+     * restarts. This is otherwise not possible because the bosserver
+     * overwrites the BosConfig while the bosserver is running.
+     */
+    if (access(AFSDIR_SERVER_BOZCONFNEW_FILEPATH, 0) == 0) {
+	code = rk_rename(AFSDIR_SERVER_BOZCONFNEW_FILEPATH,
+			 AFSDIR_SERVER_BOZCONF_FILEPATH);
+	if (code < 0)
+	    bozo_Log("Failed to rename BosConfig.new: errno %d\n", errno);
+    }
+
+    /* Do not do server restarts by default. */
+    memset(&bozo_nextRestartKT, 0, sizeof(bozo_nextRestartKT));
+    bozo_nextRestartKT.mask = KTIME_NEVER;
+
+    /* Restart processes at 5am if their binaries have changed by default. */
+    memset(&bozo_nextDayKT, 0, sizeof(bozo_nextDayKT));
+    bozo_nextDayKT.mask = KTIME_HOUR | KTIME_MIN;
+    bozo_nextDayKT.hour = 5;
+
+    /* Read the BosConfig file and create bnodes listed in the file. */
     if ((code = ReadBozoFile(0))) {
 	bozo_Log
 	    ("bosserver: Something is wrong (%d) with the bos configuration file %s; aborting\n",
