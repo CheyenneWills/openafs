@@ -62,7 +62,6 @@ extern struct bnode_ops fsbnode_ops, dafsbnode_ops, ezbnode_ops, cronbnode_ops;
 
 struct afsconf_dir *bozo_confdir = 0;	/* bozo configuration dir */
 static PROCESS bozo_pid;
-const char *bozo_fileName;
 FILE *bozo_logFile;
 #ifndef AFS_NT40_ENV
 static int bozo_argc = 0;
@@ -323,7 +322,7 @@ bzwrite(struct bnode *abnode, void *arock)
 
 #define	MAXPARMS    20
 int
-ReadBozoFile(char *aname)
+ReadBozoFile(const char *aname)
 {
     FILE *tfile;
     char tbuffer[BOZO_BSSIZE];
@@ -339,8 +338,6 @@ ReadBozoFile(char *aname)
 
     for (code = 0; code < MAXPARMS; code++)
 	parms[code] = NULL;
-    if (!aname)
-	aname = (char *)bozo_fileName;
     tfile = fopen(aname, "r");
     if (!tfile)
 	return 0;		/* -1 */
@@ -493,7 +490,7 @@ ReadBozoFile(char *aname)
 
 /* write a new bozo file */
 int
-WriteBozoFile(char *aname)
+WriteBozoFile(const char *aname)
 {
     FILE *tfile;
     char *tbuffer = NULL;
@@ -501,8 +498,6 @@ WriteBozoFile(char *aname)
     struct bztemp btemp;
     int ret = 0;
 
-    if (!aname)
-	aname = (char *)bozo_fileName;
     if (asprintf(&tbuffer, "%s.NBZ", aname) < 0)
 	return -1;
 
@@ -900,7 +895,6 @@ main(int argc, char **argv, char **envp)
     }
 
     /* some path inits */
-    bozo_fileName = AFSDIR_SERVER_BOZCONF_FILEPATH;
     DoCore = strdup(AFSDIR_SERVER_LOGS_DIRPATH);
     if (!DoCore) {
 	fprintf(stderr, "bosserver: Failed to allocate memory.\n");
@@ -1178,7 +1172,8 @@ main(int argc, char **argv, char **envp)
     bozo_nextDayKT.hour = 5;
 
     /* Read the BosConfig file and create bnodes listed in the file. */
-    if ((code = ReadBozoFile(0))) {
+    code = ReadBozoFile(AFSDIR_SERVER_BOZCONF_FILEPATH);
+    if (code != 0) {
 	bozo_Log
 	    ("bosserver: Something is wrong (%d) with the bos configuration file %s; aborting\n",
 	     code, AFSDIR_SERVER_BOZCONF_FILEPATH);

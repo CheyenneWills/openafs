@@ -94,7 +94,7 @@ SBOZO_SetRestartTime(struct rx_call *acall, afs_int32 atype, struct bozo_netKTim
 
     if (code == 0) {
 	/* try to update the bozo init file */
-	code = WriteBozoFile(0);
+	code = WriteBozoFile(AFSDIR_SERVER_BOZCONF_FILEPATH);
 	bozo_newKTs = 1;
     }
 
@@ -1546,7 +1546,7 @@ SBOZO_SetRestrictedMode(struct rx_call *acall, afs_int32 arestmode)
 	return BZDOM;
     }
     bozo_isrestricted = arestmode;
-    code = WriteBozoFile(0);
+    code = WriteBozoFile(AFSDIR_SERVER_BOZCONF_FILEPATH);
 
     return code;
 }

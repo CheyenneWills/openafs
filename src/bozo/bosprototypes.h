@@ -41,7 +41,8 @@ int bnode_StopProc(struct bnode_proc *aproc, int asignal);
 /* bosserver.c */
 void bozo_Log(const char *format, ... );
 int bozo_ReBozo(void);
-int WriteBozoFile(char *aname);
+int ReadBozoFile(const char *aname);
+int WriteBozoFile(const char *aname);
 int bozo_CreatePidFile(char *ainst, char *aname, pid_t apid);
 int bozo_DeletePidFile(char *ainst, char *aname);
 
