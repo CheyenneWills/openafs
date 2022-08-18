@@ -26,6 +26,8 @@ AFS_OS_OBJS = \
 	osi_vcache.o \
 	osi_vm.o \
 	rand-fortuna-kernel.o
+	roken-snprintf.o \
+	roken-strlcat.o
 
 AFSNOIAUTHOBJS = \
 	afs_call.o \

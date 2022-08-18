@@ -167,6 +167,7 @@ AC_REPLACE_FUNCS([ \
         mkstemp \
         setenv \
         setprogname \
+	snprintf \
         strcasecmp \
         strlcat \
         strnlen \

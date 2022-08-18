@@ -645,6 +645,18 @@ crypto-ct.o: $(TOP_SRCDIR)/external/heimdal/roken/ct.c
 	$(CRULE_OPT) $(TOP_SRCDIR)/external/heimdal/roken/ct.c
 CFLAGS-crypto-ct.o = $(RFC3961_INCLUDES)
 
+roken-strlcat.o: $(TOP_SRCDIR)/external/heimdal/roken/strlcat.c
+	$(CRULE_OPT) $(TOP_SRCDIR)/external/heimdal/roken/strlcat.c
+CFLAGS-roken-strlcat.o = $(RFC3961_INCLUDES)
+
+roken-strlcpy.o: $(TOP_SRCDIR)/external/heimdal/roken/strlcpy.c
+	$(CRULE_OPT) $(TOP_SRCDIR)/external/heimdal/roken/strlcpy.c
+CFLAGS-roken-strlcpy.o = $(RFC3961_INCLUDES)
+
+roken-snprintf.o: $(TOP_SRCDIR)/external/heimdal/roken/snprintf.c
+	$(CRULE_OPT) $(TOP_SRCDIR)/external/heimdal/roken/snprintf.c
+CFLAGS-roken-snprintf.o = $(RFC3961_INCLUDES)
+
 # Files which are specific to particular architectures/targets
 # but have common build rules. Place here instead of duplicating
 # in the per-platform Makefiles.
