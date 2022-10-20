@@ -49,6 +49,7 @@
 #include "ptserver.h"
 #include "ptuser.h"
 #include "display.h"
+#include "prname.h"
 
 struct prheader cheader;
 int fd;
@@ -827,6 +828,10 @@ WalkChains(char map[],		/* one byte per db entry */
 	    type = ntohl(e.flags) & PRTYPE;
 	    switch (type) {
 	    case PRGRP:
+		if (pr_IsNameBlank(e.name, sizeof(e.name))) {
+		    fprintf(stderr,
+			    "Warning: group name for id %d is blank\n", id);
+		}
 		if (id >= 0) {
 		    fprintf(stderr, "Group id not negative\n");
 		    goto abort;
@@ -848,6 +853,10 @@ WalkChains(char map[],		/* one byte per db entry */
 		misc->ngroups++;
 		break;
 	    case PRUSER:
+		if (pr_IsNameBlank(e.name, sizeof(e.name))) {
+		    fprintf(stderr,
+			    "Warning: user name for id %d is blank\n", id);
+		}
 		if (id <= 0) {
 #if defined(SUPERGROUPS)
 		    fprintf(stderr, "User id not positive\n");
