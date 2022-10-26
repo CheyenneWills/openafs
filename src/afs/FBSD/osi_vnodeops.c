@@ -1295,3 +1295,6 @@ struct vop_vector afs_vnodeops = {
 	.vop_symlink =		afs_vop_symlink,
 	.vop_write =		afs_vop_write,
 };
+#if __FreeBSD_version >= 1300067
+VFS_VOP_VECTOR_REGISTER(afs_vnodeops);
+#endif
