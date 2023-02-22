@@ -1176,16 +1176,20 @@ CopyBackArgs(struct cmd_token *alist, char **argv,
     afs_int32 count;
 
     count = 0;
-    if (amaxn <= 1)
+    if (amaxn <= 1) {
+	FreeTokens(alist);
 	return CMD_TOOMANY;
+    }
     *argv = strdup(INITSTR);
     assert(*argv);
     amaxn--;
     argv++;
     count++;
     while (alist) {
-	if (amaxn <= 1)
-	    return CMD_TOOMANY;	/* argv is too small for his many parms. */
+	if (amaxn <= 1) {
+	    FreeTokens(alist);
+	    return CMD_TOOMANY;	/* argv is too small for this many parms. */
+	}
 	*argv = alist->key;
 	next = alist->next;
 	free(alist);
