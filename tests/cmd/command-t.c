@@ -36,6 +36,8 @@
 #include <tests/tap/basic.h>
 #include "common.h"
 
+#define LARGE_TOKEN_LENGTH 513  /* Exceeds the cmd_ParseLine() token buffer size. */
+
 enum cmdOptions {
    copt_flag = 0,
    copt_first,
@@ -84,6 +86,39 @@ checkList(struct cmd_item *list, ...)
     }
 }
 
+static void
+checkArgs(int argc, char **argv, ...)
+{
+    va_list ap;
+    int expected_argc = 0;
+    char *arg;
+    int i;
+
+    /* Verify we got the expected argument count. */
+    va_start(ap, argv);
+    for (arg = va_arg(ap, char *); arg != NULL; arg = va_arg(ap, char *)) {
+	expected_argc++;
+    }
+    va_end(ap);
+    is_int(expected_argc, argc, "argument count is %d", expected_argc);
+
+    /*
+     * Verify the arguments match the expected results when the argument
+     * count is correct.
+     */
+    if (expected_argc != argc) {
+	skip_block(expected_argc, "argument check");
+    } else {
+	va_start(ap, argv);
+	for (i = 0; i < argc; i++) {
+	    arg = va_arg(ap, char *);
+	    is_string(arg, argv[i], " ... '%s'", arg);
+	}
+	va_end(ap);
+	ok(argv[i] == NULL, " ... (NULL terminator)");
+    }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -96,8 +131,9 @@ main(int argc, char **argv)
     int retval;
     char *path;
     char *retstring = NULL;
+    char *large = NULL;
 
-    plan(109);
+    plan(281);
 
     initialize_CMD_error_table();
 
@@ -109,10 +145,13 @@ main(int argc, char **argv)
     /* A simple command line */
     code = cmd_ParseLine("-first foo -second bar -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "foo", "-second", "bar", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(0, code, "dispatching simple comamnd line succeeds");
     code = cmd_Parse(tc, tv, &retopts);
     is_int(0, code, "parsing simple command line succeeds");
+    if (retopts == NULL)
+	bail("cmd_Parse failed");
     is_string("foo", retopts->parms[copt_first].items->data,
 	      " ... 1st option matches");
     is_string("bar", retopts->parms[copt_second].items->data,
@@ -124,6 +163,7 @@ main(int argc, char **argv)
     /* unknown switch */
     code = cmd_ParseLine("-first foo -second bar -third -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "foo", "-second", "bar", "-third", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(CMD_UNKNOWNSWITCH, code, "invalid options fail as expected");
     code = cmd_Parse(tc, tv, &retopts);
@@ -133,6 +173,7 @@ main(int argc, char **argv)
     /* missing parameter */
     code = cmd_ParseLine("-first foo -second -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "foo", "-second", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(CMD_TOOFEW, code, "missing parameters fail as expected");
     code = cmd_Parse(tc, tv, &retopts);
@@ -142,6 +183,7 @@ main(int argc, char **argv)
     /* missing option */
     code = cmd_ParseLine("-second bar -third -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-second", "bar", "-third", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(CMD_UNKNOWNSWITCH, code, "missing options fail as expected");
     code = cmd_Parse(tc, tv, &retopts);
@@ -150,6 +192,7 @@ main(int argc, char **argv)
 
     code = cmd_ParseLine("-first foo baz -second bar -third -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "foo", "baz", "-second", "bar", "-third", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(CMD_NOTLIST, code, "too many parameters fails as expected");
     code = cmd_Parse(tc, tv, &retopts);
@@ -159,6 +202,7 @@ main(int argc, char **argv)
     /* Positional parameters */
     code = cmd_ParseLine("foo bar -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "foo", "bar", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(0, code, "dispatching positional parameters succeeds");
     code = cmd_Parse(tc, tv, &retopts);
@@ -169,6 +213,7 @@ main(int argc, char **argv)
     /* Abbreviations */
     code = cmd_ParseLine("-fi foo -s bar -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-fi", "foo", "-s", "bar", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(0, code, "dispatching abbreviations succeeds");
     code = cmd_Parse(tc, tv, &retopts);
@@ -180,6 +225,7 @@ main(int argc, char **argv)
     /* Ambiguous */
     code = cmd_ParseLine("-f foo -s bar -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-f", "foo", "-s", "bar", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(CMD_UNKNOWNSWITCH, code, "ambiguous abbreviations correctly fail");
     code = cmd_Parse(tc, tv, &retopts);
@@ -192,6 +238,7 @@ main(int argc, char **argv)
 		        CMD_OPTIONAL | CMD_NOABBRV, "sugar with that");
     code = cmd_ParseLine("-fi foo -s bar -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-fi", "foo", "-s", "bar", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(0, code, "disabling specific abbreviations succeeds");
     code = cmd_Parse(tc, tv, &retopts);
@@ -203,6 +250,7 @@ main(int argc, char **argv)
     cmd_DisablePositionalCommands();
     code = cmd_ParseLine("foo bar -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "foo", "bar", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(CMD_NOTLIST, code, "positional parameters can be disabled");
     code = cmd_Parse(tc, tv, &retopts);
@@ -213,6 +261,7 @@ main(int argc, char **argv)
     cmd_DisableAbbreviations();
     code = cmd_ParseLine("-fi foo -s bar -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-fi", "foo", "-s", "bar", "-flag", (char*)NULL);
     code = cmd_Dispatch(tc, tv);
     is_int(CMD_UNKNOWNSWITCH, code, "dispatching abbreviations succeeds");
     code = cmd_Parse(tc, tv, &retopts);
@@ -223,8 +272,11 @@ main(int argc, char **argv)
     /* Try the new cmd_Parse function with something different*/
     code = cmd_ParseLine("-first one -second two -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "one", "-second", "two", "-flag", (char*)NULL);
     code = cmd_Parse(tc, tv, &retopts);
     is_int(0, code, "Parsing with cmd_Parse works");
+    if (retopts == NULL)
+	bail("cmd_Parse failed");
     is_string("one", retopts->parms[copt_first].items->data,
 	      " ... 1st option matches");
     is_string("two", retopts->parms[copt_second].items->data,
@@ -241,8 +293,11 @@ main(int argc, char **argv)
 		       "fourth option" );
     code = cmd_ParseLine("-first a -fourth b -fifth c", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "a", "-fourth", "b", "-fifth", "c", (char*)NULL);
     code = cmd_Parse(tc, tv, &retopts);
     is_int(0, code, "parsing our new options succeeds");
+    if (retopts == NULL)
+	bail("cmd_Parse failed");
     is_string("b", retopts->parms[copt_fourth].items->data,
 	      " Fourth option in right place");
     is_string("c", retopts->parms[copt_fifth].items->data,
@@ -253,7 +308,10 @@ main(int argc, char **argv)
     /* Check Accessors */
     code = cmd_ParseLine("-first 1 -second second -flag", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "1", "-second", "second", "-flag", (char*)NULL);
     code = cmd_Parse(tc, tv, &retopts);
+    if (retopts == NULL)
+	bail("cmd_Parse failed");
 
     code = cmd_OptionAsInt(retopts, copt_first, &retval);
     is_int(0, code, "cmd_OptionsAsInt succeeds");
@@ -287,8 +345,11 @@ main(int argc, char **argv)
 
     code = cmd_ParseLine("-first 1 -twa tup", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "1", "-twa", "tup", (char*)NULL);
     code = cmd_Parse(tc, tv, &retopts);
     is_int(0, code, "cmd_Parse succeeds for alias");
+    if (retopts == NULL)
+	bail("cmd_Parse failed");
     cmd_OptionAsString(retopts, copt_second, &retstring);
     is_string("tup", retstring, " ... and we have the correct value");
     free(retstring);
@@ -307,8 +368,11 @@ main(int argc, char **argv)
 
     code = cmd_ParseLine("-first 1 -perhaps 2 -sanity 3", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "1", "-perhaps", "2", "-sanity", "3", (char*)NULL);
     code = cmd_Parse(tc, tv, &retopts);
     is_int(0, code, "cmd_Parse succeeds for option-as-flag as opt");
+    if (retopts == NULL)
+	bail("cmd_Parse failed");
     code = cmd_OptionAsInt(retopts, copt_perhaps, &retval);
     is_int(0, code, "cmd_OptionAsInt succeeds");
     is_int(2, retval, " ... and we have the correct value");
@@ -319,8 +383,11 @@ main(int argc, char **argv)
 
     code = cmd_ParseLine("-first 1 -perhaps -sanity 3", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "1", "-perhaps", "-sanity", "3", (char*)NULL);
     code = cmd_Parse(tc, tv, &retopts);
     is_int(0, code, "cmd_Parse succeeds for option-as-flag as flag");
+    if (retopts == NULL)
+	bail("cmd_Parse failed");
     code = cmd_OptionAsInt(retopts, copt_perhaps, &retval);
     is_int(CMD_MISSING, code, " ... pulling out a value fails as expected");
     cmd_OptionAsFlag(retopts, copt_perhaps, &retval);
@@ -331,16 +398,22 @@ main(int argc, char **argv)
     /* Check that we can produce help output */
     code = cmd_ParseLine("-help", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-help", (char*)NULL);
     code = cmd_Parse(tc, tv, &retopts);
     is_int(CMD_HELP, code, "cmd_Parse returns help indicator with help output");
     ok(retopts == NULL, " ... and options is empty");
+    cmd_FreeOptions(&retopts);
+    cmd_FreeArgv(tv);
 
     /* Check splitting with '=' */
 
     code = cmd_ParseLine("-first 1 -perhaps=6 -sanity=3", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "1", "-perhaps=6", "-sanity=3", (char*)NULL);
     code = cmd_Parse(tc, tv, &retopts);
     is_int(0, code, "cmd_Parse succeeds for items split with '='");
+    if (retopts == NULL)
+	bail("cmd_Parse failed");
     code = cmd_OptionAsInt(retopts, copt_perhaps, &retval);
     is_int(0, code, "cmd_OptionAsInt succeeds");
     is_int(6, retval, " ... and we have the correct value once");
@@ -353,8 +426,11 @@ main(int argc, char **argv)
     /* Check list behaviour */
     code = cmd_ParseLine("-first 1 -second one two three", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "1", "-second", "one", "two", "three", (char*)NULL);
     code = cmd_Parse(tc, tv, &retopts);
     is_int(0, code, "cmd_Parse succeeds for a list");
+    if (retopts == NULL)
+	bail("cmd_Parse failed");
     code = cmd_OptionAsList(retopts, copt_second, &list);
     is_int(0, code, "cmd_OptionAsList succeeds");
     checkList(list, "one", "two", "three", NULL);
@@ -366,11 +442,16 @@ main(int argc, char **argv)
     cmd_SetCommandName("test");
     code = cmd_OpenConfigFile(path);
     is_int(0, code, "cmd_OpenConfigFile succeeds");
+    free(path);
+    path = NULL;
 
     code = cmd_ParseLine("-first 1", tv, &tc, 100);
     is_int(0, code, "cmd_ParseLine succeeds");
+    checkArgs(tc, tv, "", "-first", "1", (char*)NULL);
     code = cmd_Parse(tc, tv, &retopts);
     is_int(0, code, "cmd_Parse succeeds when we have a config file");
+    if (retopts == NULL)
+	bail("cmd_Parse failed");
     code = cmd_OptionAsInt(retopts, copt_perhaps, &retval);
     is_int(0, code, "cmd_OptionsAsInt succeeds");
     is_int(10, retval, " ... and we have the correct value for perhaps");
@@ -378,11 +459,65 @@ main(int argc, char **argv)
     is_int(0, code, "cmd_OptionAsString succeeds");
     is_string("testing", retstring,
 	      " ... and we have the correct value for sanity");
+    free(retstring);
+    retstring = NULL;
 
     /* Check breaking up a list of options */
     code = cmd_OptionAsList(retopts, copt_second, &list);
     is_int(0, code, "cmd_OptionAsList succeeds");
     checkList(list, "one", "two", "three", "four", NULL);
+    cmd_FreeOptions(&retopts);
+    cmd_FreeArgv(tv);
+
+    /* Verify cmd_ParseLine does not overflow the argv. */
+    memset(tv, 0, sizeof(tv));
+    code = cmd_ParseLine("", tv, &tc, 0);
+    is_int(CMD_TOOMANY, code,
+	   "cmd_ParseLine fails with CMD_TOOMANY when the argv size is 0");
+    cmd_FreeArgv(tv);
+
+    memset(tv, 0, sizeof(tv));
+    code = cmd_ParseLine("", tv, &tc, 1);
+    is_int(CMD_TOOMANY, code,
+	   "cmd_ParseLine fails with CMD_TOOMANY when the argv size is 1");
+    cmd_FreeArgv(tv);
+
+    memset(tv, 0, sizeof(tv));
+    code = cmd_ParseLine("too many args given", tv, &tc, 0);
+    is_int(CMD_TOOMANY, code,
+	   "cmd_ParseLine fails with CMD_TOOMANY when the argv size is 0 "
+	   "and args given");
+    cmd_FreeArgv(tv);
+
+    memset(tv, 0, sizeof(tv));
+    code = cmd_ParseLine("too many args given", tv, &tc, 1);
+    is_int(CMD_TOOMANY, code,
+	   "cmd_ParseLine fails with CMD_TOOMANY when the argv size is 1 "
+	   "and args given");
+    cmd_FreeArgv(tv);
+
+    memset(tv, 0, sizeof(tv));
+    code = cmd_ParseLine("not too many", tv, &tc, 5);
+    is_int(0, code, "cmd_ParseLine succeeds when the argv is full");
+    checkArgs(tc, tv, "", "not", "too", "many", (char*)NULL);
+    cmd_FreeArgv(tv);
+
+    memset(tv, 0, sizeof(tv));
+    code = cmd_ParseLine("too many args given", tv, &tc, 5);
+    is_int(CMD_TOOMANY, code,
+	   "cmd_ParseLine fails with CMD_TOOMANY when too many args are found");
+    cmd_FreeArgv(tv);
+
+    /* Large token test. */
+    memset(tv, 0, sizeof(tv));
+    large = bcalloc(LARGE_TOKEN_LENGTH, 1);
+    memset(large, 'x', LARGE_TOKEN_LENGTH - 1);
+    large[LARGE_TOKEN_LENGTH - 1] = '\0';
+    code = cmd_ParseLine(large, tv, &tc, 5);
+    is_int(CMD_TOOBIG, code,
+	   "cmd_ParseLine fails with CMD_TOOBIG when token size is exceeded");
+    free(large);
+    cmd_FreeArgv(tv);
 
     return 0;
 }
