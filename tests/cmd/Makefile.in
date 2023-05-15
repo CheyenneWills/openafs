@@ -12,7 +12,7 @@ LIBS = $(abs_top_builddir)/tests/common/libafstest_common.la \
        $(abs_top_builddir)/src/comerr/liboafs_comerr.la \
        $(abs_top_builddir)/src/opr/liboafs_opr.la
 
-BINS = command-t split-t
+BINS = command-t split-t join-t
 
 all: $(BINS)
 
@@ -23,6 +23,11 @@ split-t: split-t.o $(LIBS)
 	$(LT_LDRULE_static) split-t.o $(LIBS) $(LIB_roken) $(XLIBS)
 
 split-t.o: split-t.c
+
+join-t: join-t.o $(LIBS)
+	$(LT_LDRULE_static) join-t.o $(LIBS) $(LIB_roken) $(XLIBS)
+
+join-t.o: join-t.c
 
 install:
 

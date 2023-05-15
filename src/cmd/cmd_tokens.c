@@ -163,6 +163,28 @@ accept_char(struct token_buffer *tb, char ch)
 }
 
 /**
+ * Add a string to the token buffer.
+ *
+ * Realloc the token buffer if needed.
+ *
+ * @param tb token buffer
+ * @param sh string to be added
+ * @return 0 on success
+ *   @retval ENOMEM  out of memory
+ */
+static int
+accept_string(struct token_buffer *tb, char *s)
+{
+    int code;
+    for (; *s != '\0'; s++) {
+	code = accept_char(tb, *s);
+	if (code != 0)
+	    return code;
+    }
+    return 0;
+}
+
+/**
  * Lexical analyzer for shell-like syntax.
  *
  * Convert a string into a series of tokens, splitting on whitespace, honoring
@@ -461,4 +483,92 @@ cmd_FreeSplit(char ***pargv)
 	free(*pargv);
 	*pargv = NULL;
     }
+}
+
+/**
+ * Returns true if the string does not need to be quoted in a command line.
+ *
+ * @param s  string to check
+ * @return  non-zero if string is safe without quotes
+ */
+static int
+has_safe_chars(char *s)
+{
+    const char *safe = "0123456789"
+		       "abcdefghijklmnopqrstuvwxyz"
+		       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		       "@%+=:,./-";
+    size_t len = strlen(s);
+    return (strspn(s, safe) == len);
+}
+
+/**
+ * Join strings into a shell-like command string.
+ *
+ * Join an argv string vector into a string quoted for a command line. Arguments
+ * which required quotes are enclosed in single quotes. Single quote characters
+ * are quoted with double quotes, so string a'b is quoted as 'a'"'"'b'
+ *
+ * @param[in] argc  argument count
+ * @param[in] argv  arguments to be joined
+ * @param[out] text  joined output; must be freed by the caller
+ */
+int
+cmd_Join(int argc, char **argv, char **text)
+{
+    int code;
+    struct token_buffer tb;
+    char *p;
+    int i;
+
+    *text = NULL;
+    code = init_token_buffer(&tb);
+    if (code != 0)
+	return code;
+
+    for (i = 0; i < argc; i++) {
+	if (i > 0) {
+	    code = accept_char(&tb, ' ');
+	    if (code != 0)
+		goto fail;
+	}
+	if (strlen(argv[i]) == 0) {
+	    code = accept_string(&tb, "''");
+	    if (code != 0)
+		goto fail;
+	} else if (has_safe_chars(argv[i])) {
+	    code = accept_string(&tb, argv[i]);
+	    if (code != 0)
+		goto fail;
+	} else {
+	    /* Quote the argument. */
+	    code = accept_char(&tb, '\'');
+	    if (code != 0)
+		goto fail;
+	    for (p = argv[i]; *p != '\0'; p++) {
+		if (*p == '\'') {
+		    code = accept_string(&tb, "'\"'\"'");
+		    if (code != 0)
+			goto fail;
+		} else {
+		    code = accept_char(&tb, *p);
+		    if (code != 0)
+			goto fail;
+		}
+	    }
+	    code = accept_char(&tb, '\'');
+	    if (code != 0)
+		goto fail;
+	}
+    }
+    *text = strdup(tb.token_start);
+    if (*text == NULL) {
+	code = ENOMEM;
+	goto fail;
+    }
+    code = 0;
+
+  fail:
+    free_token_buffer(&tb);
+    return code;
 }

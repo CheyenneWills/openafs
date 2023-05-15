@@ -86,6 +86,7 @@ extern int cmd_Tokenize(const char *text, int (*emit)(char *token, void *rock),
 			 void *rock);
 extern int cmd_Split(const char *text, int *pc, char ***pv);
 extern void cmd_FreeSplit(char ***pargv);
+extern int cmd_Join(int argc, char **argv, char **text);
 extern void cmd_DisablePositionalCommands(void);
 extern void cmd_DisableAbbreviations(void);
 extern void PrintSyntax(struct cmd_syndesc *as);
