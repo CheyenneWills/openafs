@@ -1564,7 +1564,7 @@ HRESULT CALLBACK ListBox_HScrollHook (HWND hList, UINT msg, WPARAM wp, LPARAM lp
             if (iItem == iItemSkip)
                continue;
             int cch = (int)SendMessage (hList, LB_GETTEXTLEN, (WPARAM)iItem, 0);
-            cchMax = max (cch, cchMax);
+            cchMax = opr_max (cch, cchMax);
             }
 
          WORD cxExtent = (WORD)SendMessage (hList, LB_GETHORIZONTALEXTENT, 0, 0);
@@ -1577,7 +1577,7 @@ HRESULT CALLBACK ListBox_HScrollHook (HWND hList, UINT msg, WPARAM wp, LPARAM lp
                continue;
             SendMessage (hList, LB_GETTEXT, (WPARAM)iItem, (LPARAM)pszString);
             WORD cxString = LB_GetStringExtent (hList, pszString);
-            cxStringMax = max (cxString, cxStringMax);
+            cxStringMax = opr_max (cxString, cxStringMax);
             }
 
          FreeString (pszString);
@@ -1847,7 +1847,7 @@ WORD NextControlID (HWND hParent)
       if ((wChild < 0) || (wChild >= 0xF000))
          continue;
 
-      wNext = max( wNext, (WORD) wChild+1 );
+      wNext = opr_max( wNext, (WORD) wChild+1 );
       }
 
    return wNext;

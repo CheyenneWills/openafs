@@ -4383,7 +4383,7 @@ AFSSetupMD5Hash( IN AFSFcb *Fcb,
 
                     pMD5Buffer = (char *)pExtentBuffer;
 
-                    ulCurrentLen = min( ByteCount, pExtent->Size - (ULONG)(liByteOffset.QuadPart - pExtent->FileOffset.QuadPart));
+                    ulCurrentLen = opr_min( ByteCount, pExtent->Size - (ULONG)(liByteOffset.QuadPart - pExtent->FileOffset.QuadPart));
 
                     RtlCopyMemory( (void *)((char *)pExtentBuffer + (ULONG)(liByteOffset.QuadPart - pExtent->FileOffset.QuadPart)),
                                    pCurrentBuffer,

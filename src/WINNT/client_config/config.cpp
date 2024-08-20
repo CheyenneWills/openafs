@@ -413,7 +413,7 @@ void Config_GetChunkSize (ULONG *pckChunk)
 {
     if (!Config_ReadGlobalNum (TEXT("ChunkSize"), (DWORD*)pckChunk))
         *pckChunk = CM_CONFIGDEFAULT_CHUNKSIZE;
-    *pckChunk = max (*pckChunk, 10);
+    *pckChunk = opr_max (*pckChunk, 10);
     *pckChunk = (1 << ((*pckChunk)-10));
 }
 

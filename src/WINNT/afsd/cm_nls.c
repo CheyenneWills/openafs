@@ -235,7 +235,7 @@ NormalizeUtf16String(const wchar_t * src, int cch_src, wchar_t * ext_dest, int *
                     dest[rv] = 0;
                 else {
                     /* Can't NUL terminate */
-                    cch_dest = max(rv,cch_dest) + NLSERRCCH;
+                    cch_dest = opr_max(rv,cch_dest) + NLSERRCCH;
                     goto cont;
                 }
 
@@ -385,7 +385,7 @@ int cm_Utf16ToUtf16(const cm_unichar_t * src, int cch_src,
         StringCchCopyW(dest, cch_dest, src);
         return (int)wcslen(dest) + 1;
     } else {
-        int cch_conv = min(cch_src, cch_dest);
+        int cch_conv = opr_min(cch_src, cch_dest);
         memcpy(dest, src, cch_conv * sizeof(cm_unichar_t));
         return cch_conv;
     }

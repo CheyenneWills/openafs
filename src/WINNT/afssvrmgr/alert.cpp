@@ -176,14 +176,14 @@ void Alert_EndUpdate (LPIDENT lpi, LPSERVER lpServer)
             }
          else if (fNeedBadCredsWarning && !fHaveBadCredsWarning)
             {
-            for (iAlert = min( lpoaServer->nAlerts, nAlertsMAX-1 );
+            for (iAlert = opr_min( lpoaServer->nAlerts, nAlertsMAX-1 );
                  iAlert > 0;
                  --iAlert)
                {
                memcpy (&lpoaServer->aAlerts[ iAlert ], &lpoaServer->aAlerts[ iAlert-1 ], sizeof(ALERTINFO));
                }
             lpoaServer->aAlerts[0].alert = alertBADCREDS;
-            lpoaServer->nAlerts = min( nAlertsMAX, lpoaServer->nAlerts+1 );
+            lpoaServer->nAlerts = opr_min( nAlertsMAX, lpoaServer->nAlerts+1 );
             }
 
          for (iAlert = 0; iAlert < lpoaChild->nAlerts; ++iAlert)

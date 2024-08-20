@@ -297,13 +297,13 @@ void Date_OnCreate (DateInfo *pdi)
    ReleaseDC (GetParent (pdi->hDate), hdc);
 
    LONG cxNumbers = cxRECT(rDate) - GetSystemMetrics(SM_CXVSCROLL) - (sDateSep.cx)*2;
-   LONG cxYear    = max( cxNumbers/2, s88.cx*2 );
-   LONG cxMonth   = max( cxNumbers/4, s88.cx );
-   LONG cxDay     = max( cxNumbers/4, s88.cx );
+   LONG cxYear    = opr_max( cxNumbers/2, s88.cx*2 );
+   LONG cxMonth   = opr_max( cxNumbers/4, s88.cx );
+   LONG cxDay     = opr_max( cxNumbers/4, s88.cx );
 
-   cxYear    = min (cxYear,  (LONG)( 1.2 * s88.cx * 2 ));
-   cxMonth   = min (cxMonth, (LONG)( 1.2 * s88.cx ));
-   cxDay     = min (cxDay,   (LONG)( 1.2 * s88.cx ));  // don't be TOO wide.
+   cxYear    = opr_min (cxYear,  (LONG)( 1.2 * s88.cx * 2 ));
+   cxMonth   = opr_min (cxMonth, (LONG)( 1.2 * s88.cx ));
+   cxDay     = opr_min (cxDay,   (LONG)( 1.2 * s88.cx ));  // don't be TOO wide.
 
    pdi->idYear  = 100+NextControlID (GetParent (pdi->hDate));
    pdi->idMonth = pdi->idYear +1;

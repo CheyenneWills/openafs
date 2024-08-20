@@ -598,7 +598,7 @@ void Server_Keys_OnAddKey (HWND hDlg, LPSVR_SECURITY_PARAMS lpp)
       LPSERVERKEY pKey = &lpp->lpKeyList->aKeys[ iKey ];
       if (!ISKEYINUSE(pKey))
          continue;
-      lpCreate->keyVersion = max (lpCreate->keyVersion, 1+pKey->keyVersion);
+      lpCreate->keyVersion = opr_max (lpCreate->keyVersion, 1+pKey->keyVersion);
       }
 
    if (ModalDialogParam (IDD_SVR_CREATEKEY, hDlg, (DLGPROC)CreateKey_DlgProc, (LPARAM)lpCreate) != IDOK)

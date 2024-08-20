@@ -38,7 +38,7 @@
 #endif
 
 #ifndef limit
-#define limit(_a,_x,_b)  min( max( (_x), (_a) ), (_b) )
+#define limit(_a,_x,_b)  opr_min( opr_max( (_x), (_a) ), (_b) )
 #endif
 
 #ifndef inlimit

@@ -484,7 +484,7 @@ static void cm_CheckServersMulti(afs_uint32 flags, cm_cell_t *cellp)
     char hoststr[16];
 
     cm_InitReq(&req);
-    maxconns = max(cm_numFileServers,cm_numVldbServers);
+    maxconns = opr_max(cm_numFileServers,cm_numVldbServers);
     if (maxconns == 0)
         return;
 
@@ -921,14 +921,14 @@ void cm_SetServerIPRank(cm_server_t * serverp)
 	    if ( (serverAddr & cm_SubnetMask[i]) == mySubnet)
 	    {
 		if ( serverAddr == myAddr ) {
-		    serverp->ipRank = min(serverp->ipRank,
+		    serverp->ipRank = opr_min(serverp->ipRank,
 					   CM_IPRANK_TOP);/* same machine */
 		} else {
-                    serverp->ipRank = min(serverp->ipRank,
+                    serverp->ipRank = opr_min(serverp->ipRank,
                                           CM_IPRANK_HI); /* same subnet */
                 }
 	    } else {
-                serverp->ipRank = min(serverp->ipRank, CM_IPRANK_MED); /* same net */
+                serverp->ipRank = opr_min(serverp->ipRank, CM_IPRANK_MED); /* same net */
             }
 	}
     } /* and of for loop */

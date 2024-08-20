@@ -75,9 +75,9 @@ extern EXPORTED void CopyAnsiToString (LPTSTR pszTarget, LPCSTR pszOriginalA, si
 extern EXPORTED void CopyStringToUnicode (LPWSTR pszTargetW, LPCTSTR pszOriginal, size_t cchMax = (size_t)1024);
 extern EXPORTED void CopyStringToAnsi (LPSTR pszTargetA, LPCTSTR pszOriginal, size_t cchMax = (size_t)1024);
 
-#define AllocateAnsi(_cch)     ((LPSTR)Allocate ((max((_cch),cchRESOURCE)+1) * sizeof(CHAR)))
-#define AllocateUnicode(_cch) ((LPWSTR)Allocate ((max((_cch),cchRESOURCE)+1) * sizeof(WCHAR)))
-#define AllocateString(_cch)  ((LPTSTR)Allocate ((max((_cch),cchRESOURCE)+1) * sizeof(TCHAR)))
+#define AllocateAnsi(_cch)     ((LPSTR)Allocate ((opr_max((_cch),cchRESOURCE)+1) * sizeof(CHAR)))
+#define AllocateUnicode(_cch) ((LPWSTR)Allocate ((opr_max((_cch),cchRESOURCE)+1) * sizeof(WCHAR)))
+#define AllocateString(_cch)  ((LPTSTR)Allocate ((opr_max((_cch),cchRESOURCE)+1) * sizeof(TCHAR)))
 extern EXPORTED void FreeString (LPCVOID pszString, LPCVOID pszOriginalString = NULL);
 
 extern EXPORTED LPSTR StringToAnsi (LPCTSTR pszOriginal);

@@ -2482,7 +2482,7 @@ long smb_ReceiveRAPNetServerGetInfo(smb_vc_t *vcp, smb_tran2Packet_t *p, smb_pac
     }
 
     totalData = (DWORD)(cstrp - outp->datap);
-    outp->totalData = min(bufsize,totalData); /* actual data size */
+    outp->totalData = opr_min(bufsize,totalData); /* actual data size */
     outp->parmsp[0] = (outp->totalData == totalData)? 0 : ERROR_MORE_DATA;
     outp->parmsp[2] = totalData;
     outp->totalParms = totalParams;
@@ -3120,7 +3120,7 @@ long smb_ReceiveTran2QFSInfo(smb_vc_t *vcp, smb_tran2Packet_t *p, smb_packet_t *
         memset(&qi.u.volumeInfo.label, 0, sizeof(qi.u.volumeInfo.label));
         smb_UnparseString(op, qi.u.volumeInfo.label, _C("AFS"), &sz, 0);
 
-        responseSize = sizeof(unsigned long) + sizeof(char) + max(12, sz);
+        responseSize = sizeof(unsigned long) + sizeof(char) + opr_max(12, sz);
         break;
 
     case SMB_QUERY_FS_VOLUME_INFO:
@@ -9419,7 +9419,7 @@ long smb_ReceiveNTTranQuerySecurityDesc(smb_vc_t *vcp, smb_packet_t *inp, smb_pa
 
     if (maxData >= totalDataCount) {
         dataCount = totalDataCount;
-        parmCount = min(totalParmCount, maxParm);
+        parmCount = opr_min(totalParmCount, maxParm);
     } else if (maxParm >= totalParmCount) {
         totalDataCount = dataCount = 0;
         parmCount = totalParmCount;

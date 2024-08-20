@@ -133,8 +133,8 @@ void PROGRESSDISPLAY::SetProgress (int iProgress)
 {
    EnterCriticalSection (&m_cs);
 
-   m_iProgress = max( m_iProgress, iProgress );
-   m_iProgress = min( max( m_iProgress, m_iProgressStart ), m_iProgressFinish );
+   m_iProgress = opr_max( m_iProgress, iProgress );
+   m_iProgress = opr_min( opr_max( m_iProgress, m_iProgressStart ), m_iProgressFinish );
    PostMessage (m_hWnd, WM_UPDATE_PROGRESS, 0, 0);
 
    LeaveCriticalSection (&m_cs);

@@ -94,7 +94,7 @@ DWORD GetMTUForAddress(PIP_ADAPTER_ADDRESSES cAddress)
             cb_mtu = sizeof(mtu);
             if (RegQueryValueEx(hk_interface, "MTU", NULL, NULL, &mtu,
                                 &cb_mtu) == ERROR_SUCCESS) {
-                min_mtu = min(min_mtu, mtu);
+                min_mtu = opr_min(min_mtu, mtu);
             }
 
             RegCloseKey(hk_interface);
@@ -252,7 +252,7 @@ int syscfg_GetIFInfo(int *count, int *addrs, int *masks, int *mtus, int *flags)
                     if (n < maxCount) {
                         addrs[n] = ntohl(pIpTbl->table[i].dwAddr);
                         masks[n] = ntohl(pIpTbl->table[i].dwMask);
-                        mtus[n] = min(cAddress->Mtu, if_mtu);
+                        mtus[n] = opr_min(cAddress->Mtu, if_mtu);
                         flags[n] = 0;
                         n++;
                     }

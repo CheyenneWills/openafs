@@ -308,9 +308,9 @@ void CALLBACK Wiz_DrawOverlay (LPWIZARD pWiz, HDC hdcTarget, LPRECT prTarget, HP
       double dPortionGreen = cos (dColorRotNext + (TWOPI/3));
       double dPortionBlue = cos (dColorRotNext - (TWOPI/3));
 
-      dPortionRed = max (dPortionRed, 0.00);
-      dPortionGreen = max (dPortionGreen, 0.00);
-      dPortionBlue = max (dPortionBlue, 0.00);
+      dPortionRed = opr_max (dPortionRed, 0.00);
+      dPortionGreen = opr_max (dPortionGreen, 0.00);
+      dPortionBlue = opr_max (dPortionBlue, 0.00);
 
       clr = RGB( (BYTE)(255.0 * dPortionRed),
                  (BYTE)(255.0 * dPortionGreen),

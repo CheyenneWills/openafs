@@ -1729,7 +1729,7 @@ DWORD CALLBACK License_StreamText (DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG 
 {
    LPTSTR psz = (LPTSTR)dwCookie;
    LONG cchAvail = lstrlen(psz);
-   if ((*pcb = min(cchAvail, cb)) != 0) {
+   if ((*pcb = opr_min(cchAvail, cb)) != 0) {
       memcpy (pbBuff, psz, *pcb);
       memmove (psz, &psz[*pcb], cchAvail - *pcb + 1);
    }

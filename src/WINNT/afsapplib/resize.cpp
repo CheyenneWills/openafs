@@ -26,7 +26,7 @@ extern "C" {
  */
 
 #ifndef limit
-#define limit(_a,_x,_b)    (min( max( (_a),(_x) ), (_b) ))
+#define limit(_a,_x,_b)    (opr_min( opr_max( (_a),(_x) ), (_b) ))
 #endif
 #ifndef inlimit
 #define inlimit(_a,_x,_b)  ( (_x >= _a) && (_x <= _b) )
@@ -521,32 +521,32 @@ BOOL WhereShouldSplitterGo (HWND hWnd, int id1, int id2, RECT *prWnd, BOOL *pfX)
    if (r2.left > r1.right)	// R1 on left, R2 on right?
       {
       *pfX = TRUE;
-      prWnd->top    = min (r1.top,    r2.top);
-      prWnd->bottom = max (r1.bottom, r2.bottom);
+      prWnd->top    = opr_min (r1.top,    r2.top);
+      prWnd->bottom = opr_max (r1.bottom, r2.bottom);
       prWnd->left   = r1.right;
       prWnd->right  = r2.left;
       }
    else if (r2.right < r1.left)	// R2 on left, R1 on right?
       {
       *pfX = TRUE;
-      prWnd->top    = min (r1.top,    r2.top);
-      prWnd->bottom = max (r1.bottom, r2.bottom);
+      prWnd->top    = opr_min (r1.top,    r2.top);
+      prWnd->bottom = opr_max (r1.bottom, r2.bottom);
       prWnd->left   = r2.right;
       prWnd->right  = r1.left;
       }
    else if (r2.top > r1.bottom)	// R1 on top, R2 on bottom?
       {
       *pfX = FALSE;
-      prWnd->left   = min (r1.left,   r2.left);
-      prWnd->right  = max (r1.right,  r2.right);
+      prWnd->left   = opr_min (r1.left,   r2.left);
+      prWnd->right  = opr_max (r1.right,  r2.right);
       prWnd->top    = r1.bottom;
       prWnd->bottom = r2.top;
       }
    else if (r2.bottom < r1.top)	// R2 on top, R1 on bottom?
       {
       *pfX = FALSE;
-      prWnd->left   = min (r1.left,   r2.left);
-      prWnd->right  = max (r1.right,  r2.right);
+      prWnd->left   = opr_min (r1.left,   r2.left);
+      prWnd->right  = opr_max (r1.right,  r2.right);
       prWnd->top    = r2.bottom;
       prWnd->bottom = r1.top;
       }
@@ -764,8 +764,8 @@ void FindSplitterMinMax (HWND hWnd, SplitterData *psd, LONG cOld, LONG *pcdMin, 
                   cxMin = cOld - (cxRECT(rControl) - LOWORD(psd->awd[ ii ].cMaximum))*2;
                }
 
-            if (cxMin)  *pcdMin = (*pcdMin) ? max( *pcdMin, cxMin ) : cxMin;
-            if (cxMax)  *pcdMax = (*pcdMax) ? min( *pcdMax, cxMax ) : cxMax;
+            if (cxMin)  *pcdMin = (*pcdMin) ? opr_max( *pcdMin, cxMin ) : cxMin;
+            if (cxMax)  *pcdMax = (*pcdMax) ? opr_min( *pcdMax, cxMax ) : cxMax;
             }
          else
             {
@@ -792,8 +792,8 @@ void FindSplitterMinMax (HWND hWnd, SplitterData *psd, LONG cOld, LONG *pcdMin, 
                   cyMin = cOld - (cyRECT(rControl) - HIWORD(psd->awd[ ii ].cMaximum))*2;
                }
 
-            if (cyMin)  *pcdMin = (*pcdMin) ? max( *pcdMin, cyMin ) : cyMin;
-            if (cyMax)  *pcdMax = (*pcdMax) ? min( *pcdMax, cyMax ) : cyMax;
+            if (cyMin)  *pcdMin = (*pcdMin) ? opr_max( *pcdMin, cyMin ) : cyMin;
+            if (cyMax)  *pcdMax = (*pcdMax) ? opr_min( *pcdMax, cyMax ) : cyMax;
             }
          }
       }
@@ -873,10 +873,10 @@ void FindResizeLimits (HWND hWnd, LONG *pcxMin, LONG *pcxMax, LONG *pcyMin, LONG
                cyMax = cyRECT(rNow) - (cyRECT(rControl) - HIWORD(awd[ ii ].cMaximum))*2;
             }
 
-         if (cxMin)  *pcxMin = (*pcxMin) ? max( *pcxMin, cxMin ) : cxMin;
-         if (cyMin)  *pcyMin = (*pcyMin) ? max( *pcyMin, cyMin ) : cyMin;
-         if (cxMax)  *pcxMax = (*pcxMax) ? min( *pcxMax, cxMax ) : cxMax;
-         if (cyMax)  *pcyMax = (*pcyMax) ? min( *pcyMax, cyMax ) : cyMax;
+         if (cxMin)  *pcxMin = (*pcxMin) ? opr_max( *pcxMin, cxMin ) : cxMin;
+         if (cyMin)  *pcyMin = (*pcyMin) ? opr_max( *pcyMin, cyMin ) : cyMin;
+         if (cxMax)  *pcxMax = (*pcxMax) ? opr_min( *pcxMax, cxMax ) : cxMax;
+         if (cyMax)  *pcyMax = (*pcyMax) ? opr_min( *pcyMax, cyMax ) : cyMax;
          }
       }
 }

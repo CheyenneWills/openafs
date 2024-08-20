@@ -1073,7 +1073,7 @@ MSRPC_ReadMessageLength(msrpc_conn * conn, unsigned int max_len)
     int code;
     msrpc_call *call;
 
-    max_len = min(max_len, conn->max_recv_frag);
+    max_len = opr_min(max_len, conn->max_recv_frag);
 
     code = MSRPC_PrepareRead(conn);
     if (code)
@@ -1094,19 +1094,19 @@ MSRPC_ReadMessageLength(msrpc_conn * conn, unsigned int max_len)
 		int fragment_size = conn->max_recv_frag - RPC_RESPONSE_ENVELOPE_OVERHEAD;
 		unsigned int len;
 
-		len = min(max_len, conn->max_recv_frag);
+		len = opr_min(max_len, conn->max_recv_frag);
 
 		if (call->out.buf_pos % fragment_size == 0) {
 		    if (len < RPC_RESPONSE_ENVELOPE_OVERHEAD)
 			return 0;
 
-		    len = min(len, RPC_RESPONSE_ENVELOPE_OVERHEAD + call->out.buf_length - call->out.buf_pos);
+		    len = opr_min(len, RPC_RESPONSE_ENVELOPE_OVERHEAD + call->out.buf_length - call->out.buf_pos);
 		} else {
 		    unsigned int to_copy;
 
-		    to_copy = min(fragment_size - (call->out.buf_pos % fragment_size),
+		    to_copy = opr_min(fragment_size - (call->out.buf_pos % fragment_size),
 				  call->out.buf_length - call->out.buf_pos);
-		    len = min(to_copy, len);
+		    len = opr_min(to_copy, len);
 		}
 
 		return len;
@@ -1116,7 +1116,7 @@ MSRPC_ReadMessageLength(msrpc_conn * conn, unsigned int max_len)
 	case PDU_TYPE_FAULT:
 	case PDU_TYPE_BIND_NAK:
 	    {
-		int len = min(call->out.buf_length - call->out.buf_pos, max_len);
+		int len = opr_min(call->out.buf_length - call->out.buf_pos, max_len);
 
 		return len;
 	    }
@@ -1184,7 +1184,7 @@ MSRPC_ReadMessage(msrpc_conn * conn, BYTE *buffer, unsigned int len)
 		fragment_size = conn->max_recv_frag - RPC_RESPONSE_ENVELOPE_OVERHEAD;
 
 		/* Don't send more than the max_recv_frag */
-		len = min(len, conn->max_recv_frag);
+		len = opr_min(len, conn->max_recv_frag);
 
 		/* Switch the supplied user buffer with the output
 		   buffer */
@@ -1219,7 +1219,7 @@ MSRPC_ReadMessage(msrpc_conn * conn, BYTE *buffer, unsigned int len)
 		    write_u_int8(&o, 0);		 /* reserved */
 
 		    {
-			int to_copy = min(SPC_LEFT(&o), o_len - o_pos);
+			int to_copy = opr_min(SPC_LEFT(&o), o_len - o_pos);
 			int rc;
 
 			O_WRITESZ(&o, (o_buffer + o_pos), to_copy);
@@ -1231,7 +1231,7 @@ MSRPC_ReadMessage(msrpc_conn * conn, BYTE *buffer, unsigned int len)
 
 			 */
 			rc = closeMessage(&o, call,
-					  min(conn->max_recv_frag,
+					  opr_min(conn->max_recv_frag,
 					      RPC_RESPONSE_ENVELOPE_OVERHEAD + o_len - start_pos));
 			if (rc)
 			    return rc;
@@ -1267,9 +1267,9 @@ MSRPC_ReadMessage(msrpc_conn * conn, BYTE *buffer, unsigned int len)
 
 		    INITC(&o, call->out.buf_data, call->out.buf_alloc);
 
-		    to_copy = min(fragment_size - (o_pos % fragment_size),
+		    to_copy = opr_min(fragment_size - (o_pos % fragment_size),
 				  o_len - o_pos);
-		    to_copy = min(to_copy, SPC_LEFT(&o));
+		    to_copy = opr_min(to_copy, SPC_LEFT(&o));
 
 		    O_WRITESZ(&o, (o_buffer + o_pos), to_copy);
 

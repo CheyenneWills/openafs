@@ -3329,9 +3329,9 @@ NPGetUniversalNameCommon( LPCWSTR lpLocalPath,
 
                     memcpy( pUniversalInfo->lpUniversalName,
                             pwchSubstName,
-                            min( dwBufferSize, dwRemainingLength));
+                            opr_min( dwBufferSize, dwRemainingLength));
 
-                    dwRemainingLength -= min( dwBufferSize, dwRemainingLength);
+                    dwRemainingLength -= opr_min( dwBufferSize, dwRemainingLength);
 
 #ifdef AFS_DEBUG_TRACE
                     AFSDbgPrint( L"NPGetUniversalName (UNIVERSAL_NAME_INFO_LEVEL) lpBuffer: %p Name: (%p) \"%s\"\n",
@@ -3372,9 +3372,9 @@ NPGetUniversalNameCommon( LPCWSTR lpLocalPath,
 
                     memcpy( pRemoteInfo->lpUniversalName,
                             pwchSubstName,
-                            min( dwRemainingLength, dwBufferSize));
+                            opr_min( dwRemainingLength, dwBufferSize));
 
-                    dwRemainingLength -= min( dwRemainingLength, dwBufferSize);
+                    dwRemainingLength -= opr_min( dwRemainingLength, dwBufferSize);
 
 #ifdef AFS_DEBUG_TRACE
                     AFSDbgPrint( L"NPGetUniversalName (REMOTE_NAME_INFO_LEVEL) UNI lpBuffer: %p Name: (%p) \"%s\"\n",
@@ -3389,9 +3389,9 @@ NPGetUniversalNameCommon( LPCWSTR lpLocalPath,
 
                         memcpy( pRemoteInfo->lpConnectionName,
                                 pwchSubstName,
-                                min( dwRemainingLength, dwBufferSize));
+                                opr_min( dwRemainingLength, dwBufferSize));
 
-                        dwRemainingLength -= min( dwRemainingLength, dwBufferSize) - sizeof( WCHAR);
+                        dwRemainingLength -= opr_min( dwRemainingLength, dwBufferSize) - sizeof( WCHAR);
 
                         SeparateRemainingPath( pRemoteInfo->lpConnectionName,
                                                &pRemoteInfo->lpRemainingPath);
@@ -3510,19 +3510,19 @@ NPGetUniversalNameCommon( LPCWSTR lpLocalPath,
 
                 memcpy( pch,
                         pConnectCB,
-                        min( dwBufferSize, dwRemainingLength));
+                        opr_min( dwBufferSize, dwRemainingLength));
 
-                pch += min( dwBufferSize, dwRemainingLength);
+                pch += opr_min( dwBufferSize, dwRemainingLength);
 
-                dwRemainingLength -= min( dwBufferSize + sizeof(WCHAR), dwRemainingLength);
+                dwRemainingLength -= opr_min( dwBufferSize + sizeof(WCHAR), dwRemainingLength);
 
                 memcpy( pch,
                         &lpLocalPath[2],
-                        min(dwRemainingPathLength * sizeof( WCHAR), dwRemainingLength));
+                        opr_min(dwRemainingPathLength * sizeof( WCHAR), dwRemainingLength));
 
-                pch += min(dwRemainingPathLength * sizeof( WCHAR), dwRemainingLength);
+                pch += opr_min(dwRemainingPathLength * sizeof( WCHAR), dwRemainingLength);
 
-                dwRemainingLength -= min(dwRemainingPathLength * sizeof( WCHAR), dwRemainingLength);
+                dwRemainingLength -= opr_min(dwRemainingPathLength * sizeof( WCHAR), dwRemainingLength);
 
 #ifdef AFS_DEBUG_TRACE
                 AFSDbgPrint( L"NPGetUniversalName (UNIVERSAL_NAME_INFO_LEVEL) lpBuffer: %p Name: (%p) \"%s\"\n",
@@ -3567,19 +3567,19 @@ NPGetUniversalNameCommon( LPCWSTR lpLocalPath,
 
                 memcpy( pch,
                         pConnectCB,
-                        min( dwBufferSize, dwRemainingLength));
+                        opr_min( dwBufferSize, dwRemainingLength));
 
-                pch += min( dwBufferSize, dwRemainingLength);
+                pch += opr_min( dwBufferSize, dwRemainingLength);
 
-                dwRemainingLength -= min( dwBufferSize + sizeof( WCHAR), dwRemainingLength);
+                dwRemainingLength -= opr_min( dwBufferSize + sizeof( WCHAR), dwRemainingLength);
 
                 memcpy( pch,
                         &lpLocalPath[2],
-                        min(dwRemainingPathLength * sizeof( WCHAR), dwRemainingLength));
+                        opr_min(dwRemainingPathLength * sizeof( WCHAR), dwRemainingLength));
 
-                pch += min((dwRemainingPathLength + 1) * sizeof( WCHAR), dwRemainingLength);
+                pch += opr_min((dwRemainingPathLength + 1) * sizeof( WCHAR), dwRemainingLength);
 
-                dwRemainingLength -= min((dwRemainingPathLength + 1) * sizeof( WCHAR), dwRemainingLength);
+                dwRemainingLength -= opr_min((dwRemainingPathLength + 1) * sizeof( WCHAR), dwRemainingLength);
 
 #ifdef AFS_DEBUG_TRACE
                 AFSDbgPrint( L"NPGetUniversalName (REMOTE_NAME_INFO_LEVEL) UNI lpBuffer: %p Name: (%p) \"%s\"\n",
@@ -3594,11 +3594,11 @@ NPGetUniversalNameCommon( LPCWSTR lpLocalPath,
 
                     memcpy( pch,
                             pConnectCB,
-                            min( dwBufferSize, dwRemainingLength));
+                            opr_min( dwBufferSize, dwRemainingLength));
 
-                    pch += min( dwBufferSize + sizeof( WCHAR), dwRemainingLength);
+                    pch += opr_min( dwBufferSize + sizeof( WCHAR), dwRemainingLength);
 
-                    dwRemainingLength -= min( dwBufferSize + sizeof( WCHAR), dwRemainingLength);
+                    dwRemainingLength -= opr_min( dwBufferSize + sizeof( WCHAR), dwRemainingLength);
                 }
 
 
@@ -3608,11 +3608,11 @@ NPGetUniversalNameCommon( LPCWSTR lpLocalPath,
 
                     memcpy( pch,
                             &lpLocalPath[2],
-                            min((dwRemainingPathLength + 1) * sizeof( WCHAR), dwRemainingLength));
+                            opr_min((dwRemainingPathLength + 1) * sizeof( WCHAR), dwRemainingLength));
 
-                    pch += min((dwRemainingPathLength + 1) * sizeof( WCHAR), dwRemainingLength);
+                    pch += opr_min((dwRemainingPathLength + 1) * sizeof( WCHAR), dwRemainingLength);
 
-                    dwRemainingLength -= min((dwLocalPathLength + 1) * sizeof( WCHAR), dwRemainingLength);
+                    dwRemainingLength -= opr_min((dwLocalPathLength + 1) * sizeof( WCHAR), dwRemainingLength);
                 }
 
 #ifdef AFS_DEBUG_TRACE

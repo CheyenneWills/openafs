@@ -37,10 +37,6 @@
 #ifndef iswhiteeol
 #define iswhiteeol(_ch) (iswhite(_ch) || iseol(_ch))
 #endif
-#ifndef min
-#define min(_a,_b) ((_a) < (_b) ? (_a) : (_b))
-#endif
-
 
 /*
  * STATICS ____________________________________________________________________
@@ -49,7 +45,7 @@
 
 static void strzcpy (char *pszTarget, const char *pszSource, size_t cch)
 {
-   cch = min(cch, (size_t)(1+strlen(pszSource)));
+   cch = opr_min(cch, (size_t)(1+strlen(pszSource)));
    strncpy (pszTarget, pszSource, cch-1);
    pszTarget[ cch-1 ] = '\0';
 }

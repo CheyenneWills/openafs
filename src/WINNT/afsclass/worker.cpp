@@ -1433,7 +1433,7 @@ DWORD Worker_PerformTask (WORKERTASK wtask, LPWORKERPACKET lpwp)
          bos_ForceDirectory_t forceDirectory = (lpwp->wpBosSalvage.fRebuildDirs) ? BOS_SALVAGE_FORCE_DIRECTORIES : BOS_SALVAGE_DONT_FORCE_DIRECTORIES;
          bos_ForceBlockRead_t forceBlockRead = (lpwp->wpBosSalvage.fReadBlocks) ? BOS_SALVAGE_FORCE_BLOCK_READS : BOS_SALVAGE_DONT_FORCE_BLOCK_READS;
 
-         if ((*lpBosSalvage)(lpwp->wpBosSalvage.hCell, lpwp->wpBosSalvage.hServer, pszAggregateA, pszFilesetA, max(lpwp->wpBosSalvage.nProcesses,1), pszTempDirA, pszLogFileA, force, salvageDamagedVolumes, writeInodes, writeRootInodes, forceDirectory, forceBlockRead, &status))
+         if ((*lpBosSalvage)(lpwp->wpBosSalvage.hCell, lpwp->wpBosSalvage.hServer, pszAggregateA, pszFilesetA, opr_max(lpwp->wpBosSalvage.nProcesses,1), pszTempDirA, pszLogFileA, force, salvageDamagedVolumes, writeInodes, writeRootInodes, forceDirectory, forceBlockRead, &status))
              status = 0;
 
          FreeString (pszLogFileA, lpwp->wpBosSalvage.pszLogFile);

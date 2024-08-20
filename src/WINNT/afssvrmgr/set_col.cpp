@@ -167,7 +167,7 @@ LPTSTR Filesets_GetColumnText (LPIDENT lpi, FILESETCOLUMN setcol, BOOL fShowServ
             if (lpfs->ckQuota != 0)
                dwPer = (DWORD)( 100.0 * lpfs->ckUsed / lpfs->ckQuota );
 
-            dwPer = max( 0, dwPer );
+            dwPer = opr_max( 0, dwPer );
             LPTSTR psz = FormatString (IDS_PERCENTAGE, TEXT("%lu"), dwPer);
             lstrcpy (pszBuffer, psz);
             FreeString (psz);

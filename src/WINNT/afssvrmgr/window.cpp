@@ -822,9 +822,9 @@ void Main_RearrangeChildren (BOOL fPreviewNew, BOOL fVertNew)
          LONG cyMod = gr.diVert.cSplitter;
 
          if (cyRECT(rServers) > cyMIN_SERVER)
-            cyMod = min( cyMod, cyRECT(rServers)-cyMIN_SERVER );
+            cyMod = opr_min( cyMod, cyRECT(rServers)-cyMIN_SERVER );
          if (cyRECT(rPreview) > cyMIN_TABS)
-            cyMod = min( cyMod, cyRECT(rPreview)-cyMIN_TABS );
+            cyMod = opr_min( cyMod, cyRECT(rPreview)-cyMIN_TABS );
 
          rServers.bottom += cyMod;
          rPreview.top += cyMod;
@@ -834,9 +834,9 @@ void Main_RearrangeChildren (BOOL fPreviewNew, BOOL fVertNew)
          LONG cxMod = gr.diHorz.cSplitter;
 
          if (cxRECT(rServers) > cxMIN_SERVER)
-            cxMod = min( cxMod, cxRECT(rServers)-cxMIN_SERVER );
+            cxMod = opr_min( cxMod, cxRECT(rServers)-cxMIN_SERVER );
          if (cxRECT(rPreview) > cxMIN_TABS)
-            cxMod = min( cxMod, cxRECT(rPreview)-cxMIN_TABS );
+            cxMod = opr_min( cxMod, cxRECT(rPreview)-cxMIN_TABS );
 
          rServers.right += cxMod;
          rPreview.left += cxMod;

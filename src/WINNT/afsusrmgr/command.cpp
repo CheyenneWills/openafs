@@ -109,8 +109,8 @@ void OnRightClick (POPUPMENU pm, HWND hList, POINT *pptScreen)
             FastList_GetItemRegions (hList, hItemSelected, &Reg);
             ptScreen.x = rWindow.left + Reg.rLabel.left + (Reg.rLabel.right - Reg.rLabel.left)/2;
             ptScreen.y = rWindow.top + Reg.rLabel.top + (Reg.rLabel.bottom - Reg.rLabel.top)/2;
-            ptScreen.x = min (max (ptScreen.x, rWindow.left), rWindow.right);
-            ptScreen.y = min (max (ptScreen.y, rWindow.top), rWindow.bottom);
+            ptScreen.x = opr_min (opr_max (ptScreen.x, rWindow.left), rWindow.right);
+            ptScreen.y = opr_min (opr_max (ptScreen.y, rWindow.top), rWindow.bottom);
             }
 
          ShowContextMenu (pm, hList, pAsidList, &ptScreen);

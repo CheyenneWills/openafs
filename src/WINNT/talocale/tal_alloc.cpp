@@ -1230,7 +1230,7 @@ void MemMgr_TrackAllocation (PVOID pData, size_t cb, LPTSTR pszExpr, LPTSTR pszF
       iChunk = l.cChunks;
 #endif
 
-   l.cChunks = max (l.cChunks, 1+iChunk);
+   l.cChunks = opr_max (l.cChunks, 1+iChunk);
 
    if (fLinkIn)
       {

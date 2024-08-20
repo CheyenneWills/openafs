@@ -2911,7 +2911,7 @@ cm_IoctlMakeSubmount(cm_ioctl_t *ioctlp, cm_user_t *userp)
              (isdigit (submountName[strlen("auto")]))) {
             int thisAutoSubmount;
             thisAutoSubmount = atoi (&submountName[strlen("auto")]);
-            nextAutoSubmount = max (nextAutoSubmount,
+            nextAutoSubmount = opr_max (nextAutoSubmount,
                                      thisAutoSubmount+1);
         }
 

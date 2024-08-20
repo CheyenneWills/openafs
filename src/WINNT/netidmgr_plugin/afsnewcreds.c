@@ -1853,7 +1853,7 @@ afs_dlg_proc(HWND hwnd,
                                     /* looks like we overflowed */
                                     /* add an ellipsis at the end */
                                     StringCchLength(wcells, ARRAYLENGTH(wcells), &cch);
-                                    cch = min(ARRAYLENGTH(wcells) - 4, cch);
+                                    cch = opr_min(ARRAYLENGTH(wcells) - 4, cch);
                                     StringCchCopy(wcells + cch, 4, L"...");
 
                                     break;

@@ -473,7 +473,7 @@ CopySubkeys(const char *srcName, HKEY srcKey, const char *dupName, HKEY dupKey)
 	skEnumName = skEnum;
 	while (*skEnumName != '\0') {
 	    size_t skNameLen = strlen(skEnumName);
-	    skNameMax = max(skNameMax, skNameLen);
+	    skNameMax = opr_max(skNameMax, skNameLen);
 
 	    skEnumName += skNameLen + 1;
 	}

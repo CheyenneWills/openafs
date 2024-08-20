@@ -68,7 +68,7 @@ typedef struct _FASTLISTITEM
         //
 #define cREALLOC_VISIBLEHEAP_MIN   128
 #define cREALLOC_VISIBLEHEAP_MAX  4096
-#define cREALLOC_VISIBLEHEAP(pfl) min(max(pfl->cVisibleHeap, cREALLOC_VISIBLEHEAP_MIN),cREALLOC_VISIBLEHEAP_MAX)
+#define cREALLOC_VISIBLEHEAP(pfl) opr_min(opr_max(pfl->cVisibleHeap, cREALLOC_VISIBLEHEAP_MIN),cREALLOC_VISIBLEHEAP_MAX)
 
 #define dwSigFASTLIST  TEXT('FAST')
 
@@ -157,7 +157,7 @@ static struct FASTLIST_GLOBAL
 #endif
 
 #ifndef limit
-#define limit(_a,_x,_b) min(max((_x),(_a)),(_b))
+#define limit(_a,_x,_b) opr_min(opr_max((_x),(_a)),(_b))
 #endif
 
 #ifndef DivRoundUp
@@ -1220,7 +1220,7 @@ void FastList_OnPaintItem_Large (LPFASTLIST pfl, LPFASTLISTDRAWITEM pdi)
       rText.left += (cxRECT(pdi->rItem)-cxRECT(rTextSize))/2;
       rText.right -= (cxRECT(pdi->rItem)-cxRECT(rTextSize))/2;
       rText.top += cyABOVE_LARGE_ICON + GetSystemMetrics(SM_CYICON) + cyBELOW_LARGE_ICON + cyABOVE_LARGE_TEXT;
-      rText.bottom = min( pdi->rItem.bottom - cyBELOW_LARGE_TEXT, (rText.top + cyRECT(rTextSize)) );
+      rText.bottom = opr_min( pdi->rItem.bottom - cyBELOW_LARGE_TEXT, (rText.top + cyRECT(rTextSize)) );
 
       pdi->reg.rHighlight = rText;
       pdi->reg.rHighlight.left -= cxBEFORE_LARGE_TEXT;
@@ -1291,7 +1291,7 @@ void FastList_OnPaintItem_Small (LPFASTLIST pfl, LPFASTLISTDRAWITEM pdi)
 
       RECT rText = pdi->rItem;
       rText.left += cxBEFORE_SMALL_TEXT + fImage * (GetSystemMetrics(SM_CXSMICON) + cxBEFORE_SMALL_ICON + cxAFTER_SMALL_ICON);
-      rText.right = min( pdi->rItem.right - cxAFTER_SMALL_TEXT, (rText.left + cxRECT(rTextSize)) );
+      rText.right = opr_min( pdi->rItem.right - cxAFTER_SMALL_TEXT, (rText.left + cxRECT(rTextSize)) );
       rText.top += cyABOVE_SMALL_TEXT;
       rText.bottom -= cyBELOW_SMALL_TEXT;
 
@@ -1533,7 +1533,7 @@ void FastList_OnPaintItem_List (LPFASTLIST pfl, LPFASTLISTDRAWITEM pdi)
          rText.left += cxBEFORE_COLUMN_TEXT;
 
       RECT rTextJustified = rText;
-      rTextJustified.right = min( rText.right, rText.left + cxRECT(rTextSize) );
+      rTextJustified.right = opr_min( rText.right, rText.left + cxRECT(rTextSize) );
 
       LONG dxJustify = 0;
       if (fmtColumn == HDF_CENTER)
@@ -1558,7 +1558,7 @@ void FastList_OnPaintItem_List (LPFASTLIST pfl, LPFASTLISTDRAWITEM pdi)
          }
       if (icol == icolLong)
          {
-         pdi->reg.rHighlight.right = min( pdi->reg.rHighlight.right, rTextJustified.right + cxAFTER_LIST_TEXT );
+         pdi->reg.rHighlight.right = opr_min( pdi->reg.rHighlight.right, rTextJustified.right + cxAFTER_LIST_TEXT );
          }
 
       // Okay, it's time to actually draw the text. Didn't think we'd
@@ -1924,7 +1924,7 @@ HLISTITEM FastList_OnCommand_AddItem (HWND hList, LPFASTLISTADDITEM pai)
 
       if (pai->pszText)
          {
-         REALLOC (hItem->apszText, hItem->cpszText, 1, max(1,pfl->cColumns));
+         REALLOC (hItem->apszText, hItem->cpszText, 1, opr_max(1,pfl->cColumns));
          hItem->apszText[0] = (LPTSTR)Allocate (sizeof(TCHAR)*(1+lstrlen(pai->pszText)));
          lstrcpy (hItem->apszText[0], pai->pszText);
          }
@@ -2637,7 +2637,7 @@ HLISTITEM FastList_OnCommand_ItemFromPoint (HWND hList, POINT *pptClient, BOOL f
             LONG iyIndex = yField / cyRECT(rTemplate);
 
             LONG cxArray = cxRECT(rClient) / cxRECT(rTemplate);
-            cxArray = max( cxArray, 1 );
+            cxArray = opr_max( cxArray, 1 );
 
             index = ixIndex + iyIndex * cxArray;
             break;
@@ -2649,7 +2649,7 @@ HLISTITEM FastList_OnCommand_ItemFromPoint (HWND hList, POINT *pptClient, BOOL f
             LONG iyIndex = yField / cyRECT(rTemplate);
 
             LONG cyArray = cyRECT(rClient) / cyRECT(rTemplate);
-            cyArray = max( cyArray, 1 );
+            cyArray = opr_max( cyArray, 1 );
 
             index = iyIndex + ixIndex * cyArray;
             break;
@@ -3029,7 +3029,7 @@ int FastList_GetListHeight (LPFASTLIST pfl)
       DeleteDC (hdc);
 
       cyLast = tm.tmHeight + cyABOVE_LIST_TEXT + cyBELOW_LIST_TEXT;
-      cyLast = max( cyLast, GetSystemMetrics(SM_CYSMICON) );
+      cyLast = opr_max( cyLast, GetSystemMetrics(SM_CYSMICON) );
       if (cyLast & 1)
          cyLast ++;  // make the height even (for vertical dotted lines)
       }
@@ -3354,14 +3354,14 @@ void FastList_CalcFieldSize (LPFASTLIST pfl, LONG *pcxField, LONG *pcyField, BOO
       {
       case FLS_VIEW_LARGE:
          cxArray = cxRECT(rClient) / cxRECT(rItem);
-         cxArray = max (cxArray, 1);
+         cxArray = opr_max (cxArray, 1);
          if (cxArray)
             cyArray = DivRoundUp (pfl->cVisible, cxArray);
          break;
 
       case FLS_VIEW_SMALL:
          cyArray = cyRECT(rClient) / cyRECT(rItem);
-         cyArray = max (cyArray, 1);
+         cyArray = opr_max (cyArray, 1);
          if (cyArray)
             cxArray = DivRoundUp (pfl->cVisible, cyArray);
          break;
@@ -3405,7 +3405,7 @@ void FastList_CalcItemRect (LPFASTLIST pfl, int index, RECT *prItem, BOOL fScrol
          LONG cxRect = GetSystemMetrics (SM_CXICONSPACING);
          LONG cyRect = GetSystemMetrics (SM_CYICONSPACING);
          int cxLayout = cxRECT(rClient) / cxRect;
-         cxLayout = max (cxLayout, 1);
+         cxLayout = opr_max (cxLayout, 1);
 
          int vIndex = index / cxLayout;  // 0 = top row
          int hIndex = index % cxLayout;  // 0 = left row
@@ -3430,7 +3430,7 @@ void FastList_CalcItemRect (LPFASTLIST pfl, int index, RECT *prItem, BOOL fScrol
          LONG cxRect = GetSystemMetrics (SM_CXICONSPACING) * 2;
          LONG cyRect = FastList_GetListHeight (pfl);
          int cyLayout = cyRECT(rClient) / cyRect;
-         cyLayout = max (cyLayout, 1);
+         cyLayout = opr_max (cyLayout, 1);
 
          int hIndex = index / cyLayout;  // 0 = left row
          int vIndex = index % cyLayout;  // 0 = top row
@@ -3903,8 +3903,8 @@ void FastList_PerformSelectRange (LPFASTLIST pfl, HLISTITEM hItem1, HLISTITEM hI
       {
       FastList_Begin (pfl->hList);
 
-      int iIndex1 = min (hItem1->index, hItem2->index);
-      int iIndex2 = max (hItem1->index, hItem2->index);
+      int iIndex1 = opr_min (hItem1->index, hItem2->index);
+      int iIndex2 = opr_max (hItem1->index, hItem2->index);
       for (int iIndex = iIndex1; iIndex <= iIndex2; ++iIndex)
          FastList_SelectItem (pfl->hList, pfl->aVisibleHeap[ iIndex ], TRUE);
 

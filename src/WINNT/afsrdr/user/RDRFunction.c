@@ -5968,7 +5968,7 @@ RDR_GetVolumeInfo( IN cm_user_t     *userp,
                 {
                     pResultCB->TotalAllocationUnits.QuadPart = volStat.MaxQuota;
                     pResultCB->AvailableAllocationUnits.QuadPart =
-                        min(volStat.MaxQuota - volStat.BlocksInUse, volStat.PartBlocksAvail);
+                        opr_min(volStat.MaxQuota - volStat.BlocksInUse, volStat.PartBlocksAvail);
                 }
                 else
                 {
@@ -6177,7 +6177,7 @@ RDR_GetVolumeSizeInfo( IN cm_user_t     *userp,
                 {
                     pResultCB->TotalAllocationUnits.QuadPart = volStat.MaxQuota;
                     pResultCB->AvailableAllocationUnits.QuadPart =
-                        min(volStat.MaxQuota - volStat.BlocksInUse, volStat.PartBlocksAvail);
+                        opr_min(volStat.MaxQuota - volStat.BlocksInUse, volStat.PartBlocksAvail);
                 }
                 else
                 {

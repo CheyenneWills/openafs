@@ -311,7 +311,7 @@ BOOL HASHLIST::Add (PVOID pEntryToAdd)
          }
 
       ++m_cObjects;
-      m_cObjectsMax = max (m_cObjectsMax, m_cObjects);
+      m_cObjectsMax = opr_max (m_cObjectsMax, m_cObjects);
       rc = TRUE;
       }
 
@@ -953,7 +953,7 @@ LPHASHLISTKEYDEBUGINFO HASHLISTKEY::GetDebugInfo (void)
 
          size_t cObjectsInPlace = 0;
          for (iBucket = 0; iBucket < pInfo->cBuckets; ++iBucket)
-            cObjectsInPlace += min( pInfo->aBuckets[ iBucket ], cPerfectLength );
+            cObjectsInPlace += opr_min( pInfo->aBuckets[ iBucket ], cPerfectLength );
 
          // Now calculating that percent effectiveness is easy. If everything
          // is evenly distributed, cObjectsInPlace will == cObjects--and

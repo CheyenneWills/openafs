@@ -306,8 +306,8 @@ void Elapsed_OnCreate (ElapsedInfo *pei)
    s888.cx = (LONG)( (double)(s88.cx) * 1.2 );
 
    LONG cxNumbers = cxRECT(rElapsed) - (2 * sTimeSep.cx) - GetSystemMetrics (SM_CXVSCROLL);
-   LONG cxSeconds = min( max( cxNumbers/3, s88.cx ), s888.cx );
-   LONG cxMinutes = min( max( cxNumbers/3, s88.cx ), s888.cx );
+   LONG cxSeconds = opr_min( opr_max( cxNumbers/3, s88.cx ), s888.cx );
+   LONG cxMinutes = opr_min( opr_max( cxNumbers/3, s88.cx ), s888.cx );
    LONG cxHours   = cxNumbers - cxSeconds - cxMinutes;
    LONG yy = ptElapsed.y;
    LONG cy = cyRECT(rElapsed);

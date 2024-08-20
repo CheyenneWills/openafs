@@ -542,7 +542,7 @@ void CellEdit_OnAdd (HWND hDlg)
    for (HLISTITEM hItem = FastList_FindFirst (hList); hItem; hItem = FastList_FindNext (hList, hItem))
       {
       PCELLDBLINE pInfo = (PCELLDBLINE)FastList_GetItemParam (hList, hItem);
-      iOrder = max (iOrder, 1+ (int)(pInfo->pNext));
+      iOrder = opr_max (iOrder, 1+ (int)(pInfo->pNext));
       }
 
    if (ModalDialogParam (IDD_SERVER_EDIT, hDlg, (DLGPROC)ServerEdit_DlgProc, (LPARAM)&Line) == IDOK)

@@ -345,18 +345,18 @@ AFSQueryFsVolumeInfo( IN AFSVolumeInfoCB *VolumeInfo,
 
                 RtlCopyMemory( Buffer->VolumeLabel,
                                VolumeInfo->VolumeLabel,
-                               min( *Length, VolumeInfo->VolumeLabelLength));
+                               opr_min( *Length, VolumeInfo->VolumeLabelLength));
 
-                *Length -= min( *Length, VolumeInfo->VolumeLabelLength);
+                *Length -= opr_min( *Length, VolumeInfo->VolumeLabelLength);
             }
             else
             {
 
                 RtlCopyMemory( Buffer->VolumeLabel,
                                VolumeInfo->Cell,
-                               min( *Length, VolumeInfo->CellLength));
+                               opr_min( *Length, VolumeInfo->CellLength));
 
-                *Length -= min( *Length, VolumeInfo->CellLength);
+                *Length -= opr_min( *Length, VolumeInfo->CellLength);
 
                 if ( *Length >= sizeof( WCHAR))
                 {
@@ -369,9 +369,9 @@ AFSQueryFsVolumeInfo( IN AFSVolumeInfoCB *VolumeInfo,
 
                         RtlCopyMemory( &Buffer->VolumeLabel[ (VolumeInfo->CellLength + sizeof( WCHAR)) / sizeof( WCHAR)],
                                        VolumeInfo->VolumeLabel,
-                                       min( *Length, VolumeInfo->VolumeLabelLength));
+                                       opr_min( *Length, VolumeInfo->VolumeLabelLength));
 
-                        *Length -= min( *Length, VolumeInfo->VolumeLabelLength);
+                        *Length -= opr_min( *Length, VolumeInfo->VolumeLabelLength);
                     }
                 }
             }

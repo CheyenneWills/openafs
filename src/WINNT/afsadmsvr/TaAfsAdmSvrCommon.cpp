@@ -83,7 +83,7 @@ BOOL AfsAdmSvr_ReallocFunction (PVOID *ppStructure, size_t cbHeader, size_t ipos
    //
    if (cInc)
       cReq = cInc * ( (cReq + cInc - 1) / cInc );
-   cReq = max (cReq, 1);
+   cReq = opr_max (cReq, 1);
 
    // See how much space is allocated now. If we have no structure to start
    // with, obviously we have no array elements either.

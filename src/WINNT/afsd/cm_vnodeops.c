@@ -2803,7 +2803,7 @@ cm_IsSpaceAvailable(cm_fid_t * fidp, osi_hyper_t *sizep, cm_user_t *userp, cm_re
 
     if (code == 0) {
         if (volStat.MaxQuota) {
-            freespace.QuadPart = 1024 * (afs_int64)min(volStat.MaxQuota - volStat.BlocksInUse, volStat.PartBlocksAvail);
+            freespace.QuadPart = 1024 * (afs_int64)opr_min(volStat.MaxQuota - volStat.BlocksInUse, volStat.PartBlocksAvail);
         } else {
             freespace.QuadPart = 1024 * (afs_int64)volStat.PartBlocksAvail;
         }
@@ -4521,8 +4521,8 @@ static void cm_LockRangeSubtract(cm_range_t * pos, const cm_range_t * neg)
     afs_int64 int_begin;
     afs_int64 int_end;
 
-    int_begin = max(pos->offset, neg->offset);
-    int_end = min(pos->offset+pos->length, neg->offset+neg->length);
+    int_begin = opr_max(pos->offset, neg->offset);
+    int_end = opr_min(pos->offset+pos->length, neg->offset+neg->length);
 
     if (int_begin < int_end) {
         if (int_begin == pos->offset) {

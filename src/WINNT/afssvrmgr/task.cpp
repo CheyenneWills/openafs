@@ -2101,7 +2101,7 @@ void Task_Agg_Find_Quota_Limits (LPTASKPACKET ptp)
             ptp->rc = FALSE;
          else
             {
-            TASKDATA(ptp)->ckMax = max( 1L, as.ckStorageTotal );
+            TASKDATA(ptp)->ckMax = opr_max( 1L, as.ckStorageTotal );
             }
          lpAggregate->Close();
          }

@@ -243,7 +243,7 @@ HRESULT CALLBACK CheckList_DialogProc (HWND hDlg, UINT msg, WPARAM wp, LPARAM lp
             TEXTMETRIC tm;
             GetTextMetrics (hdc, &tm);
             ReleaseDC (hDlg, hdc);
-            lpms->itemHeight = max( tm.tmHeight, cyCHECKBOX );
+            lpms->itemHeight = opr_max( tm.tmHeight, cyCHECKBOX );
             return TRUE;
             }
          break;

@@ -265,8 +265,8 @@ void SockAddr_OnCreate (SockAddrInfo *psai)
    LONG yy = ptSockAddr.y;
    LONG cy = cyRECT(rSockAddr);
 
-   cxE2 = min (cxE2, (LONG)( 1.4 * s888.cx ));
-   cxE1 = min (cxE1, (LONG)( 1.4 * s888.cx ));  // don't be TOO wide.
+   cxE2 = opr_min (cxE2, (LONG)( 1.4 * s888.cx ));
+   cxE1 = opr_min (cxE1, (LONG)( 1.4 * s888.cx ));  // don't be TOO wide.
 
    psai->idE1 = 100+NextControlID (GetParent (psai->hSockAddr));
    psai->hE1 = CreateWindow (

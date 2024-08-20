@@ -318,11 +318,11 @@ void Time_OnCreate (TimeInfo *pti)
    LONG cxNumbers = cxRECT(rTime) - GetSystemMetrics (SM_CXVSCROLL) - (sTimeSep.cx);
    if (!pti->f24Hour)
       cxNumbers -= sTimeSep.cx + sAMPM.cx;
-   LONG cxMinutes = max( cxNumbers/2, s88.cx );
+   LONG cxMinutes = opr_max( cxNumbers/2, s88.cx );
    LONG cxHours   = cxNumbers - cxMinutes;
 
-   cxMinutes = min (cxMinutes, (LONG)( 1.2 * s88.cx ));
-   cxHours   = min (cxHours,   (LONG)( 1.2 * s88.cx ));  // don't be TOO wide.
+   cxMinutes = opr_min (cxMinutes, (LONG)( 1.2 * s88.cx ));
+   cxHours   = opr_min (cxHours,   (LONG)( 1.2 * s88.cx ));  // don't be TOO wide.
 
    LONG cy = cyRECT(rTime);
    LONG yy = ptTime.y;
@@ -804,7 +804,7 @@ void Time_GetAMPMSize (HDC hdc, SIZE *pSize, LPTSTR pszAM, LPTSTR pszPM)
 
    SIZE sPM; // size of "PM"
    GetTextExtentPoint (hdc, pszPM, lstrlen(pszPM), &sPM);
-   pSize->cx = max( sAM.cx, sPM.cx );
-   pSize->cy = max( sAM.cy, sPM.cy );
+   pSize->cx = opr_max( sAM.cx, sPM.cx );
+   pSize->cy = opr_max( sAM.cy, sPM.cy );
 }
 

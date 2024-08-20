@@ -480,7 +480,7 @@ void Debugstr::OutString (char *str, BOOL fRecord)
             }
          }
 
-      nRefr = max( nRefr, gcY );
+      nRefr = opr_max( nRefr, gcY );
 
       *pch = '\n';
       psz = 1+pch;

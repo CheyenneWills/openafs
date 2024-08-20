@@ -69,7 +69,7 @@ void GetString (LPTSTR psz, int ids, int cchMax)
       if ((pst = TaLocale_GetStringResource (ids)) == NULL)
          break;
 
-      CopyUnicodeToString (psz, (LPWSTR)pst->achString, min(cchMax,pst->cchString+1));
+      CopyUnicodeToString (psz, (LPWSTR)pst->achString, opr_min(cchMax,pst->cchString+1));
       if (psz[ lstrlen(psz)-1 ] != TEXT('+'))
          break;
       psz[ lstrlen(psz)-1 ] = TEXT('\0');
@@ -594,7 +594,7 @@ LPTSTR cdecl vFormatString (LONG pszSource, LPCTSTR pszFmt, va_list arg)
                // of this argument.
                //
 
-      cch = max( cch, cchMin );
+      cch = opr_max( cch, cchMin );
 
       if ((apszArgs[ argno ] = AllocateString (cch+1)) == NULL)
          goto lblDONE;
@@ -1205,7 +1205,7 @@ void lstrncpy (LPTSTR pszTarget, LPCTSTR pszSource, size_t cch)
 
 void lstrzcpy (LPTSTR pszTarget, LPCTSTR pszSource, size_t cch)
 {
-   cch = min(cch, (size_t)(1+lstrlen(pszSource)));
+   cch = opr_min(cch, (size_t)(1+lstrlen(pszSource)));
    lstrncpy (pszTarget, pszSource, cch-1);
    pszTarget[ cch-1 ] = TEXT('\0');
 }
@@ -1289,7 +1289,7 @@ void lsplitpath (LPCTSTR pszSource,
       {
       if (pszPath)
          {
-         cchCopy = min( _MAX_DIR -1, pszLastSlash -pszSource +1 );
+         cchCopy = opr_min( _MAX_DIR -1, pszLastSlash -pszSource +1 );
          lstrncpy (pszPath, pszSource, cchCopy);
          pszPath[ cchCopy ] = 0;
          }
@@ -1313,7 +1313,7 @@ void lsplitpath (LPCTSTR pszSource,
                //
       if (pszName)
          {
-         cchCopy = min( _MAX_DIR-1, pszLastDot -pszSource );
+         cchCopy = opr_min( _MAX_DIR-1, pszLastDot -pszSource );
          lstrncpy (pszName, pszSource, cchCopy);
          pszName[ cchCopy ] = 0;
          }
@@ -1409,7 +1409,7 @@ void CopyUnicodeToAnsi (LPSTR pszTargetA, LPCWSTR pszOriginalW, size_t cchMax)
    static size_t cchBufferW = 0;
    static LPWSTR pszBufferW = NULL;
 
-   size_t cchSource = min( cchMax, (size_t)lstrlenW(pszOriginalW)+1 );
+   size_t cchSource = opr_min( cchMax, (size_t)lstrlenW(pszOriginalW)+1 );
    if (cchSource > cchBufferW)
       {
       if (pszBufferW)
@@ -1432,7 +1432,7 @@ void CopyAnsiToUnicode (LPWSTR pszTargetW, LPCSTR pszOriginalA, size_t cchMax)
    static size_t cchBufferA = 0;
    static LPSTR  pszBufferA = NULL;
 
-   cchMax = min( cchMax, (size_t)lstrlenA(pszOriginalA)+1 );
+   cchMax = opr_min( cchMax, (size_t)lstrlenA(pszOriginalA)+1 );
    if (cchMax > cchBufferA)
       {
       if (pszBufferA)
