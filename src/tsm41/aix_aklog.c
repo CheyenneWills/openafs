@@ -33,6 +33,7 @@
 
 #include <krb5.h>
 
+#include <afs/opr.h>
 #include <afs/cellconfig.h>
 #include <afs/dirpath.h>
 #include <rx/rxkad.h>
