@@ -514,14 +514,14 @@ main(int argc, char **argv)
 	/*printf("%d bytes remaining\n",bytesremaining); */
 	if (slcl) {
 	    if ((bytes =
-		 read(sfd, databuffer, min(blksize, bytesremaining))) <= 0) {
+		 read(sfd, databuffer, opr_min(blksize, bytesremaining))) <= 0) {
 		fetchcode = errno;
 		break;
 	    }
 	} else {
 	    if ((bytes =
 		 rx_Read(scall, databuffer,
-			 min(blksize, bytesremaining))) <= 0)
+			 opr_min(blksize, bytesremaining))) <= 0)
 		break;
 	}
 	if (dlcl) {

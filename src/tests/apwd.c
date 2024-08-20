@@ -95,7 +95,7 @@ guarantee_room(char **buf, size_t * size, size_t len)
     if (*size > len)
 	return 0;
 
-    return expand_string(buf, size, min(*size * 2, len));
+    return expand_string(buf, size, opr_min(*size * 2, len));
 }
 
 static char *
