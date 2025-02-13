@@ -340,14 +340,16 @@ afs_nfsclient_getcreds(struct unixuser *au)
 	    tsysnames.SysNameList_len > MAXNUMSYSNAMES)
 	    goto done;
 
-	for(i = 0; i < np->sysnamecount; i++)
+	for (i = 0; i < np->sysnamecount; i++) {
 	    afs_osi_Free(np->sysname[i], MAXSYSNAME);
+	    np->sysname[i] = NULL;
+	}
 
 	np->sysnamecount = tsysnames.SysNameList_len;
-	for(i = 0; i < np->sysnamecount; i++)
+	for (i = 0; i < np->sysnamecount; i++) {
 	    np->sysname[i] = tsysnames.SysNameList_val[i].sysname;
-        afs_osi_Free(tsysnames.SysNameList_val,
-                     tsysnames.SysNameList_len * sizeof(SysNameEnt));
+	    tsysnames.SysNameList_val[i].sysname = NULL;
+	}
     }
 
     /* Get credentials */
@@ -363,11 +365,9 @@ afs_nfsclient_getcreds(struct unixuser *au)
 
 	/* Find the cell.  If it is unknown to us, punt this entry. */
 	tcell = afs_GetCellByName(tcred->cellname, READ_LOCK);
-	afs_osi_Free(tcred->cellname, strlen(tcred->cellname) + 1);
 	if (!tcell) {
 	    memset(tcred->ct.HandShakeKey, 0, 8);
 	    memset(tcred->st.st_val, 0, tcred->st.st_len);
-	    afs_osi_Free(tcred->st.st_val, tcred->st.st_len);
 	    continue;
 	}
 	cellnum = tcell->cellNum;
@@ -391,6 +391,9 @@ afs_nfsclient_getcreds(struct unixuser *au)
 	token->ticket = tcred->st.st_val;
 	token->ticketLen = tcred->st.st_len;
 
+	tcred->st.st_val = NULL;
+	tcred->st.st_len = 0;
+
 	/* copy the clear token */
 	memset(&token->clearToken, 0, sizeof(token->clearToken));
 	memcpy(token->clearToken.HandShakeKey, tcred->ct.HandShakeKey, 8);
@@ -409,9 +412,10 @@ afs_nfsclient_getcreds(struct unixuser *au)
 	afs_ResetUserConns(tu);
 	afs_PutUser(tu, WRITE_LOCK);
     }
-    afs_osi_Free(tcreds.CredInfos_val, tcreds.CredInfos_len * sizeof(CredInfo));
 
-done:
+ done:
+    xdr_free((xdrproc_t) xdr_SysNameList, &tsysnames);
+    xdr_free((xdrproc_t) xdr_CredInfos, &tcreds);
     AFS_GUNLOCK();
     rx_DestroyConnection(tconn);
     AFS_GLOCK();
