@@ -1,7 +1,117 @@
                        User-Visible OpenAFS Changes
 
-OpenAFS 1.8.14 (proposed)
 
+OpenAFS 1.8.x-next
+
+  All platforms
+
+    * Fix memory leaks when XDR decoding fails (16266)
+
+    * Fix crashes due to incorrect Rx security class reference counting (15850)
+
+    * Fix error handling in `vos`, `fs`, and `volinfo` command line tools
+      (15817, 16081, 16082, 16228, 16265)
+
+  All server platforms
+
+    * Improve fileserver performance and restart time on servers handling a
+      large number of callbacks (16017, 16018, 16019, 16022, 16023)
+
+    * Fix volume operation lock race errors in `vos` (16195, 16202)
+
+    * Ensure VLDB entries sent over the network do not contain uninitialized
+      memory (16208)
+
+    * Ensure the File Server GetStatistics64 RPC does not send uninitialized
+      memory over the network (16205)
+
+    * Several misleading file server log messages have been corrected and
+      more messages are issued during start up (16016, 16020, 16021)
+
+    * Fix a bug that caused vlserver to crash during startup when launched
+      with a very long -trace command line argument (16010)
+
+    * Improve handling of signals during volserver shutdown, providing more
+      informative log messages when volume transactions are interrupted (16123)
+
+    * Rx services now log the IP address they bind to during startup to
+      improve network diagnostics (16095)
+
+    * Improve error handling in `vos restore` (16193)
+
+    * Remove support for the obsolete VLDELETED volume flag (16201)
+
+  All unix clients
+
+    * Avoid a possible crash when a client cache size configuration is greatly
+      reduced and then the client is restarted (16103)
+
+    * The `fs getfid` command now displays the FID even if it cannot retrieve
+      cell information (16080)
+
+    * The output of `fs getfid -literal` is now correct when the path is a
+      broken symlink or the dynroot directory (16079)
+
+    * Fix possible kernel memory leaks when getting the volume status
+      with the `fs` command (16262)
+
+    * Reduce unnecessary `lstat()` calls in the `fs` command to improve
+      performance (16102)
+
+    * Avoid creating unused connections to the fileserver (16261)
+
+  Linux client
+
+    * Add support for Linux kernel 6.14 (16276, 16277)
+
+    * Critical fix for a crash or hang that could occur when a process received
+      a signal while waiting for AFS3 network packets. This is especially
+      impactful for Go applications which make heavy use of signals (16007, 16008)
+
+    * Improved systemd service support (16104, 16105, 16106, 16107)
+
+  MacOS client
+
+    * Add support for macOS 15.x (Sequoia) (16189)
+
+    * Functionality of the OpenAFS Preference Pane is restored on macOS 10.8
+      and later. This includes enabling/disabling startup, starting/stopping
+      the client, and editing OpeAFS configuration files (16066, 16067, 16068,
+      16069, 16070, 16071, 16072, 16073, 16074, 16260)
+
+    * Improve build system compatibility with recent Xcode versions (16180,
+      16182, 16183, 16185, 16186, 16187, 16188, 16190)
+
+    * Improve build system for macOS package signing (16076, 16077)
+
+  FreeBSD:
+
+    * Add support for FreeBSD 13 and 14 (16161, 16176)
+
+    * Numerous fixes for compatibility with recent kernel API changes
+      (16158, 16159, 16161, 16163, 16164, 16165, 16166, 16167, 16168, 16169,
+      16170, 16171, 16172, 16173, 16175, 16176, 16177, 16178)
+
+    * Fix vnode locking is certain code paths (16157)
+
+    * Fix issues with vnode reference counting which could lead to crashes
+      or other issues (16160)
+
+    * Handle missing v_tag fields when printing information about vnodes (16174)
+
+    * Fix client shutdown when the client was started with -rxbind (16011)
+
+  Solaris
+
+    * Fix client shutdown when the client was started with -rxbind (16011)
+
+  AIX
+
+    * Add support for building with clang-based XCL 17.1 (15810, 15811, 15812)
+
+    * Fix loading of kernel extension on AIX (16129)
+
+OpenAFS 1.8.14 (proposed)
 
 ... will add the list of commits ...
 
