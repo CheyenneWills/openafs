@@ -1,0 +1,8 @@
+AC_DEFUN([OPENAFS_LINUX_KERNEL_SYMBOL_CHECKS],[
+dnl Type existence checks
+
+dnl Linux 6.15 converted DCACHE_NEED_AUTOMOUNT and DCACHE_NFSFS_RENAMED
+dnl from #defines to enums
+AC_CHECK_LINUX_SYMBOL([DCACHE_NEED_AUTOMOUNT], [dcache.h])
+AC_CHECK_LINUX_SYMBOL([DCACHE_NFSFS_RENAMED], [dcache.h])
+])

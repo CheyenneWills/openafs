@@ -1972,8 +1972,11 @@ afs_linux_sillyrename(struct inode *dir, struct dentry *dentry,
 	__name = afs_newname();
 	AFS_GUNLOCK();
 
+#if 0
+	__dp = lookup_noperm(&QSTR(__name), dentry->d_parent);
+#else
 	__dp = lookup_one_len(__name, dentry->d_parent, strlen(__name));
-
+#endif
 	if (IS_ERR(__dp)) {
 	    osi_FreeSmallSpace(__name);
 	    return EBUSY;
