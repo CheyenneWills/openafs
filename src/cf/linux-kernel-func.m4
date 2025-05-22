@@ -327,6 +327,12 @@ AC_CHECK_LINUX_FUNC([filemap_get_folio],
                       static struct folio *folio;]],
                     [[folio = __filemap_get_folio(NULL, 0, 0, 0);]])
 
+dnl check to see if write_on_page_locked exists
+AC_CHECK_LINUX_FUNC([folio_wait_locked],
+		    [[#include <linux/pagemap.h>
+		      #include <linux/fs.h>]],
+		    [[folio_wait_locked(NULL);]])
+
 dnl Consequences - things which get set as a result of the
 dnl                above tests
 AS_IF([test "x$ac_cv_linux_func_d_alloc_anon" = "xno"],

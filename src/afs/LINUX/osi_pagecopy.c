@@ -228,8 +228,13 @@ static int afs_pagecopy_thread(void *unused) {
 	for (;;) {
 	    sleeppage = afs_pagecopy_checkworkload();
 	    if (sleeppage) {
+#if defined(HAVE_LINUX_FOLIO_WAIT_LOCKED)
+		folio_wait_locked(page_folio(sleeppage));
+		folio_put(page_folio(sleeppage));
+#else
 		wait_on_page_locked(sleeppage);
 		put_page(sleeppage);
+#endif
 	    } else {
 		break;
 	    }

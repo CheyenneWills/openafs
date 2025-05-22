@@ -494,4 +494,13 @@ do { \
 
 #define osi_procname(procname, size) strncpy(procname, current->comm, size)
 
+#if defined(HAVE_LINUX_FOLIO_WAIT_LOCKED)
+/* Folios are present, but still using single pages */
+# define afs_page_wait_locked(p) folio_wait_locked(page_folio((p)))
+# define afs_put_page(p) folio_put(page_folio((p)))
+#else
+# define afs_page_wait_locked(p) wait_on_page_locked((p))
+# define afs_put_page(p) put_page((p))
+#endif
+
 #endif /* OSI_MACHDEP_H_ */
