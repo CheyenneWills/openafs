@@ -319,6 +319,14 @@ AC_CHECK_LINUX_FUNC([write_begin_end_folio],
 		    [[aops->write_begin(file, mapping, 0, 0, &foliop, fsdata);
 		      aops->write_end(file, mapping, 0, 0, 0, foliop, fsdata);]])
 
+dnl Linux 6.15 removed grab_cache_page_write_begin which was replaced by
+dnl __filemap_get_folio that was introduced in Linux 5.16
+AC_CHECK_LINUX_FUNC([filemap_get_folio],
+                    [[#include <linux/pagemap.h>
+                      #include <linux/fs.h>
+                      static struct folio *folio;]],
+                    [[folio = __filemap_get_folio(NULL, 0, 0, 0);]])
+
 dnl Consequences - things which get set as a result of the
 dnl                above tests
 AS_IF([test "x$ac_cv_linux_func_d_alloc_anon" = "xno"],

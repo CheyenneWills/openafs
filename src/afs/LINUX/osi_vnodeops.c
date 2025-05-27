@@ -3628,6 +3628,30 @@ afs_linux_write_end(struct file *file, struct address_space *mapping,
     return code;
 }
 
+#  if defined(HAVE_LINUX_FILEMAP_GET_FOLIO)
+static int
+afs_linux_write_begin(struct file *file, struct address_space *mapping,
+		      loff_t pos, unsigned len,
+		      struct folio **foliop, void **fsdata)
+{
+    struct page *page;
+    pgoff_t index = pos >> PAGE_SHIFT;
+    unsigned int from = pos & (PAGE_SIZE - 1);
+    int code;
+
+    *foliop = __filemap_get_folio(mapping, index, FGP_WRITEBEGIN, mapping_gfp_mask(mapping));
+    if (IS_ERR(*foliop)) {
+	return -ENOMEM;
+    }
+    page = &(*foliop)->page;
+    code = afs_linux_prepare_write(file, page, from, from + len);
+    if (code != 0) {
+	folio_unlock(*foliop);
+	folio_put(*foliop);
+    }
+    return code;
+}
+#  else
 static int
 afs_linux_write_begin(struct file *file, struct address_space *mapping,
 		      loff_t pos, unsigned len,
@@ -3652,6 +3676,7 @@ afs_linux_write_begin(struct file *file, struct address_space *mapping,
 
     return code;
 }
+#  endif /* HAVE_LINUX_FILEMAP_GET_FOLIO */
 # else /* !HAVE LINUX_WRITE_BEGIN_END_FOLIO -- Non-folios */
 static int
 afs_linux_write_end(struct file *file, struct address_space *mapping,
