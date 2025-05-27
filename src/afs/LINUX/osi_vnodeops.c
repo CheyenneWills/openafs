@@ -3611,23 +3611,15 @@ afs_linux_prepare_write(struct file *file, struct page *page, unsigned from,
 }
 
 #if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_WRITE_BEGIN)
-# if defined(HAVE_LINUX_WRITE_BEGIN_END_FOLIO)
+# if defined(HAVE_LINUX_WRITE_BEGIN_END_FOLIO) /* Folios related */
 static int
 afs_linux_write_end(struct file *file, struct address_space *mapping,
 		    loff_t pos, unsigned len, unsigned copied,
 		    struct folio *folio, void *fsdata)
-# else
-static int
-afs_linux_write_end(struct file *file, struct address_space *mapping,
-		    loff_t pos, unsigned len, unsigned copied,
-		    struct page *page, void *fsdata)
-# endif
 {
     int code;
     unsigned int from = pos & (PAGE_SIZE - 1);
-# if defined(HAVE_LINUX_WRITE_BEGIN_END_FOLIO)
     struct page *page = &folio->page;
-# endif
 
     code = afs_linux_commit_write(file, page, from, from + copied);
 
@@ -3636,42 +3628,72 @@ afs_linux_write_end(struct file *file, struct address_space *mapping,
     return code;
 }
 
-# if defined(HAVE_LINUX_WRITE_BEGIN_END_FOLIO)
 static int
 afs_linux_write_begin(struct file *file, struct address_space *mapping,
 		      loff_t pos, unsigned len,
 		      struct folio **foliop, void **fsdata)
-# elif defined(HAVE_LINUX_GRAB_CACHE_PAGE_WRITE_BEGIN_NOFLAGS)
-static int
-afs_linux_write_begin(struct file *file, struct address_space *mapping,
-		      loff_t pos, unsigned len,
-		      struct page **pagep, void **fsdata)
-# else
-static int
-afs_linux_write_begin(struct file *file, struct address_space *mapping,
-		      loff_t pos, unsigned len, unsigned flags,
-		      struct page **pagep, void **fsdata)
-# endif
 {
     struct page *page;
     pgoff_t index = pos >> PAGE_SHIFT;
     unsigned int from = pos & (PAGE_SIZE - 1);
     int code;
 
-# if defined(HAVE_LINUX_GRAB_CACHE_PAGE_WRITE_BEGIN_NOFLAGS)
     page = grab_cache_page_write_begin(mapping, index);
-# else
-    page = grab_cache_page_write_begin(mapping, index, flags);
-# endif
     if (!page) {
 	return -ENOMEM;
     }
 
-# if defined(HAVE_LINUX_WRITE_BEGIN_END_FOLIO)
     *foliop = page_folio(page);
-# else
+    code = afs_linux_prepare_write(file, page, from, from + len);
+    if (code) {
+	unlock_page(page);
+	put_page(page);
+    }
+
+    return code;
+}
+# else /* !HAVE LINUX_WRITE_BEGIN_END_FOLIO -- Non-folios */
+static int
+afs_linux_write_end(struct file *file, struct address_space *mapping,
+		    loff_t pos, unsigned len, unsigned copied,
+		    struct page *page, void *fsdata)
+{
+    int code;
+    unsigned int from = pos & (PAGE_SIZE - 1);
+
+    code = afs_linux_commit_write(file, page, from, from + copied);
+
+    unlock_page(page);
+    put_page(page);
+    return code;
+}
+#  if defined(HAVE_LINUX_GRAB_CACHE_PAGE_WRITE_BEGIN_NOFLAGS)
+static int
+afs_linux_write_begin(struct file *file, struct address_space *mapping,
+		      loff_t pos, unsigned len,
+		      struct page **pagep, void **fsdata)
+#  else
+static int
+afs_linux_write_begin(struct file *file, struct address_space *mapping,
+		      loff_t pos, unsigned len, unsigned flags,
+		      struct page **pagep, void **fsdata)
+#  endif
+{
+    struct page *page;
+    pgoff_t index = pos >> PAGE_SHIFT;
+    unsigned int from = pos & (PAGE_SIZE - 1);
+    int code;
+
+#  if defined(HAVE_LINUX_GRAB_CACHE_PAGE_WRITE_BEGIN_NOFLAGS)
+    page = grab_cache_page_write_begin(mapping, index);
+#  else
+    page = grab_cache_page_write_begin(mapping, index, flags);
+#  endif
+    if (!page) {
+	return -ENOMEM;
+    }
+
     *pagep = page;
-# endif
 
     code = afs_linux_prepare_write(file, page, from, from + len);
     if (code) {
@@ -3681,6 +3703,7 @@ afs_linux_write_begin(struct file *file, struct address_space *mapping,
 
     return code;
 }
+# endif /* HAVE LINUX_WRITE_BEGIN_END_FOLIO */
 #endif /* STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_WRITE_BEGIN */
 
 #ifndef STRUCT_DENTRY_OPERATIONS_HAS_D_AUTOMOUNT
