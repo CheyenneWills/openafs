@@ -3411,7 +3411,126 @@ afs_linux_writepage_sync(struct inode *ip, struct page *pp,
 
     return code;
 }
+#if 1
+int
+afs_linux_writefolio(struct folio *folio, struct writeback_control *wbc, void *priv);
+ int
+afs_linux_writefolio(struct folio *folio, struct writeback_control *wbc, void *priv)
+{
+    struct inode *inode;
+    struct page *pp;
+    struct address_space *mapping;
+    struct vcache *vcp;
+    cred_t *credp;
+    loff_t isize;
 
+    loff_t folio_start_offset;
+    unsigned int to;
+
+    int code = 0;
+    int code1 = 0;
+
+    folio_get(folio);
+    pp = &folio->page;
+    mapping = folio->mapping;
+    folio_start_offset = folio_pos(folio);
+    to = folio_size(folio);
+
+    inode = mapping->host;
+    vcp = VTOAFS(inode);
+    isize = i_size_read(inode);
+
+    /* Don't defeat an earlier truncate */
+    if (folio_pos(folio) >= isize) {
+	folio_start_writeback(folio);
+	folio_unlock(folio);
+	folio_end_writeback(folio);
+	folio_put(folio);
+	return 0;
+    }
+
+    AFS_GLOCK();
+    ObtainWriteLock(&vcp->lock, 537);
+    code = afs_linux_prepare_writeback(vcp);
+    if (code == AOP_WRITEPAGE_ACTIVATE) {
+	ReleaseWriteLock(&vcp->lock);
+	AFS_GUNLOCK();
+	return code;
+    }
+
+    /* Grab the creds structure currently held in the vnode, and
+     * get a reference to it, in case it goes away ... */
+    credp = vcp->cred;
+    if (credp)
+	crhold(credp);
+    else
+	credp = crref();
+    ReleaseWriteLock(&vcp->lock);
+    AFS_GUNLOCK();
+
+    folio_start_writeback(folio);
+
+    folio_mark_uptodate(folio);
+
+    /* We can unlock the page here, because it's protected by the
+     * page_writeback flag. This should make us less vulnerable to
+     * deadlocking in afs_write and afs_DoPartialWrite
+     */
+    folio_unlock(folio);
+
+    if ((isize - folio_start_offset) < to) {
+	to = isize - folio_start_offset;
+    }
+
+    code = afs_linux_page_writeback(inode, pp, 0, to, credp);
+
+    AFS_GLOCK();
+    ObtainWriteLock(&vcp->lock, 538);
+
+    /* As much as we might like to ignore a file server error here,
+     * and just try again when we close(), unfortunately StoreAllSegments
+     * will invalidate our chunks if the server returns a permanent error,
+     * so we need to at least try and get that error back to the user
+     */
+    if (code == to) {
+	code1 = afs_linux_dopartialwrite(vcp, credp);
+    }
+    afs_linux_complete_writeback(vcp);
+    ReleaseWriteLock(&vcp->lock);
+    crfree(credp);
+    AFS_GUNLOCK();
+
+    folio_end_writeback(folio);
+    folio_put(folio);
+
+    if (code1){
+	return code1;
+    }
+    if (code == to) {
+	return 0;
+    }
+    if (code < 0) {
+	return code;
+    }
+
+    return -EIO;
+}
+ int
+afs_linux_write_pages(struct address_space *mapping, struct writeback_control *wbc);
+ int
+afs_linux_write_pages(struct address_space *mapping, struct writeback_control *wbc)
+{
+    int ret;
+    printk("afs_linux_writepages: For inode %lu: wbc->nr_to_write=%ld, wbc->pages_skipped=%ld, range_start=%llu, range_end=%llu, sync_mode=%d, for_reclaim=%d, index=%llu\n",
+	mapping->host->i_ino, wbc->nr_to_write, wbc->pages_skipped,
+	(unsigned long long)wbc->range_start, (unsigned long long)wbc->range_end,
+	wbc->sync_mode, wbc->for_reclaim, (unsigned long long)wbc->index);
+    ret = write_cache_pages(mapping, wbc, afs_linux_writefolio, NULL);
+    printk("afs_linux_writepages: write_cache_pages for inode %lu returned %d\n", mapping->host->i_ino, ret);
+    return ret;
+}
+
+#else
 static int
 #ifdef AOP_WRITEPAGE_TAKES_WRITEBACK_CONTROL
 afs_linux_writepage(struct page *pp, struct writeback_control *wbc)
@@ -3507,7 +3626,7 @@ done:
 
     return code;
 }
-
+#endif
 /* afs_linux_permission
  * Check access rights - returns error if can't check or permission denied.
  */
@@ -3793,7 +3912,12 @@ static struct address_space_operations afs_file_aops = {
 #else
   .readpages = 		afs_linux_readpages,
 #endif
+#if 1
+
+  .writepages =		afs_linux_write_pages,
+#else
   .writepage =		afs_linux_writepage,
+#endif
 #if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_DIRTY_FOLIO) && \
     defined(HAVE_LINUX_BLOCK_DIRTY_FOLIO)
   .dirty_folio =	block_dirty_folio,
