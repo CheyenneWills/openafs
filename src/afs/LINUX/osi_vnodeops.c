@@ -3440,12 +3440,15 @@ afs_linux_writefolio(struct folio *folio, struct writeback_control *wbc, void *p
     vcp = VTOAFS(inode);
     isize = i_size_read(inode);
 
+printk("afs_linux_writefolio isize = %lu offset=%lu to=%lu\n", (unsigned long)isize, (unsigned long)folio_start_offset, (unsigned long)to);
+
     /* Don't defeat an earlier truncate */
     if (folio_pos(folio) >= isize) {
 	folio_start_writeback(folio);
 	folio_unlock(folio);
 	folio_end_writeback(folio);
 	folio_put(folio);
+	printk("return due to earlier truncate\n");
 	return 0;
     }
 
@@ -3455,6 +3458,7 @@ afs_linux_writefolio(struct folio *folio, struct writeback_control *wbc, void *p
     if (code == AOP_WRITEPAGE_ACTIVATE) {
 	ReleaseWriteLock(&vcp->lock);
 	AFS_GUNLOCK();
+	printk("return WRITEPAGE_ACTIVATE\n");
 	return code;
     }
 
@@ -3494,6 +3498,7 @@ afs_linux_writefolio(struct folio *folio, struct writeback_control *wbc, void *p
      */
     if (code == to) {
 	code1 = afs_linux_dopartialwrite(vcp, credp);
+    	printk("code after afs_linux_dopartialwrite %d\n", code1);
     }
     afs_linux_complete_writeback(vcp);
     ReleaseWriteLock(&vcp->lock);
@@ -3503,6 +3508,7 @@ afs_linux_writefolio(struct folio *folio, struct writeback_control *wbc, void *p
     folio_end_writeback(folio);
     folio_put(folio);
 
+    printk("at exit code1=%d code=%d to=%d", code1, code, to);
     if (code1){
 	return code1;
     }
