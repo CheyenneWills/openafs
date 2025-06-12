@@ -87,6 +87,19 @@ struct afs_pagecopy_task {
     struct list_head joblink;
 };
 
+
+/* MULTI FOLIO*/ 
+
+struct afs_pagecopy_folio {
+   struct folio *afsfolio;
+   struct folio *cachefolio;
+   struct list_head tasklink;
+};
+
+/* MULTI FOLIO*/ 
+
+
+
 #if defined(INIT_WORK_HAS_DATA)
 static void afs_pagecopy_worker(void *rock);
 #else
@@ -254,3 +267,42 @@ void afs_shutdown_pagecopy(void) {
 	kthread_stop(afs_pagecopy_thread_id);
 }
 
+/* MULTI FOLIO */
+
+#if defined(INIT_WORK_HAS_DATA)
+static void afs_pagecopy_worker_folio(void *work)
+#else
+static void afs_pagecopy_worker_folio(struct work_struct *work)
+#endif
+{
+   struct afs_pagecopy_task *task =
+   container_of(work, struct afs_pagecopy_task, work);
+   struct afs_pagecopy_folio *folio_entry;
+
+   spin_lock(&task->lock);
+   while (!list_empty(&task->copypages)) {
+   folio_entry = list_entry(task->copypages.next, struct afs_pagecopy_folio,
+   		  tasklink);
+   list_del(&folio_entry->tasklink);
+   spin_unlock(&task->lock);
+
+   if (folio_test_uptodate(folio_entry->cachefolio)) {
+       folio_copy(folio_entry->afsfolio, folio_entry->cachefolio);
+       flush_dcache_folio(folio_entry->afsfolio);
+       folio_clear_error(folio_entry->afsfolio);
+       folio_mark_uptodate(folio_entry->afsfolio);
+   }
+   folio_unlock(folio_entry->afsfolio);
+   folio_put(folio_entry->cachefolio);
+   folio_put(folio_entry->afsfolio);
+   kfree(folio_entry);
+
+   spin_lock(&task->lock);
+   }
+   spin_unlock(&task->lock);
+
+   afs_pagecopy_put_task(task);
+}
+
+
+/* MULTI FOLIO */

@@ -836,3 +836,107 @@ afs_setattr_prepare(struct dentry *dp, struct iattr *newattrs)
 #endif /* D_ALIAS_IS_HLIST */
 
 #endif /* AFS_LINUX_OSI_COMPAT_H */
+
+
+
+/* MULTI FOLIO */
+
+#ifndef HAVE_LINUX_FOLIO_SUPPORT
+/* Folio compatibility for older kernels */
+#define folio page
+#define folio_pos(f) page_offset(f)
+#define folio_size(f) PAGE_SIZE
+#define folio_nr_pages(f) 1
+#define folio_order(f) 0
+#define folio_index(f) ((f)->index)
+#define folio_unlock(f) unlock_page(f)
+#define folio_lock(f) lock_page(f)
+#define folio_get(f) get_page(f)
+#define folio_put(f) put_page(f)
+#define folio_test_uptodate(f) PageUptodate(f)
+#define folio_test_locked(f) PageLocked(f)
+#define folio_mark_uptodate(f) SetPageUptodate(f)
+#define folio_clear_error(f) ClearPageError(f)
+#define folio_set_error(f) SetPageError(f)
+#define folio_zero_range(f, start, len) zero_user_segment(f, start, start + len)
+#define flush_dcache_folio(f) flush_dcache_page(f)
+#define kmap_local_folio(f, offset) kmap_atomic(f)
+#define kunmap_local(addr) kunmap_atomic(addr)
+#define folio_copy(dst, src) copy_highpage(dst, src)
+#define folio_wait_locked(f) wait_on_page_locked(f)
+#define page_folio(p) (p)
+
+static inline struct folio *folio_page(struct folio *folio, int n) {
+   return folio + n;
+}
+#endif
+
+
+#ifndef HAVE_LINUX_FILEMAP_GET_FOLIO
+static inline struct folio *
+filemap_get_folio(struct address_space *mapping, pgoff_t index)
+{
+   struct page *page = find_get_page(mapping, index);
+   return page ? page_folio(page) : ERR_PTR(-ENOENT);
+}
+#endif
+
+#ifndef HAVE_LINUX_FILEMAP_ADD_FOLIO
+static inline int
+filemap_add_folio(struct address_space *mapping, struct folio *folio,
+   	  pgoff_t index, gfp_t gfp)
+{
+   if (folio_nr_pages(folio) == 1) {
+       return add_to_page_cache(folio, mapping, index, gfp);
+   } else {
+       /* For large folios on older kernels, add each page */
+       int i, code = 0;
+       for (i = 0; i < folio_nr_pages(folio) && !code; i++) {
+           struct page *page = folio_page(folio, i);
+           code = add_to_page_cache(page, mapping, index + i, gfp);
+       }
+       return code;
+   }
+}
+#endif
+
+#ifndef HAVE_LINUX_FOLIO_ADD_LRU
+static inline void
+folio_add_lru(struct folio *folio)
+{
+   if (folio_nr_pages(folio) == 1) {
+       lru_cache_add(folio);
+   } else {
+       int i;
+       for (i = 0; i < folio_nr_pages(folio); i++) {
+           struct page *page = folio_page(folio, i);
+           lru_cache_add(page);
+       }
+   }
+}
+#endif
+
+
+#if defined(HAVE_LINUX_FILEMAP_ALLOC_FOLIO)
+static inline struct folio *
+afs_folio_cache_alloc(struct address_space *cachemapping, unsigned int order)
+{
+   return filemap_alloc_folio(mapping_gfp_mask(cachemapping), order);
+}
+#else
+static inline struct folio *
+afs_folio_cache_alloc(struct address_space *cachemapping, unsigned int order)
+{
+   struct page *page;
+   if (order == 0) {
+       page = page_cache_alloc(cachemapping);
+       return page ? page_folio(page) : NULL;
+   }
+   /* For large folios on older kernels, allocate compound page */
+   page = alloc_pages(mapping_gfp_mask(cachemapping) | __GFP_COMP, order);
+   return page ? page_folio(page) : NULL;
+}
+#endif
+
+
+/* MULTI FOLIO */
