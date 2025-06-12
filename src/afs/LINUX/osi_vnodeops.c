@@ -154,22 +154,117 @@ afs_lru_cache_finalize(struct afs_lru_pages *alrupages)
 }
 #endif /* !HAVE_LINUX_LRU_ADD_FILE */
 
+/* MULTI FOLIO  */
+
+/*static inline int
+/*afs_add_to_page_cache_lru(struct afs_lru_pages *alrupages, struct page *page,
+/*			  struct address_space *mapping,
+/*			  pgoff_t index, gfp_t gfp)
+/*{
+/*#if defined(HAVE_LINUX_ADD_TO_PAGE_CACHE_LRU)
+/*    return add_to_page_cache_lru(page, mapping, index, gfp);
+/*#else
+/*    int code;
+/*    code = add_to_page_cache(page, mapping, index, gfp);
+/*    if (code == 0) {
+/*	afs_lru_cache_add(alrupages, page);
+/*    }
+/*    return code;
+/*#endif
+/*} */
+
 static inline int
-afs_add_to_page_cache_lru(struct afs_lru_pages *alrupages, struct page *page,
-			  struct address_space *mapping,
-			  pgoff_t index, gfp_t gfp)
+afs_add_to_page_cache_lru(struct afs_lru_pages *alrupages, struct folio *folio,
+   		  struct address_space *mapping,
+   		  pgoff_t index, gfp_t gfp)
 {
-#if defined(HAVE_LINUX_ADD_TO_PAGE_CACHE_LRU)
-    return add_to_page_cache_lru(page, mapping, index, gfp);
+#if defined(HAVE_LINUX_FILEMAP_ADD_FOLIO)
+   return filemap_add_folio(mapping, folio, index, gfp);
 #else
-    int code;
-    code = add_to_page_cache(page, mapping, index, gfp);
-    if (code == 0) {
-	afs_lru_cache_add(alrupages, page);
-    }
-    return code;
+   int code;
+   code = add_to_page_cache(folio, mapping, index, gfp);
+   if (code == 0) {
+   afs_lru_cache_add(alrupages, folio);
+   }
+   return code;
 #endif
 }
+
+
+#if defined(HAVE_LINUX_FOLIO_ADD_LRU) || \
+   defined(HAVE_LINUX_LRU_CACHE_ADD_FILE) || defined(HAVE_LINUX_LRU_CACHE_ADD)
+
+struct afs_lru_folios {
+   char unused;
+};
+
+static inline void
+afs_lru_cache_init(struct afs_lru_folios *alrufolios)
+{
+   return;
+}
+
+static inline void
+afs_lru_cache_add(struct afs_lru_folios *alrufolios, struct folio *folio)
+{
+# if defined(HAVE_LINUX_FOLIO_ADD_LRU)
+   folio_add_lru(folio);
+# elif defined(HAVE_LINUX_LRU_CACHE_ADD)
+   lru_cache_add(&folio->page);
+# elif defined(HAVE_LINUX_LRU_CACHE_ADD_FILE)
+   lru_cache_add_file(&folio->page);
+# else
+#  error need a kernel function to add a folio to the kernel lru cache
+# endif
+}
+
+static inline void
+afs_lru_cache_finalize(struct afs_lru_folios *alrufolios)
+{
+   return;
+}
+
+#else
+
+/* Folio-aware pagevec handling */
+struct afs_lru_folios {
+   struct pagevec lrupv;
+};
+
+static inline void
+afs_lru_cache_init(struct afs_lru_folios *alrufolios)
+{
+# if defined(PAGEVEC_INIT_COLD_ARG)
+   pagevec_init(&alrufolios->lrupv, 0);
+# else
+   pagevec_init(&alrufolios->lrupv);
+# endif
+}
+
+static inline void
+afs_lru_cache_add(struct afs_lru_folios *alrufolios, struct folio *folio)
+{
+   int i;
+   int nr_pages = folio_nr_pages(folio);
+   
+   for (i = 0; i < nr_pages; i++) {
+       struct page *page = folio_page(folio, i);
+       get_page(page);
+       if (!pagevec_add(&alrufolios->lrupv, page))
+           __pagevec_lru_add_file(&alrufolios->lrupv);
+   }
+}
+
+static inline void
+afs_lru_cache_finalize(struct afs_lru_folios *alrufolios)
+{
+   if (pagevec_count(&alrufolios->lrupv))
+   __pagevec_lru_add_file(&alrufolios->lrupv);
+}
+#endif
+
+/* MULTI FOLIO  */
+
 
 /* This function converts a positive error code from AFS into a negative
  * code suitable for passing into the Linux VFS layer. It checks that the
@@ -2362,99 +2457,226 @@ afs_page_cache_alloc(struct address_space *cachemapping)
  * ready for use. Note that if task is non-NULL and we encounter an error
  * before we start the background copy, we MUST unlock 'page' before we return.
  */
+
+/* MULTI FOLIO E */
+
+static int afs_large_folio_support = -1;
+
+
+/* static int
+/* afs_linux_read_cache(struct file *cachefp, struct page *page,
+/* 		     int chunk, struct afs_lru_pages *alrupages,
+/* 		     struct afs_pagecopy_task *task) {
+/*     loff_t offset = page_offset(page);
+/*     struct inode *cacheinode = cachefp->f_dentry->d_inode;
+/*     struct page *newpage, *cachepage;
+/*     struct address_space *cachemapping;
+/*     int pageindex;
+/*     int code = 0;
+/* 
+/*     cachemapping = cacheinode->i_mapping;
+/*     newpage = NULL;
+/*     cachepage = NULL;
+/* 
+/*     /* If we're trying to read a page that's past the end of the disk
+/*      * cache file, then just return a zeroed page */
+/*     if (AFS_CHUNKOFFSET(offset) >= i_size_read(cacheinode)) {
+/* 	zero_user_segment(page, 0, PAGE_SIZE);
+/* 	SetPageUptodate(page);
+/* 	if (task)
+/* 	    unlock_page(page);
+/* 	return 0;
+/*     }
+/* 
+/*     /* From our offset, we now need to work out which page in the disk
+/*      * file it corresponds to. This will be fun ... */
+/*     pageindex = (offset - AFS_CHUNKTOBASE(chunk)) >> PAGE_SHIFT;
+/* 
+/*     while (cachepage == NULL) {
+/* 	cachepage = find_get_page(cachemapping, pageindex);
+/* 	if (!cachepage) {
+/* 	    if (newpage == NULL) {
+/* 		newpage = afs_page_cache_alloc(cachemapping);
+/* 	    }
+/* 	    if (newpage == NULL) {
+/* 		code = -ENOMEM;
+/* 		goto out;
+/* 	    }
+/* 
+/* 	    code = afs_add_to_page_cache_lru(alrupages, newpage, cachemapping,
+/* 					     pageindex, GFP_KERNEL);
+/* 	    if (code == 0) {
+/* 	        cachepage = newpage;
+/* 	        newpage = NULL;
+/* 	    } else {
+/* 		put_page(newpage);
+/* 		newpage = NULL;
+/* 		if (code != -EEXIST)
+/* 		    goto out;
+/* 	    }
+/*         } else {
+/* 	    lock_page(cachepage);
+/* 	}
+/*     }
+/* 
+/*     if (!PageUptodate(cachepage)) {
+/* 	ClearPageError(cachepage);
+/* 	/* Note that mapping_read_page always handles unlocking the given page,
+/* 	 * even when an error is returned. */
+/* 	code = mapping_read_page(cachemapping, cachepage);
+/* 	if (!code && !task) {
+/* 	    wait_on_page_locked(cachepage);
+/* 	}
+/*     } else {
+/*         unlock_page(cachepage);
+/*     }
+/* 
+/*     if (!code) {
+/* 	if (PageUptodate(cachepage)) {
+/* 	    copy_highpage(page, cachepage);
+/* 	    flush_dcache_page(page);
+/* 	    SetPageUptodate(page);
+/* 
+/* 	    if (task)
+/* 		unlock_page(page);
+/*         } else if (task) {
+/* 	    afs_pagecopy_queue_page(task, cachepage, page);
+/* 	} else {
+/* 	    code = -EIO;
+/* 	}
+/*     }
+/* 
+/*  out:
+/*     if (code && task) {
+/*         unlock_page(page);
+/*     }
+/* 
+/*     if (cachepage)
+/* 	put_page(cachepage);
+/* 
+/*     return code;
+/* }*/
+
 static int
-afs_linux_read_cache(struct file *cachefp, struct page *page,
-		     int chunk, struct afs_lru_pages *alrupages,
-		     struct afs_pagecopy_task *task) {
-    loff_t offset = page_offset(page);
-    struct inode *cacheinode = cachefp->f_dentry->d_inode;
-    struct page *newpage, *cachepage;
-    struct address_space *cachemapping;
-    int pageindex;
-    int code = 0;
+afs_linux_read_cache(struct file *cachefp, struct folio *folio,
+   	     int chunk, struct afs_lru_pages *alrupages,
+   	     struct afs_pagecopy_task *task) {
+   loff_t offset = folio_pos(folio);
+   struct inode *cacheinode = cachefp->f_dentry->d_inode;
+   struct folio *newfolio, *cachefolio;
+   struct address_space *cachemapping;
+   pgoff_t pageindex;
+   int code = 0;
 
-    cachemapping = cacheinode->i_mapping;
-    newpage = NULL;
-    cachepage = NULL;
+   cachemapping = cacheinode->i_mapping;
+   newfolio = NULL;
+   cachefolio = NULL;
 
-    /* If we're trying to read a page that's past the end of the disk
-     * cache file, then just return a zeroed page */
-    if (AFS_CHUNKOFFSET(offset) >= i_size_read(cacheinode)) {
-	zero_user_segment(page, 0, PAGE_SIZE);
-	SetPageUptodate(page);
-	if (task)
-	    unlock_page(page);
-	return 0;
-    }
+   /* Check if trying to read past end of cache file */
+   if (AFS_CHUNKOFFSET(offset) >= i_size_read(cacheinode)) {
+   folio_zero_range(folio, 0, folio_size(folio));
+   folio_mark_uptodate(folio);
+   if (task)
+       folio_unlock(folio);
+   return 0;
+   }
 
-    /* From our offset, we now need to work out which page in the disk
-     * file it corresponds to. This will be fun ... */
-    pageindex = (offset - AFS_CHUNKTOBASE(chunk)) >> PAGE_SHIFT;
+   pageindex = (offset - AFS_CHUNKTOBASE(chunk)) >> PAGE_SHIFT;
 
-    while (cachepage == NULL) {
-	cachepage = find_get_page(cachemapping, pageindex);
-	if (!cachepage) {
-	    if (newpage == NULL) {
-		newpage = afs_page_cache_alloc(cachemapping);
-	    }
-	    if (newpage == NULL) {
-		code = -ENOMEM;
-		goto out;
-	    }
+   while (cachefolio == NULL) {
+   cachefolio = filemap_get_folio(cachemapping, pageindex);
+   if (IS_ERR(cachefolio)) {
+       cachefolio = NULL;
+       if (newfolio == NULL) {
+   	newfolio = filemap_alloc_folio(mapping_gfp_mask(cachemapping), 
+   				       folio_order(folio));
+       }
+       if (newfolio == NULL) {
+   	code = -ENOMEM;
+   	goto out;
+       }
 
-	    code = afs_add_to_page_cache_lru(alrupages, newpage, cachemapping,
-					     pageindex, GFP_KERNEL);
-	    if (code == 0) {
-	        cachepage = newpage;
-	        newpage = NULL;
-	    } else {
-		put_page(newpage);
-		newpage = NULL;
-		if (code != -EEXIST)
-		    goto out;
-	    }
-        } else {
-	    lock_page(cachepage);
-	}
-    }
+       code = filemap_add_folio(cachemapping, newfolio, pageindex, GFP_KERNEL);
+       if (code == 0) {
+   	cachefolio = newfolio;
+   	newfolio = NULL;
+       } else {
+   	folio_put(newfolio);
+   	newfolio = NULL;
+   	if (code != -EEXIST)
+   	    goto out;
+       }
+   } else {
+       folio_lock(cachefolio);
+   }
+   }
 
-    if (!PageUptodate(cachepage)) {
-	ClearPageError(cachepage);
-	/* Note that mapping_read_page always handles unlocking the given page,
-	 * even when an error is returned. */
-	code = mapping_read_page(cachemapping, cachepage);
-	if (!code && !task) {
-	    wait_on_page_locked(cachepage);
-	}
-    } else {
-        unlock_page(cachepage);
-    }
+   if (!folio_test_uptodate(cachefolio)) {
+   folio_clear_error(cachefolio);
+   code = mapping_read_folio(cachemapping, cachefolio);
+   if (!code && !task) {
+       folio_wait_locked(cachefolio);
+   }
+   } else {
+   folio_unlock(cachefolio);
+   }
 
-    if (!code) {
-	if (PageUptodate(cachepage)) {
-	    copy_highpage(page, cachepage);
-	    flush_dcache_page(page);
-	    SetPageUptodate(page);
+   if (!code) {
+   if (folio_test_uptodate(cachefolio)) {
+       folio_copy(folio, cachefolio);
+       flush_dcache_folio(folio);
+       folio_mark_uptodate(folio);
 
-	    if (task)
-		unlock_page(page);
-        } else if (task) {
-	    afs_pagecopy_queue_page(task, cachepage, page);
-	} else {
-	    code = -EIO;
-	}
-    }
+       if (task)
+   	folio_unlock(folio);
+   } else if (task) {
+       afs_pagecopy_queue_folio(task, cachefolio, folio);
+   } else {
+       code = -EIO;
+   }
+   }
 
- out:
-    if (code && task) {
-        unlock_page(page);
-    }
+out:
+   if (code && task) {
+   folio_unlock(folio);
+   }
 
-    if (cachepage)
-	put_page(cachepage);
+   if (cachefolio)
+   folio_put(cachefolio);
 
-    return code;
+   return code;
 }
+
+void afs_pagecopy_queue_folio(struct afs_pagecopy_task *task,
+   		      struct folio *cachefolio,
+   		      struct folio *afsfolio)
+{
+   struct afs_pagecopy_folio *folio_entry;
+
+   folio_entry = kzalloc(sizeof(struct afs_pagecopy_folio), GFP_NOFS);
+   INIT_LIST_HEAD(&folio_entry->tasklink);
+
+   folio_get(cachefolio);
+   folio_entry->cachefolio = cachefolio;
+   folio_get(afsfolio);
+   folio_entry->afsfolio = afsfolio;
+
+   spin_lock(&task->lock);
+   list_add_tail(&folio_entry->tasklink, &task->checkpages);
+   spin_lock(&afs_pagecopy_lock);
+   if (list_empty(&task->joblink)) {
+   atomic_inc(&task->refcnt);
+   list_add_tail(&task->joblink, &afs_pagecopy_tasks);
+   }
+   spin_unlock(&afs_pagecopy_lock);
+   spin_unlock(&task->lock);
+
+   wake_up_interruptible(&afs_pagecopy_wq);
+}
+
+
+/* MULTI FOLIO E */
+
 
 /*
  * Return true if the file has a mapping that can read pages
@@ -2702,190 +2924,175 @@ afs_linux_prefetch(struct file *fp, struct page *pp)
 }
 
 #if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READAHEAD)
-/*
- * Bypass the cache while performing a readahead.
- * See the comments for afs_linux_readahead for the semantics
- * for 'rac'.
- */
 static void
 afs_linux_bypass_readahead(struct readahead_control *rac)
 {
-    struct file *fp = rac->file;
-    unsigned num_pages = readahead_count(rac);
-    afs_int32 page_ix;
-    afs_offs_t offset;
-    struct iovec* iovecp;
-    struct nocache_read_request *ancr;
-    struct page *pp;
-    afs_int32 code = 0;
+   struct file *fp = rac->file;
+   unsigned num_folios = readahead_count(rac) / folio_nr_pages(readahead_folio(rac));
+   afs_int32 folio_ix;
+   afs_offs_t offset;
+   struct iovec* iovecp;
+   struct nocache_read_request *ancr;
+   struct folio *folio;
+   afs_int32 code = 0;
 
-    cred_t *credp;
-    struct inode *ip = FILE_INODE(fp);
-    struct vcache *avc = VTOAFS(ip);
-    afs_int32 base_index = 0;
-    afs_int32 page_count = 0;
-    afs_int32 isize;
+   cred_t *credp;
+   struct inode *ip = FILE_INODE(fp);
+   struct vcache *avc = VTOAFS(ip);
+   afs_int32 base_index = 0;
+   afs_int32 folio_count = 0;
+   afs_int32 isize;
 
-    ancr = afs_alloc_ncr(num_pages);
-    if (ancr == NULL)
-	goto done;
+   ancr = afs_alloc_ncr(num_folios);
+   if (ancr == NULL)
+   goto done;
 
-    iovecp = ancr->auio->uio_iov;
+   iovecp = ancr->auio->uio_iov;
 
-    for (page_ix = 0; page_ix < num_pages; ++page_ix) {
-	pp = readahead_page(rac);
-	if (pp == NULL)
-	    break;
+   for (folio_ix = 0; folio_ix < num_folios; ++folio_ix) {
+   folio = readahead_folio(rac);
+   if (folio == NULL)
+       break;
 
-	isize = (i_size_read(fp->f_mapping->host) - 1) >> PAGE_SHIFT;
-	if (pp->index > isize) {
-	    if (PageLocked(pp))
-		unlock_page(pp);
-	    put_page(pp);
-	    continue;
-	}
+   isize = (i_size_read(fp->f_mapping->host) - 1) >> PAGE_SHIFT;
+   if (folio->index > isize) {
+       if (folio_test_locked(folio))
+   	folio_unlock(folio);
+       folio_put(folio);
+       continue;
+   }
 
-	if (page_ix == 0) {
-	    offset = page_offset(pp);
-	    ancr->offset = ancr->auio->uio_offset = offset;
-	    base_index = pp->index;
-	}
-	iovecp[page_ix].iov_len = PAGE_SIZE;
-	if (base_index != pp->index) {
-	    if (PageLocked(pp))
-		 unlock_page(pp);
-	    put_page(pp);
-	    iovecp[page_ix].iov_base = NULL;
-	    base_index++;
-	    ancr->length -= PAGE_SIZE;
-	    continue;
-	}
-	base_index++;
-	page_count++;
-	/* save the page for background map */
-	iovecp[page_ix].iov_base = pp;
-    }
+   if (folio_ix == 0) {
+       offset = folio_pos(folio);
+       ancr->offset = ancr->auio->uio_offset = offset;
+       base_index = folio->index;
+   }
+   iovecp[folio_ix].iov_len = folio_size(folio);
+   if (base_index != folio->index) {
+       if (folio_test_locked(folio))
+   	 folio_unlock(folio);
+       folio_put(folio);
+       iovecp[folio_ix].iov_base = NULL;
+       base_index++;
+       ancr->length -= folio_size(folio);
+       continue;
+   }
+   base_index++;
+   folio_count++;
+   iovecp[folio_ix].iov_base = folio;
+   }
 
-    /* If there were useful pages in the page list, schedule
-     * the read */
-    if (page_count > 0) {
-	credp = crref();
-	/* The background thread frees the ancr */
-	code = afs_ReadNoCache(avc, ancr, credp);
-	crfree(credp);
-    } else {
-	/* If there is nothing for the background thread to handle,
-	 * it won't be freeing the things that we never gave it */
-	afs_free_ncr(&ancr);
-    }
-    /* we do not flush, release, or unmap pages--that will be
-     * done for us by the background thread as each page comes in
-     * from the fileserver */
+   if (folio_count > 0) {
+   credp = crref();
+   code = afs_ReadNoCache(avc, ancr, credp);
+   crfree(credp);
+   } else {
+   afs_free_ncr(&ancr);
+   }
 
- done:
-    /* The vfs layer will unlock/put any of the pages in the rac that were not
-     * processed */
-    return;
+done:
+   return;
 }
-#else /* STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READAHEAD */
+
+/* Compatibility wrapper for readahead_folio */
+#ifndef HAVE_LINUX_READAHEAD_FOLIO
+static struct folio *
+readahead_folio(struct readahead_control *rac)
+{
+   struct page *page = readahead_page(rac);
+   return page ? page_folio(page) : NULL;
+}
+#endif
+
+#else /* !STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READAHEAD */
 static int
 afs_linux_bypass_readpages(struct file *fp, struct address_space *mapping,
-			   struct list_head *page_list, unsigned num_pages)
+   		   struct list_head *page_list, unsigned num_pages)
 {
-    afs_int32 page_ix;
-    afs_offs_t offset;
-    struct iovec* iovecp;
-    struct nocache_read_request *ancr;
-    struct page *pp;
-    struct afs_lru_pages lrupages;
-    afs_int32 code = 0;
+   afs_int32 page_ix;
+   afs_offs_t offset;
+   struct iovec* iovecp;
+   struct nocache_read_request *ancr;
+   struct page *pp;
+   struct folio *folio;
+   struct afs_lru_folios lrufolios;
+   afs_int32 code = 0;
 
-    cred_t *credp;
-    struct inode *ip = FILE_INODE(fp);
-    struct vcache *avc = VTOAFS(ip);
-    afs_int32 base_index = 0;
-    afs_int32 page_count = 0;
-    afs_int32 isize;
+   cred_t *credp;
+   struct inode *ip = FILE_INODE(fp);
+   struct vcache *avc = VTOAFS(ip);
+   afs_int32 base_index = 0;
+   afs_int32 folio_count = 0;
+   afs_int32 isize;
 
-    ancr = afs_alloc_ncr(num_pages);
-    if (ancr == NULL)
-	return afs_convert_code(ENOMEM);
-    iovecp = ancr->auio->uio_iov;
+   ancr = afs_alloc_ncr(num_pages);
+   if (ancr == NULL)
+   return afs_convert_code(ENOMEM);
+   iovecp = ancr->auio->uio_iov;
 
-    afs_lru_cache_init(&lrupages);
+   afs_lru_cache_init(&lrufolios);
 
-    for(page_ix = 0; page_ix < num_pages; ++page_ix) {
+   for(page_ix = 0; page_ix < num_pages; ++page_ix) {
+   if(list_empty(page_list))
+       break;
 
-	if(list_empty(page_list))
-	    break;
+   pp = list_entry(page_list->prev, struct page, lru);
+   list_del(&pp->lru);
+   folio = page_folio(pp);
+   
+   isize = (i_size_read(fp->f_mapping->host) - 1) >> PAGE_SHIFT;
+   if(pp->index > isize) {
+       if(PageLocked(pp))
+   	unlock_page(pp);
+       put_page(pp);
+       continue;
+   }
 
-	pp = list_entry(page_list->prev, struct page, lru);
-	/* If we allocate a page and don't remove it from page_list,
-	 * the page cache gets upset. */
-	list_del(&pp->lru);
-	isize = (i_size_read(fp->f_mapping->host) - 1) >> PAGE_SHIFT;
-	if(pp->index > isize) {
-	    if(PageLocked(pp))
-		unlock_page(pp);
-	    put_page(pp);
-	    continue;
-	}
+   if(page_ix == 0) {
+       offset = page_offset(pp);
+       ancr->offset = ancr->auio->uio_offset = offset;
+       base_index = pp->index;
+   }
+       iovecp[page_ix].iov_len = PAGE_SIZE;
+       code = add_to_page_cache(pp, mapping, pp->index, GFP_KERNEL);
+       if(base_index != pp->index) {
+           if(PageLocked(pp))
+   	 unlock_page(pp);
+           put_page(pp);
+       iovecp[page_ix].iov_base = (void *) 0;
+       base_index++;
+       ancr->length -= PAGE_SIZE;
+       continue;
+       }
+       base_index++;
+       if(code) {
+       if(PageLocked(pp))
+   	unlock_page(pp);
+       put_page(pp);
+       iovecp[page_ix].iov_base = (void *) 0;
+   } else {
+       folio_count++;
+       if(!PageLocked(pp)) {
+   	lock_page(pp);
+       }
+       iovecp[page_ix].iov_base = (void*) pp;
+       afs_lru_cache_add(&lrufolios, folio);
+       }
+   }
 
-	if(page_ix == 0) {
-	    offset = page_offset(pp);
-	    ancr->offset = ancr->auio->uio_offset = offset;
-	    base_index = pp->index;
-	}
-        iovecp[page_ix].iov_len = PAGE_SIZE;
-        code = add_to_page_cache(pp, mapping, pp->index, GFP_KERNEL);
-        if(base_index != pp->index) {
-            if(PageLocked(pp))
-		 unlock_page(pp);
-            put_page(pp);
-	    iovecp[page_ix].iov_base = (void *) 0;
-	    base_index++;
-	    ancr->length -= PAGE_SIZE;
-	    continue;
-        }
-        base_index++;
-        if(code) {
-	    if(PageLocked(pp))
-		unlock_page(pp);
-	    put_page(pp);
-	    iovecp[page_ix].iov_base = (void *) 0;
-	} else {
-	    page_count++;
-	    if(!PageLocked(pp)) {
-		lock_page(pp);
-	    }
-
-	    /* save the page for background map */
-            iovecp[page_ix].iov_base = (void*) pp;
-
-	    /* and put it on the LRU cache */
-	    afs_lru_cache_add(&lrupages, pp);
-        }
-    }
-
-    /* If there were useful pages in the page list, make sure all pages
-     * are in the LRU cache, then schedule the read */
-    if(page_count) {
-	afs_lru_cache_finalize(&lrupages);
-	credp = crref();
-	/* background thread frees the ancr */
-        code = afs_ReadNoCache(avc, ancr, credp);
-	crfree(credp);
-    } else {
-        /* If there is nothing for the background thread to handle,
-         * it won't be freeing the things that we never gave it */
-	afs_free_ncr(&ancr);
-    }
-    /* we do not flush, release, or unmap pages--that will be
-     * done for us by the background thread as each page comes in
-     * from the fileserver */
-    return afs_convert_code(code);
+   if(folio_count) {
+   afs_lru_cache_finalize(&lrufolios);
+   credp = crref();
+   code = afs_ReadNoCache(avc, ancr, credp);
+   crfree(credp);
+   } else {
+   afs_free_ncr(&ancr);
+   }
+   return afs_convert_code(code);
 }
 #endif /* STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READAHEAD */
+
+
 
 static int
 afs_linux_bypass_readpage(struct file *fp, struct page *pp)
@@ -2992,89 +3199,389 @@ afs_linux_readpage(struct file *fp, struct page *pp)
 }
 
 #if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READ_FOLIO)
+
+ /* MULTI FOLIO  */
+
+/*static int
+/*afs_linux_read_folio(struct file *fp, struct folio *folio)
+/*{
+/*    struct page *pp = &folio->page;
+/*
+/*    return afs_linux_readpage(fp, pp);
+/*}
+/*#endif */
+
 static int
 afs_linux_read_folio(struct file *fp, struct folio *folio)
 {
-    struct page *pp = &folio->page;
+   struct page *pp = &folio->page;
+   int code;
 
-    return afs_linux_readpage(fp, pp);
+   if (afs_linux_bypass_check(FILE_INODE(fp))) {
+   code = afs_linux_bypass_readfolio(fp, folio);
+   } else {
+   code = afs_linux_fillfolio(fp, folio);
+   if (!code)
+       code = afs_linux_prefetch(fp, pp);
+   folio_unlock(folio);
+   }
+
+   return code;
 }
-#endif
 
+static int
+afs_linux_fillfolio(struct file *fp, struct folio *folio)
+{
+   afs_int32 code;
+   char *address;
+   struct uio *auio;
+   struct iovec *iovecp;
+   struct inode *ip = FILE_INODE(fp);
+   afs_int32 cnt = folio_nr_pages(folio);
+   struct vcache *avc = VTOAFS(ip);
+   afs_offs_t offset = folio_pos(folio);
+   size_t len = folio_size(folio);
+   cred_t *credp;
+
+   AFS_GLOCK();
+   if (afs_linux_readfolio_fastpath(fp, folio, &code)) {
+   AFS_GUNLOCK();
+   return code;
+   }
+   AFS_GUNLOCK();
+
+   credp = crref();
+   address = kmap_local_folio(folio, 0);
+   folio_clear_error(folio);
+
+   auio = kmalloc(sizeof(struct uio), GFP_NOFS);
+   iovecp = kmalloc(sizeof(struct iovec), GFP_NOFS);
+
+   setup_uio(auio, iovecp, (char *)address, offset, len, UIO_READ,
+             AFS_UIOSYS);
+
+   AFS_GLOCK();
+   AFS_DISCON_LOCK();
+   afs_Trace4(afs_iclSetp, CM_TRACE_READPAGE, ICL_TYPE_POINTER, ip,
+          ICL_TYPE_POINTER, folio, ICL_TYPE_INT32, cnt, ICL_TYPE_INT32,
+          99999);
+
+   code = afs_rdwr(avc, auio, UIO_READ, 0, credp);
+
+   afs_Trace4(afs_iclSetp, CM_TRACE_READPAGE, ICL_TYPE_POINTER, ip,
+          ICL_TYPE_POINTER, folio, ICL_TYPE_INT32, cnt, ICL_TYPE_INT32,
+          code);
+   AFS_DISCON_UNLOCK();
+   AFS_GUNLOCK();
+   
+   if (!code) {
+   if (auio->uio_resid)
+       folio_zero_range(folio, len - auio->uio_resid, auio->uio_resid);
+
+   flush_dcache_folio(folio);
+   folio_mark_uptodate(folio);
+   }
+
+   kunmap_local(address);
+   kfree(auio);
+   kfree(iovecp);
+   crfree(credp);
+   
+   return afs_convert_code(code);
+}
+
+static inline int
+afs_linux_readfolio_fastpath(struct file *fp, struct folio *folio, int *codep)
+{
+   loff_t offset = folio_pos(folio);
+   struct inode *ip = FILE_INODE(fp);
+   struct vcache *avc = VTOAFS(ip);
+   struct dcache *tdc;
+   struct file *cacheFp = NULL;
+   int code;
+   int dcLocked = 0;
+   struct afs_lru_pages lrupages;
+   size_t folio_size_val = folio_size(folio);
+
+   /* Not a UFS cache, don't do anything */
+   if (cacheDiskType != AFS_FCACHE_TYPE_UFS)
+   return 0;
+
+   if (cachefs_noreadpage)
+   return 0;
+
+   /* Can't do anything if vcache isn't statd, or if read crosses chunk boundary */
+   if (!(avc->f.states & CStatd) ||
+       AFS_CHUNK(offset) != AFS_CHUNK(offset + folio_size_val)) {
+   return 0;
+   }
+
+   ObtainWriteLock(&avc->lock, 911);
+
+   tdc = avc->dchint;
+   if (tdc) {
+   ObtainReadLock(&afs_xdcache);
+   dcLocked = ( 0 == NBObtainReadLock(&tdc->lock));
+
+   if (dcLocked && (tdc->index != NULLIDX)
+       && !FidCmp(&tdc->f.fid, &avc->f.fid)
+       && tdc->f.chunk == AFS_CHUNK(offset)
+       && !(afs_indexFlags[tdc->index] & (IFFree | IFDiscarded))) {
+       afs_RefDCache(tdc);
+   } else {
+       if (dcLocked) {
+   	ReleaseReadLock(&tdc->lock);
+   	avc->dchint = NULL;
+       }
+       tdc = NULL;
+       dcLocked = 0;
+   }
+       ReleaseReadLock(&afs_xdcache);
+   }
+
+   if (!tdc)
+   tdc = afs_FindDCache(avc, offset);
+
+   if (!tdc) {
+   ReleaseWriteLock(&avc->lock);
+   return 0;
+   }
+
+   if (!dcLocked)
+   ObtainReadLock(&tdc->lock);
+
+   if (!afs_IsDCacheFresh(tdc, avc) || (tdc->dflags & DFFetching))
+   goto out;
+
+   avc->dchint = tdc;
+
+   AFS_GUNLOCK();
+   cacheFp = afs_linux_raw_open(&tdc->f.inode);
+   if (cacheFp == NULL) {
+   AFS_GLOCK();
+   goto out;
+   }
+
+   if (!file_can_read_folios(cacheFp)) {
+   cachefs_noreadpage = 1;
+   AFS_GLOCK();
+   goto out;
+   }
+
+   afs_lru_cache_init(&lrupages);
+   code = afs_linux_read_cache(cacheFp, folio, tdc->f.chunk, &lrupages, NULL);
+   afs_lru_cache_finalize(&lrupages);
+
+   filp_close(cacheFp, NULL);
+   AFS_GLOCK();
+
+   ReleaseReadLock(&tdc->lock);
+   ReleaseWriteLock(&avc->lock);
+   afs_PutDCache(tdc);
+
+   *codep = code;
+   return 1;
+
+out:
+   if (cacheFp != NULL) {
+   filp_close(cacheFp, NULL);
+   }
+   ReleaseWriteLock(&avc->lock);
+   ReleaseReadLock(&tdc->lock);
+   afs_PutDCache(tdc);
+   return 0;
+}
+
+ /* MULTI FOLIO  */
 /*
  * Updates the adc and acacheFp parameters
  * Returns:
  *    0 - success
  *   -1 - problem getting inode or no mapping function
  */
+
+ /* MULTI FOLIO  */
+
+/*static int
+/*get_dcache_readahead(struct dcache **adc, struct file **acacheFp,
+/*		     struct vcache *avc, loff_t offset)
+/*{
+/*    struct dcache *tdc = *adc;
+/*    struct file *cacheFp = *acacheFp;
+/*    int code;
+/*
+/*    if (tdc != NULL && tdc->f.chunk != AFS_CHUNK(offset)) {
+/*	AFS_GLOCK();
+/*	ReleaseReadLock(&tdc->lock);
+/*	afs_PutDCache(tdc);
+/*	AFS_GUNLOCK();
+/*	tdc = NULL;
+/*	if (cacheFp != NULL) {
+/*	    filp_close(cacheFp, NULL);
+/*	    cacheFp = NULL;
+/*	}
+/*    }
+/*
+/*    if (tdc == NULL) {
+/*	AFS_GLOCK();
+/*	tdc = afs_FindDCache(avc, offset);
+/*	if (tdc != NULL) {
+/*	    ObtainReadLock(&tdc->lock);
+/*	    if (!afs_IsDCacheFresh(tdc, avc) ||
+/*		(tdc->dflags & DFFetching) != 0) {
+/*		ReleaseReadLock(&tdc->lock);
+/*		afs_PutDCache(tdc);
+/*		tdc = NULL;
+/*	    }
+/*	}
+/*	AFS_GUNLOCK();
+/*	if (tdc != NULL) {
+/*	    cacheFp = afs_linux_raw_open(&tdc->f.inode);
+/*	    if (cacheFp == NULL) {
+/*		/* Problem getting the inode */
+/*		code = -1;
+/*		goto out;
+/*	    }
+/*	    if (!file_can_read_pages(cacheFp)) {
+/*		cachefs_noreadpage = 1;
+/*		/* No mapping function */
+/*		code = -1;
+/*		goto out;
+/*	    }
+/*	}
+/*    }
+/*    code = 0;
+/*
+/* out:
+/*    if (code != 0) {
+/*	if (cacheFp != NULL) {
+/*	    filp_close(cacheFp, NULL);
+/*	    cacheFp = NULL;
+/*	}
+/*	if (tdc != NULL) {
+/*	    AFS_GLOCK();
+/*	    ReleaseReadLock(&tdc->lock);
+/*	    afs_PutDCache(tdc);
+/*	    AFS_GUNLOCK();
+/*	    tdc = NULL;
+/*	}
+/*    }
+/*    *adc = tdc;
+/*    *acacheFp = cacheFp;
+/*    return code;
+/*} */
+
+static inline int
+file_can_read_folios(struct file *fp)
+{
+#if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READ_FOLIO)
+   if (fp->f_dentry->d_inode->i_mapping->a_ops->read_folio != NULL)
+   return 1;
+#else
+   if (fp->f_dentry->d_inode->i_mapping->a_ops->readpage != NULL)
+   return 1;
+#endif
+   return 0;
+}
+
+/* In osi_vnodeops.c - Modified address space operations structure */
+static struct address_space_operations afs_file_aops = {
+#if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READ_FOLIO)
+ .read_folio =		afs_linux_read_folio,
+#else
+ .readpage =		afs_linux_readpage,
+#endif
+#if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READAHEAD)
+ .readahead =		afs_linux_readahead,
+#else
+ .readpages = 		afs_linux_readpages,
+#endif
+ .writepage =		afs_linux_writepage,
+#if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_DIRTY_FOLIO) && \
+   defined(HAVE_LINUX_BLOCK_DIRTY_FOLIO)
+ .dirty_folio =	block_dirty_folio,
+#else
+ .set_page_dirty =	__set_page_dirty_buffers,
+#endif
+#if defined (STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_WRITE_BEGIN)
+ .write_begin =        afs_linux_write_begin,
+ .write_end =          afs_linux_write_end,
+#else
+ .commit_write =       afs_linux_commit_write,
+ .prepare_write =      afs_linux_prepare_write,
+#endif
+};
+
+
+
 static int
 get_dcache_readahead(struct dcache **adc, struct file **acacheFp,
-		     struct vcache *avc, loff_t offset)
+   	     struct vcache *avc, loff_t offset)
 {
-    struct dcache *tdc = *adc;
-    struct file *cacheFp = *acacheFp;
-    int code;
+   struct dcache *tdc = *adc;
+   struct file *cacheFp = *acacheFp;
+   int code;
 
-    if (tdc != NULL && tdc->f.chunk != AFS_CHUNK(offset)) {
-	AFS_GLOCK();
-	ReleaseReadLock(&tdc->lock);
-	afs_PutDCache(tdc);
-	AFS_GUNLOCK();
-	tdc = NULL;
-	if (cacheFp != NULL) {
-	    filp_close(cacheFp, NULL);
-	    cacheFp = NULL;
-	}
-    }
+   if (tdc != NULL && tdc->f.chunk != AFS_CHUNK(offset)) {
+   AFS_GLOCK();
+   ReleaseReadLock(&tdc->lock);
+   afs_PutDCache(tdc);
+   AFS_GUNLOCK();
+   tdc = NULL;
+   if (cacheFp != NULL) {
+       filp_close(cacheFp, NULL);
+       cacheFp = NULL;
+   }
+   }
 
-    if (tdc == NULL) {
-	AFS_GLOCK();
-	tdc = afs_FindDCache(avc, offset);
-	if (tdc != NULL) {
-	    ObtainReadLock(&tdc->lock);
-	    if (!afs_IsDCacheFresh(tdc, avc) ||
-		(tdc->dflags & DFFetching) != 0) {
-		ReleaseReadLock(&tdc->lock);
-		afs_PutDCache(tdc);
-		tdc = NULL;
-	    }
-	}
-	AFS_GUNLOCK();
-	if (tdc != NULL) {
-	    cacheFp = afs_linux_raw_open(&tdc->f.inode);
-	    if (cacheFp == NULL) {
-		/* Problem getting the inode */
-		code = -1;
-		goto out;
-	    }
-	    if (!file_can_read_pages(cacheFp)) {
-		cachefs_noreadpage = 1;
-		/* No mapping function */
-		code = -1;
-		goto out;
-	    }
-	}
-    }
-    code = 0;
+   if (tdc == NULL) {
+   AFS_GLOCK();
+   tdc = afs_FindDCache(avc, offset);
+   if (tdc != NULL) {
+       ObtainReadLock(&tdc->lock);
+       if (!afs_IsDCacheFresh(tdc, avc) ||
+   	(tdc->dflags & DFFetching) != 0) {
+   	ReleaseReadLock(&tdc->lock);
+   	afs_PutDCache(tdc);
+   	tdc = NULL;
+       }
+   }
+   AFS_GUNLOCK();
+   if (tdc != NULL) {
+       cacheFp = afs_linux_raw_open(&tdc->f.inode);
+       if (cacheFp == NULL) {
+   	code = -1;
+   	goto out;
+       }
+       if (!file_can_read_folios(cacheFp)) {
+   	cachefs_noreadpage = 1;
+   	code = -1;
+   	goto out;
+       }
+   }
+   }
+   code = 0;
 
- out:
-    if (code != 0) {
-	if (cacheFp != NULL) {
-	    filp_close(cacheFp, NULL);
-	    cacheFp = NULL;
-	}
-	if (tdc != NULL) {
-	    AFS_GLOCK();
-	    ReleaseReadLock(&tdc->lock);
-	    afs_PutDCache(tdc);
-	    AFS_GUNLOCK();
-	    tdc = NULL;
-	}
-    }
-    *adc = tdc;
-    *acacheFp = cacheFp;
-    return code;
+out:
+   if (code != 0) {
+   if (cacheFp != NULL) {
+       filp_close(cacheFp, NULL);
+       cacheFp = NULL;
+   }
+   if (tdc != NULL) {
+       AFS_GLOCK();
+       ReleaseReadLock(&tdc->lock);
+       afs_PutDCache(tdc);
+       AFS_GUNLOCK();
+       tdc = NULL;
+   }
+   }
+   *adc = tdc;
+   *acacheFp = cacheFp;
+   return code;
 }
+
+ /* MULTI FOLIO  */
 
 #if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READAHEAD)
 /*
@@ -3089,6 +3596,45 @@ get_dcache_readahead(struct dcache **adc, struct file **acacheFp,
  * vfs. We just need to unlock/put the page and return.  Errors will be detected
  * later in the vfs processing.
  */
+
+/* MULTI FOLIO */
+
+static void
+afs_folio_cleanup_on_error(struct folio *folio, struct afs_lru_folios *lrufolios)
+{
+   if (folio_test_locked(folio))
+       folio_unlock(folio);
+   
+   folio_clear_error(folio);
+   folio_put(folio);
+   
+   if (lrufolios) {
+       afs_lru_cache_finalize(lrufolios);
+   }
+}
+
+static int
+afs_validate_folio_for_cache(struct folio *folio, loff_t offset)
+{
+   size_t folio_size_val = folio_size(folio);
+   
+   /* Ensure folio doesn't cross chunk boundaries */
+   if (AFS_CHUNK(offset) != AFS_CHUNK(offset + folio_size_val - 1)) {
+       return -EINVAL;
+   }
+   
+   /* For large folios, prefer chunk-aligned access */
+   if (folio_size_val > PAGE_SIZE) {
+       if ((offset & (AFS_CHUNKSIZE - 1)) != 0) {
+           return -EINVAL;
+       }
+   }
+   
+   return 0;
+}
+
+
+
 static void
 afs_linux_readahead(struct readahead_control *rac)
 {
@@ -3316,6 +3862,367 @@ afs_linux_complete_writeback(struct vcache *avc) {
 	osi_Free(pw, sizeof(struct pagewriter));
     }
 }
+
+static int
+afs_linux_bypass_readfolio(struct file *fp, struct folio *folio)
+{
+   cred_t *credp = NULL;
+   struct uio *auio;
+   struct iovec *iovecp;
+   struct nocache_read_request *ancr;
+   int code;
+   size_t folio_size_val = folio_size(folio);
+   loff_t offset = folio_pos(folio);
+
+   /* Special case: if folio is at or past end of file */
+   if (offset >= i_size_read(fp->f_mapping->host)) {
+   folio_zero_range(folio, 0, folio_size_val);
+   folio_mark_uptodate(folio);
+   folio_unlock(folio);
+   return 0;
+   }
+
+   folio_clear_error(folio);
+
+   /* Allocate for the entire folio */
+   ancr = afs_alloc_ncr(folio_nr_pages(folio));
+   if (ancr == NULL) {
+   folio_set_error(folio);
+   return afs_convert_code(ENOMEM);
+   }
+
+   auio = ancr->auio;
+   iovecp = auio->uio_iov;
+
+   setup_uio(auio, iovecp, NULL, offset, folio_size_val, UIO_READ, AFS_UIOSYS);
+
+   /* Save the folio for background map */
+   folio_get(folio);
+   auio->uio_iov->iov_base = (void*) folio;
+   ancr->offset = offset;
+   ancr->length = folio_size_val;
+
+   credp = crref();
+   code = afs_ReadNoCache(VTOAFS(FILE_INODE(fp)), ancr, credp);
+   crfree(credp);
+
+   return afs_convert_code(code);
+}
+
+static void
+afs_linux_readahead(struct readahead_control *rac)
+{
+   struct folio *folio;
+   struct address_space *mapping = rac->mapping;
+   struct inode *inode = mapping->host;
+   struct vcache *avc = VTOAFS(inode);
+   struct dcache *tdc;
+   struct file *cacheFp = NULL;
+   int code;
+   loff_t offset;
+   struct afs_lru_folios lrufolios;
+   struct afs_pagecopy_task *task;
+
+   if (afs_linux_bypass_check(inode)) {
+   afs_linux_bypass_readahead(rac);
+   return;
+   }
+   if (cacheDiskType == AFS_FCACHE_TYPE_MEM)
+   return;
+
+   if (cachefs_noreadpage)
+   return;
+
+   AFS_GLOCK();
+   code = afs_linux_VerifyVCache(avc, NULL);
+   if (code != 0) {
+   AFS_GUNLOCK();
+   return;
+   }
+
+   ObtainWriteLock(&avc->lock, 912);
+   AFS_GUNLOCK();
+
+   task = afs_pagecopy_init_task();
+   tdc = NULL;
+   afs_lru_cache_init(&lrufolios);
+
+   while ((folio = readahead_folio(rac)) != NULL) {
+   offset = folio_pos(folio);
+
+   code = get_dcache_readahead(&tdc, &cacheFp, avc, offset);
+   if (code != 0) {
+       if (folio_test_locked(folio)) {
+   	folio_unlock(folio);
+       }
+       folio_put(folio);
+       goto done;
+   }
+
+   if (tdc != NULL) {
+       afs_linux_read_cache(cacheFp, folio, tdc->f.chunk, &lrufolios, task);
+   } else if (folio_test_locked(folio)) {
+       folio_unlock(folio);
+   }
+   folio_put(folio);
+   }
+
+done:
+   afs_lru_cache_finalize(&lrufolios);
+
+   if (cacheFp != NULL)
+   filp_close(cacheFp, NULL);
+
+   afs_pagecopy_put_task(task);
+
+   AFS_GLOCK();
+   if (tdc != NULL) {
+   ReleaseReadLock(&tdc->lock);
+   afs_PutDCache(tdc);
+   }
+
+   ReleaseWriteLock(&avc->lock);
+   AFS_GUNLOCK();
+   return;
+}
+
+static inline unsigned int
+afs_folio_order_for_chunk(void)
+{
+   /* AFS chunks are 64KB, try to match with large folio */
+   return ilog2(AFS_CHUNKSIZE / PAGE_SIZE);
+}
+
+static int
+mapping_read_folio(struct address_space *mapping, struct folio *folio)
+{
+#if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READ_FOLIO)
+   return mapping->a_ops->read_folio(NULL, folio);
+#else
+   /* Fallback for older kernels - read page by page */
+   int i, code = 0;
+   int nr_pages = folio_nr_pages(folio);
+   
+   for (i = 0; i < nr_pages && !code; i++) {
+       struct page *page = folio_page(folio, i);
+       code = mapping->a_ops->readpage(NULL, page);
+   }
+   return code;
+#endif
+}
+
+static inline int
+afs_folio_chunk_aligned(struct folio *folio, loff_t offset)
+{
+   size_t folio_size_val = folio_size(folio);
+   
+   /* Check if folio fits within a single AFS chunk */
+   if (AFS_CHUNK(offset) != AFS_CHUNK(offset + folio_size_val - 1))
+       return 0;
+       
+   /* For 64KB folios, check if they align with chunk boundaries */
+   if (folio_size_val == AFS_CHUNKSIZE) {
+       return (offset & (AFS_CHUNKSIZE - 1)) == 0;
+   }
+   
+   return 1;
+}
+
+
+static int
+afs_linux_read_cache(struct file *cachefp, struct folio *folio,
+   	     int chunk, struct afs_lru_folios *alrufolios,
+   	     struct afs_pagecopy_task *task) {
+   loff_t offset = folio_pos(folio);
+   struct inode *cacheinode = cachefp->f_dentry->d_inode;
+   struct folio *newfolio, *cachefolio;
+   struct address_space *cachemapping;
+   pgoff_t folioindex;
+   int code = 0;
+   size_t folio_size_val = folio_size(folio);
+   unsigned int folio_order = folio_order(folio);
+
+   cachemapping = cacheinode->i_mapping;
+   newfolio = NULL;
+   cachefolio = NULL;
+
+   /* Validate folio alignment with AFS chunk */
+   if (!afs_folio_chunk_aligned(folio, offset)) {
+       code = -EINVAL;
+       goto out;
+   }
+
+   /* If trying to read past end of cache file, zero and mark uptodate */
+   if (AFS_CHUNKOFFSET(offset) >= i_size_read(cacheinode)) {
+   folio_zero_range(folio, 0, folio_size_val);
+   folio_mark_uptodate(folio);
+   if (task)
+       folio_unlock(folio);
+   return 0;
+   }
+
+   folioindex = (offset - AFS_CHUNKTOBASE(chunk)) >> PAGE_SHIFT;
+
+   while (cachefolio == NULL) {
+#if defined(HAVE_LINUX_FILEMAP_GET_FOLIO)
+   cachefolio = filemap_get_folio(cachemapping, folioindex);
+   if (IS_ERR(cachefolio)) {
+       cachefolio = NULL;
+#else
+   cachefolio = find_get_page(cachemapping, folioindex);
+   if (!cachefolio) {
+#endif
+       if (newfolio == NULL) {
+   	newfolio = afs_folio_cache_alloc(cachemapping, folio_order);
+       }
+       if (newfolio == NULL) {
+   	code = -ENOMEM;
+   	goto out;
+       }
+
+#if defined(HAVE_LINUX_FILEMAP_ADD_FOLIO)
+       code = filemap_add_folio(cachemapping, newfolio, folioindex, GFP_KERNEL);
+#else
+       code = afs_add_to_page_cache_lru(alrufolios, newfolio, cachemapping,
+   				     folioindex, GFP_KERNEL);
+#endif
+       if (code == 0) {
+   	cachefolio = newfolio;
+   	newfolio = NULL;
+       } else {
+   	folio_put(newfolio);
+   	newfolio = NULL;
+   	if (code != -EEXIST)
+   	    goto out;
+       }
+       } else {
+       folio_lock(cachefolio);
+   }
+   }
+
+   if (!folio_test_uptodate(cachefolio)) {
+   folio_clear_error(cachefolio);
+   code = mapping_read_folio(cachemapping, cachefolio);
+   if (!code && !task) {
+       folio_wait_locked(cachefolio);
+   }
+   } else {
+       folio_unlock(cachefolio);
+   }
+
+   if (!code) {
+   if (folio_test_uptodate(cachefolio)) {
+       folio_copy(folio, cachefolio);
+       flush_dcache_folio(folio);
+       folio_mark_uptodate(folio);
+
+       if (task)
+   	folio_unlock(folio);
+       } else if (task) {
+       afs_pagecopy_queue_folio(task, cachefolio, folio);
+   } else {
+       code = -EIO;
+   }
+   }
+
+out:
+   if (code && task) {
+       folio_unlock(folio);
+   }
+
+   if (cachefolio)
+   folio_put(cachefolio);
+
+   return code;
+}
+
+/* In osi_vnodeops.c - Add folio support detection */
+static inline int
+afs_kernel_supports_large_folios(void)
+{
+#if defined(HAVE_LINUX_FOLIO_ADD_LRU) && defined(HAVE_LINUX_FILEMAP_ALLOC_FOLIO)
+   return 1;
+#else
+   return 0;
+#endif
+}
+
+
+static int
+afs_detect_large_folio_support(void)
+{
+   if (afs_large_folio_support >= 0)
+       return afs_large_folio_support;
+       
+#if defined(HAVE_LINUX_FOLIO_ADD_LRU) && defined(HAVE_LINUX_FILEMAP_ALLOC_FOLIO)
+   afs_large_folio_support = 1;
+#else
+   afs_large_folio_support = 0;
+#endif
+   
+   return afs_large_folio_support;
+}
+
+static unsigned int
+afs_optimal_folio_order(struct inode *inode, loff_t offset)
+{
+   if (!afs_detect_large_folio_support())
+       return 0;
+       
+   /* For 64KB AFS chunks, try 4th order (16 pages = 64KB) */
+   if ((offset & (AFS_CHUNKSIZE - 1)) == 0) {
+       return ilog2(AFS_CHUNKSIZE / PAGE_SIZE);
+   }
+   
+   return 0;
+}
+
+/* In osi_vnodeops.c - Update bypass decision logic */
+static inline int
+afs_linux_can_bypass(struct inode *ip) {
+   switch(cache_bypass_strategy) {
+   case NEVER_BYPASS_CACHE:
+       return 0;
+   case ALWAYS_BYPASS_CACHE:
+       return 1;
+   case LARGE_FILES_BYPASS_CACHE:
+       if (i_size_read(ip) > cache_bypass_threshold)
+   	return 1;
+       /* For large folio support, prefer cache for better chunk alignment */
+       if (afs_detect_large_folio_support())
+   	return 0;
+       AFS_FALLTHROUGH;
+   default:
+       return 0;
+    }
+}
+
+/* In osi_vnodeops.c - Performance monitoring hooks */
+static unsigned long afs_large_folio_reads = 0;
+static unsigned long afs_single_page_reads = 0;
+
+static inline void
+afs_count_folio_read(struct folio *folio)
+{
+   if (folio_nr_pages(folio) > 1)
+       afs_large_folio_reads++;
+   else
+       afs_single_page_reads++;
+}
+
+/* In osi_vnodeops.c - Update trace macros for folios */
+#define afs_Trace4_folio(set, event, type1, data1, type2, data2, type3, data3, type4, data4) \
+   do { \
+       if (folio_nr_pages(data2) > 1) { \
+           afs_Trace4(set, event, type1, data1, type2, data2, type3, folio_nr_pages(data2), type4, data4); \
+       } else { \
+           afs_Trace4(set, event, type1, data1, type2, data2, type3, data3, type4, data4); \
+       } \
+   } while(0)
+
+
+
+/* MULTI FOLIO */
 
 /* Writeback a given page syncronously. Called with no AFS locks held */
 static int
