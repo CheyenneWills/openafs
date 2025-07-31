@@ -2541,6 +2541,7 @@ mapping_read_page(struct address_space *mapping, struct page *page)
 #endif
 }
 
+#if !defined(LINUX_MULTIPAGE_FOLIO)
 /*
  * small compat wrapper for filemap_alloc_folio/page_cache_alloc
  */
@@ -2558,7 +2559,161 @@ afs_page_cache_alloc(struct address_space *cachemapping)
     return page_cache_alloc(cachemapping);
 #endif
 }
+#endif /* LINUX_MULTIPAGE_FOLIO */
 
+#if defined(LINUX_MULTIPAGE_FOLIO)
+static unsigned int
+afs_calculate_optimal_folio_order(struct inode *inode, loff_t offset, size_t len)
+{
+    unsigned int order;
+    size_t chunk_offset, remaining_in_chunk;
+
+    /* Calculate position within chunk */
+    chunk_offset = offset & (AFS_CHUNKSIZE - 1);
+    remaining_in_chunk = AFS_CHUNKSIZE - chunk_offset;
+
+    /* For chunk-aligned requests, use full chunk size */
+    if (chunk_offset == 0 && len >= AFS_CHUNKSIZE) {
+	order = ilog2(AFS_CHUNKSIZE / PAGE_SIZE);
+    }
+    /* For smaller requests, use appropriate order */
+    else if (len >= (PAGE_SIZE * 4) && len <= remaining_in_chunk) {
+	order = 2; /* 4 pages */
+    }
+    /* Default to single page */
+    else {
+	order = 0;
+    }
+
+    /* Ensure we don't exceed reasonable limits */
+    if (order > 9) { /* Max 512 pages */
+	order = 9;
+    }
+
+    return order;
+}
+#endif
+
+#if defined(LINUX_MULTIPAGE_FOLIO)
+/*
+ * Populate a folio by filling it from the cache file pointed at by cachefp
+ * (which contains indicated chunk)
+ * If task is NULL, the folio copy occurs synchronously, and the routine
+ * returns with folio still locked. If task is non-NULL, then folio copies
+ * may occur in the background, and the folio will be unlocked when it is
+ * ready for use. Note that if task is non-NULL and we encounter an error
+ * before we start the background copy, we MUST unlock 'folio' before we return.
+ */
+static int
+afs_linux_read_cache_folio(struct file *cachefp, struct folio *folio,
+			   int chunk, struct afs_lru_pages *alrupages,
+			   struct afs_pagecopy_task *task)
+{
+    loff_t offset = folio_pos(folio);
+    struct inode *cacheinode = cachefp->f_dentry->d_inode;
+    struct folio *newfolio = NULL, *cachefolio = NULL;
+    struct address_space *cachemapping;
+    pgoff_t index;
+    int code = 0;
+    unsigned int folio_order = folio_order(folio);
+
+    cachemapping = cacheinode->i_mapping;
+
+    /* If we're trying to read a folio that's past the end of the disk
+     * cache file, then just return a zeroed folio */
+    if (AFS_CHUNKOFFSET(offset) >= i_size_read(cacheinode)) {
+	folio_zero_range(folio, 0, folio_size(folio));
+	folio_mark_uptodate(folio);
+	if (task) {
+	    folio_unlock(folio);
+	}
+	return 0;
+    }
+
+    /* Calculate folio index in cache file */
+    index = (offset - AFS_CHUNKTOBASE(chunk)) >> PAGE_SHIFT;
+
+    /* Try to find existing cache folio */
+    while (cachefolio == NULL) {
+	cachefolio = filemap_get_folio(cachemapping, index);
+	if (IS_ERR(cachefolio)) {
+	    cachefolio = NULL;
+	    if (newfolio == NULL) {
+		if (folio_order > 0) {
+		    newfolio = filemap_alloc_folio(mapping_gfp_mask(cachemapping), folio_order);
+		} else {
+		    newfolio = filemap_alloc_folio(mapping_gfp_mask(cachemapping), 0);
+		}
+	    }
+	    if (newfolio == NULL) {
+		code = -ENOMEM;
+		goto out;
+	    }
+
+	    code = filemap_add_folio(cachemapping, newfolio, index, GFP_KERNEL);
+	    if (code == 0) {
+		cachefolio = newfolio;
+		newfolio = NULL;
+		/* Add to LRU */
+		folio_add_lru(cachefolio);
+	    } else {
+		folio_put(newfolio);
+		newfolio = NULL;
+		if (code != -EEXIST) {
+		    goto out;
+		}
+	    }
+	} else {
+	    folio_lock(cachefolio);
+	}
+    }
+
+    if (!folio_test_uptodate(cachefolio)) {
+	folio_clear_error(cachefolio);
+	/* Note that filemap_read_folio always handles unlocking the given folio,
+	 * even when an error is returned. */
+	code = filemap_read_folio(NULL, cachefolio);
+	if (!code && !task) {
+	    folio_wait_locked(cachefolio);
+	}
+    } else {
+	folio_unlock(cachefolio);
+    }
+
+    if (!code) {
+	if (folio_test_uptodate(cachefolio)) {
+	    folio_copy(folio, cachefolio);
+	    folio_mark_uptodate(folio);
+
+	    if (task) {
+		folio_unlock(folio);
+	    }
+	} else if (task) {
+	    /* Convert to pages for existing pagecopy API */
+	    struct page *src_page = folio_page(cachefolio, 0);
+	    struct page *dst_page = folio_page(folio, 0);
+	    afs_pagecopy_queue_page(task, src_page, dst_page);
+	} else {
+	    code = -EIO;
+	}
+    }
+
+out:
+    if (code && task) {
+	folio_unlock(folio);
+    }
+
+    if (cachefolio) {
+	folio_put(cachefolio);
+    }
+
+    if (newfolio) {
+	folio_put(newfolio);
+    }
+
+    return code;
+}
+#else  /* LINUX_MULTIPAGE_FOLIO */
 /* Populate a page by filling it from the cache file pointed at by cachefp
  * (which contains indicated chunk)
  * If task is NULL, the page copy occurs syncronously, and the routine
@@ -2684,6 +2839,8 @@ afs_linux_read_cache(struct file *cachefp, struct page *page,
 
     return code;
 }
+
+#endif /* LINUX_MULTIPAGE_FOLIO */
 
 /*
  * Return true if the file has a mapping that can read pages
@@ -3307,7 +3464,119 @@ get_dcache_readahead(struct dcache **adc, struct file **acacheFp,
     *acacheFp = cacheFp;
     return code;
 }
+#if defined(LINUX_MULTIPAGE_FOLIO)
+/*
+ * Readahead reads folios for a particular file. We use this to optimize
+ * reading by limiting dcache lookups and file operations.
+ */
+static void
+afs_linux_readahead(struct readahead_control *rac)
+{
+    struct folio *folio;
+    struct address_space *mapping = rac->mapping;
+    struct inode *inode = mapping->host;
+    struct vcache *avc = VTOAFS(inode);
+    struct dcache *tdc = NULL;
+    struct file *cacheFp = NULL;
+    int code;
+    loff_t offset, current_chunk_start = -1;
+    struct afs_lru_pages lrupages;
+    struct afs_pagecopy_task *task;
 
+    if (afs_linux_bypass_check(inode)) {
+	afs_linux_bypass_readahead(rac);
+	return;
+    }
+
+    if (cacheDiskType == AFS_FCACHE_TYPE_MEM) {
+	return;
+    }
+
+    /* No readpage support, skip */
+    if (cachefs_noreadpage) {
+	return;
+    }
+
+    AFS_GLOCK();
+    code = afs_linux_VerifyVCache(avc, NULL);
+    if (code != 0) {
+	AFS_GUNLOCK();
+	return;
+    }
+
+    ObtainWriteLock(&avc->lock, 912);
+    AFS_GUNLOCK();
+
+    task = afs_pagecopy_init_task();
+    afs_lru_cache_init(&lrupages);
+
+    /*
+     * Process folios from readahead control
+     */
+    while ((folio = readahead_folio(rac)) != NULL) {
+	offset = folio_pos(folio);
+
+	/* Check for chunk boundary crossing */
+	loff_t chunk_start = AFS_CHUNKTOBASE(AFS_CHUNK(offset));
+	if (current_chunk_start != chunk_start) {
+	    current_chunk_start = chunk_start;
+
+	    /* Release previous dcache if we crossed chunk boundary */
+	    if (tdc != NULL) {
+		if (cacheFp != NULL) {
+		    filp_close(cacheFp, NULL);
+		    cacheFp = NULL;
+		}
+
+		AFS_GLOCK();
+		ReleaseReadLock(&tdc->lock);
+		afs_PutDCache(tdc);
+		AFS_GUNLOCK();
+		tdc = NULL;
+	    }
+	}
+
+	/* Get dcache for current chunk */
+	code = get_dcache_readahead(&tdc, &cacheFp, avc, offset);
+	if (code != 0) {
+	    if (folio_test_locked(folio)) {
+		folio_unlock(folio);
+	    }
+	    folio_put(folio);
+	    goto done;
+	}
+
+	if (tdc != NULL) {
+	    /* Process folio through cache */
+	    afs_linux_read_cache_folio(cacheFp, folio, tdc->f.chunk,
+				       &lrupages, task);
+	} else if (folio_test_locked(folio)) {
+	    folio_unlock(folio);
+	}
+
+	folio_put(folio);
+    }
+
+done:
+    afs_lru_cache_finalize(&lrupages);
+
+    if (cacheFp != NULL) {
+	filp_close(cacheFp, NULL);
+    }
+
+    afs_pagecopy_put_task(task);
+
+    AFS_GLOCK();
+    if (tdc != NULL) {
+	ReleaseReadLock(&tdc->lock);
+	afs_PutDCache(tdc);
+    }
+
+    ReleaseWriteLock(&avc->lock);
+    AFS_GUNLOCK();
+    return;
+}
+#else /* LINUX_MULTIPAGE_FOLIO */
 #if defined(STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READAHEAD)
 /*
  * Readahead reads a number of pages for a particular file. We use
@@ -3483,7 +3752,7 @@ out:
     return 0;
 }
 #endif /* STRUCT_ADDRESS_SPACE_OPERATIONS_HAS_READAHEAD */
-
+#endif /* LINUX_MULTIPAGE_FOLIO */
 /* Prepare an AFS vcache for writeback. Should be called with the vcache
  * locked */
 static inline int
