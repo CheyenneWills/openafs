@@ -2561,7 +2561,7 @@ afs_page_cache_alloc(struct address_space *cachemapping)
 }
 #endif /* LINUX_MULTIPAGE_FOLIO */
 
-#if defined(LINUX_MULTIPAGE_FOLIO)
+#if 0
 static unsigned int
 afs_calculate_optimal_folio_order(struct inode *inode, loff_t offset, size_t len)
 {
@@ -2616,7 +2616,7 @@ afs_linux_read_cache_folio(struct file *cachefp, struct folio *folio,
     pgoff_t index;
     int code = 0;
     int do_unlock_page; /* Should we unlock 'page' before returning */
-    unsigned int folio_order = folio_order(folio);
+    unsigned int forder = folio_order(folio);
 
     if (task != NULL) {
 	do_unlock_page = 1;
@@ -2644,8 +2644,8 @@ afs_linux_read_cache_folio(struct file *cachefp, struct folio *folio,
 	if (IS_ERR(cachefolio)) {
 	    cachefolio = NULL;
 	    if (newfolio == NULL) {
-		if (folio_order > 0) {
-		    newfolio = filemap_alloc_folio(mapping_gfp_mask(cachemapping), folio_order);
+		if (forder > 0) {
+		    newfolio = filemap_alloc_folio(mapping_gfp_mask(cachemapping), forder);
 		} else {
 		    newfolio = filemap_alloc_folio(mapping_gfp_mask(cachemapping), 0);
 		}
