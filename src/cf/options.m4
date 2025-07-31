@@ -284,6 +284,13 @@ AC_ARG_WITH([macos-keychain-profile],
         [macOS: use the given keychain profile to notarize the package (optional, defaults to no profile)]),
         [AC_SUBST([MACOS_KEYCHAIN_PROFILE], [$withval])])
 
+AC_ARG_ENABLE([linux-multipage-folio],
+    [AS_HELP_STRING([--enable-linux-multipage-folio],
+        [enable Linux multipage-folio support (experimental defaults to no)])],
+    [],
+    [enable_linux_multipage_folio="no"])
+])
+
 enable_login="no"
 
 ])
@@ -408,5 +415,8 @@ AS_IF([test x"$enable_shared" = xyes],
  [SHARED_ONLY=],
  [SHARED_ONLY=#])
 AC_SUBST([SHARED_ONLY])
+
+AS_IF([test x"$enable_linux_multipage_folio" = xyes],
+    [AC_DEFINE(LINUX_MULTIPAGE_FOLIO, 1, [define if you want to enable Linux multipage folio support])])
 
 ])
