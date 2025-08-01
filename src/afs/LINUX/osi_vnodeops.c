@@ -2525,6 +2525,7 @@ afs_linux_put_link(struct dentry *dentry, struct nameidata *nd)
 
 #endif /* USABLE_KERNEL_PAGE_SYMLINK_CACHE */
 
+#if !defined(LINUX_MULTIPAGE_FOLIO)
 /*
  * Call the mapping function that reads data for a given page.
  * Note: When we return, it is expected that the page is unlocked.  It is the
@@ -2541,7 +2542,6 @@ mapping_read_page(struct address_space *mapping, struct page *page)
 #endif
 }
 
-#if !defined(LINUX_MULTIPAGE_FOLIO)
 /*
  * small compat wrapper for filemap_alloc_folio/page_cache_alloc
  */
@@ -2655,7 +2655,12 @@ afs_linux_read_cache_folio(struct file *cachefp, struct folio *folio,
 		goto out;
 	    }
 
-	    code = filemap_add_folio(cachemapping, newfolio, index, GFP_KERNEL);
+	    /* We can't use filemap_add_folio, since it's GPL.  Looking at the linux source
+	     * shows that add_to_page_cache_lru calls filemap_add_folio by converting grabbing the
+	     * folio of the page that is passed.  So -- we can simply pass the head page of the new
+	     * folio
+	     */
+	    code = add_to_page_cache_lru(folio_page(newfolio, 0), cachemapping, index, GFP_KERNEL);
 	    if (code == 0) {
 		cachefolio = newfolio;
 		newfolio = NULL;
@@ -2674,10 +2679,9 @@ afs_linux_read_cache_folio(struct file *cachefp, struct folio *folio,
     }
 
     if (!folio_test_uptodate(cachefolio)) {
-	folio_clear_error(cachefolio);
 	/* Note that filemap_read_folio always handles unlocking the given folio,
 	 * even when an error is returned. */
-	code = filemap_read_folio(NULL, cachefolio);
+	code = cachemapping->a_ops->read_folio(NULL, cachefolio);
 	if (!code && !task) {
 	    folio_wait_locked(cachefolio);
 	}
@@ -2731,6 +2735,19 @@ out:
 	folio_put(newfolio);
     }
 
+    return code;
+}
+static int
+afs_linux_read_cache(struct file *cachefp, struct page *page,
+		     int chunk, struct afs_lru_pages *alrupages,
+		     struct afs_pagecopy_task *task)
+{
+    struct folio *folio = page_folio(page);
+    int code;
+
+    folio_get(folio);
+    code = afs_linux_read_cache_folio(cachefp, folio, chunk, alrupages, task);
+    folio_put(folio);
     return code;
 }
 #else  /* LINUX_MULTIPAGE_FOLIO */
