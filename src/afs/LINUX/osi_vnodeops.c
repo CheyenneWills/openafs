@@ -2679,7 +2679,12 @@ afs_linux_read_cache_folio(struct file *cachefp, struct folio *folio,
     }
 
     if (!folio_test_uptodate(cachefolio)) {
-	/* Note that filemap_read_folio always handles unlocking the given folio,
+	/* Clear error on all pages in the folio */
+	int i;
+	for (i = 0; i < folio_nr_pages(cachefolio); i++) {
+	    ClearPageError(folio_page(cachefolio, i));
+	}
+	/* Note that mapping read operation always handles unlocking the given folio,
 	 * even when an error is returned. */
 	code = cachemapping->a_ops->read_folio(NULL, cachefolio);
 	if (!code && !task) {
@@ -2737,6 +2742,12 @@ out:
 
     return code;
 }
+
+#if defined(LINUX_MULTIPAGE_FOLIO)
+/*
+ * Wrapper function to maintain compatibility with existing page-based callers
+ * when multifolio support is enabled. This converts page calls to folio calls.
+ */
 static int
 afs_linux_read_cache(struct file *cachefp, struct page *page,
 		     int chunk, struct afs_lru_pages *alrupages,
@@ -2750,7 +2761,8 @@ afs_linux_read_cache(struct file *cachefp, struct page *page,
     folio_put(folio);
     return code;
 }
-#else  /* LINUX_MULTIPAGE_FOLIO */
+#else /* LINUX_MULTIPAGE_FOLIO */
+
 /* Populate a page by filling it from the cache file pointed at by cachefp
  * (which contains indicated chunk)
  * If task is NULL, the page copy occurs syncronously, and the routine
