@@ -2743,7 +2743,6 @@ out:
     return code;
 }
 
-#if defined(LINUX_MULTIPAGE_FOLIO)
 /*
  * Wrapper function to maintain compatibility with existing page-based callers
  * when multifolio support is enabled. This converts page calls to folio calls.
