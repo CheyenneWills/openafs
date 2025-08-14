@@ -2730,11 +2730,11 @@ out:
     if (cachefolio) {
 	folio_put(cachefolio);
     }
-
+/*
     if (newfolio) {
 	folio_put(newfolio);
     }
-
+*/
     return code;
 }
 
