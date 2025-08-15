@@ -3556,7 +3556,7 @@ afs_linux_readahead(struct readahead_control *rac)
     /*
      * Process folios from readahead control
      */
-    while ((folio = readahead_folio(rac)) != NULL) {
+    while ((folio = __readahead_folio(rac)) != NULL) {
 	offset = folio_pos(folio);
 
 	/* Check for chunk boundary crossing */
