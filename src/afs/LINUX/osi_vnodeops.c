@@ -2679,11 +2679,6 @@ afs_linux_read_cache_folio(struct file *cachefp, struct folio *folio,
     }
 
     if (!folio_test_uptodate(cachefolio)) {
-	/* Clear error on all pages in the folio */
-	int i;
-	for (i = 0; i < folio_nr_pages(cachefolio); i++) {
-	    ClearPageError(folio_page(cachefolio, i));
-	}
 	/* Note that mapping read operation always handles unlocking the given folio,
 	 * even when an error is returned. */
 	code = cachemapping->a_ops->read_folio(NULL, cachefolio);
