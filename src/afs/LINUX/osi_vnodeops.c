@@ -2665,7 +2665,7 @@ afs_linux_read_cache_folio(struct file *cachefp, struct folio *folio,
 		cachefolio = newfolio;
 		newfolio = NULL;
 		/* Add to LRU */
-		folio_add_lru(cachefolio);
+		/* folio_add_lru(cachefolio); */
 	    } else {
 		folio_put(newfolio);
 		newfolio = NULL;
