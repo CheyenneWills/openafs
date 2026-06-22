@@ -45,6 +45,14 @@
 #define MAXINSIZE 1300		/* pioctl complains if data is larger than this */
 #define VMSGSIZE 128		/* size of msg buf in volume hdr */
 
+#ifndef MAXSYMLINKS
+# ifdef SYMLOOP_MAX
+#  define MAXSYMLINKS SYMLOOP_MAX
+# else
+#  define MAXSYMLINKS 32	/* BSD's value; POSIX requires at least 8 */
+# endif
+#endif
+
 static char space[AFS_PIOCTL_MAXSIZE];
 static char tspace[1024];
 static struct ubik_client *uclient;
@@ -1843,6 +1851,172 @@ out:
     return -1;
 }
 
+static int
+PathInfoCmd(struct cmd_syndesc *as, void *arock)
+{
+    struct cmd_item *ti;
+    char fullpath[MAXPATHLEN];
+    char current[MAXPATHLEN];
+    char target[MAXPATHLEN];
+    int error = 0;
+    int multi;
+    int idx = 0;
+
+    SetDotDefault(&as->parms[0].items);
+    multi = (as->parms[0].items->next != NULL);
+
+    for (ti = as->parms[0].items; ti; ti = ti->next) {
+	char *cursor = NULL;
+	char *slash;
+	afs_int32 code = 0;
+	int n = 0;
+
+	if (multi) {
+	    printf("===== Path %d =====\n\n", ++idx);
+	}
+
+	if (ti->data[0] != '/') {
+	    char cwd[MAXPATHLEN];
+
+	    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+		fprintf(stderr, "%s: Can't get current directory\n", pn);
+		code = 1;
+	    } else {
+		if (strcmp(ti->data, ".") == 0) {
+		    n = snprintf(fullpath, sizeof(fullpath), "%s", cwd);
+		} else {
+		    n = snprintf(fullpath, sizeof(fullpath), "%s/%s", cwd,
+				 ti->data);
+		}
+		cursor = fullpath + strlen(cwd);
+	    }
+	} else {
+	    n = snprintf(fullpath, sizeof(fullpath), "%s", ti->data);
+	    cursor = fullpath + 1;
+	}
+
+	if (code == 0 && (n < 0 || (size_t)n >= sizeof(fullpath))) {
+	    fprintf(stderr, "%s: path too long: '%s'\n", pn, ti->data);
+	    code = 1;
+	}
+
+	while (code == 0) {
+	    int comp_len;
+	    int hops;
+
+	    slash = strchr(cursor, '/');
+	    if (slash != NULL) {
+		comp_len = slash - fullpath;
+	    } else {
+		comp_len = strlen(fullpath);
+	    }
+	    snprintf(current, sizeof(current), "%.*s", comp_len, fullpath);
+
+	    for (hops = 0; code == 0; hops++) {
+		struct stat s;
+		struct ViceIoctl blob;
+		char *parent_dir = NULL;
+		char *last_comp = NULL;
+
+		if (hops > MAXSYMLINKS) {
+		    printf("too many levels of symbolic links\n");
+		    code = 1;
+		    break;
+		}
+
+		if (lstat(current, &s) == -1) {
+		    if (errno == ENOENT) {
+			printf("'%s' does not exist\n", current);
+		    } else {
+			printf("'%s': lstat failed\n", current);
+		    }
+		    code = 1;
+		    break;
+		}
+
+		if (GetLastComponent(current, &parent_dir, &last_comp,
+				     NULL, 1) != 0) {
+		    printf("'%s' cannot be described\n", current);
+		    code = 1;
+		    break;
+		}
+
+		if (S_ISLNK(s.st_mode)) {
+		    ssize_t len;
+		    int tlen;
+
+		    len = readlink(current, target, sizeof(target) - 1);
+		    if (len < 0) {
+			printf("'%s' is a symbolic link, but its target cannot be read\n",
+			       current);
+			code = 1;
+		    } else {
+			target[len] = '\0';
+			printf("'%s' is a symbolic link, leading to ",
+			       current);
+
+			if (target[0] != '/') {
+			    tlen = snprintf(current, sizeof(current),
+					    "%s/%s", parent_dir, target);
+			} else {
+			    tlen = snprintf(current, sizeof(current), "%s",
+					    target);
+			}
+			if (tlen < 0 || (size_t)tlen >= sizeof(current)) {
+			    printf("a path that is too long\n");
+			    code = 1;
+			}
+		    }
+		} else if (S_ISDIR(s.st_mode)) {
+		    blob.in = last_comp;
+		    blob.in_size = strlen(last_comp) + 1;
+		    blob.out_size = AFS_PIOCTL_MAXSIZE;
+		    blob.out = space;
+		    memset(space, 0, AFS_PIOCTL_MAXSIZE);
+
+		    if (pioctl(parent_dir, VIOC_AFS_STAT_MT_PT, &blob, 1) == 0) {
+			printf("'%s' is a mount point, for volume '%s'\n",
+			       current, space);
+		    } else {
+			printf("'%s' is a directory\n", current);
+		    }
+		} else if (S_ISREG(s.st_mode)) {
+		    printf("'%s' is a regular file\n", current);
+		} else {
+		    printf("'%s' is a special file\n", current);
+		}
+
+		free(parent_dir);
+		free(last_comp);
+
+		if (!S_ISLNK(s.st_mode)) {
+		    break;
+		}
+	    }
+
+	    if (slash == NULL) {
+		break;
+	    }
+	    cursor = slash + 1;
+	    while (*cursor == '/') {
+		cursor++;
+	    }
+	    if (*cursor == '\0') {
+		break;
+	    }
+	}
+
+	if (code != 0) {
+	    error = 1;
+	}
+
+	if (multi) {
+	    printf("\n");
+	}
+    }
+
+    return error;
+}
 
 static int
 ListMountCmd(struct cmd_syndesc *as, void *arock)
@@ -3770,6 +3944,10 @@ main(int argc, char **argv)
 
     ts = cmd_CreateSyntax("lsmount", ListMountCmd, NULL, 0, "list mount point");
     cmd_AddParm(ts, "-dir", CMD_LIST, 0, "directory");
+
+    ts = cmd_CreateSyntax("pathinfo", PathInfoCmd, NULL, 0,
+			  "display the type of each path component");
+    cmd_AddParm(ts, "-path", CMD_LIST, CMD_OPTIONAL, "dir/file path");
 
     ts = cmd_CreateSyntax("mkmount", MakeMountCmd, NULL, 0, "make mount point");
     cmd_AddParm(ts, "-dir", CMD_SINGLE, 0, "directory");
