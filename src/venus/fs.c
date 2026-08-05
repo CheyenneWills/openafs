@@ -1787,7 +1787,7 @@ GetLastComponent(const char *data, char **outdir, char **outbase,
      */
     if (!literal && (statbuff.st_mode & S_IFMT) == S_IFLNK) {
 	if (thru_symlink)
-	     *thru_symlink = 1;
+	    *thru_symlink = 1;
 
 	/* Read name of resolved file (leave space for NULL!) */
 	link_chars_read = readlink(orig_name, true_name, MAXPATHLEN-1);
@@ -1812,14 +1812,14 @@ GetLastComponent(const char *data, char **outdir, char **outbase,
 	    strcpy(++lastSlash, true_name);
 	    strcpy(true_name, orig_name);
 	}
-     } else {
+    } else {
 	strcpy(true_name, orig_name);
-     }
+    }
 
     /* Trim trailing slashes, if any. */
     len = strlen(true_name);
     while (len > 1 && true_name[len - 1] == '/') {
-	true_name[len - 1 ] = '\0';
+	true_name[len - 1] = '\0';
 	len--;
     }
 
@@ -1843,6 +1843,11 @@ GetLastComponent(const char *data, char **outdir, char **outbase,
 	 */
 	dirname = strdup(".");
 	basename = strdup(true_name);
+    }
+
+    if (dirname == NULL || basename == NULL) {
+	fprintf(stderr, "%s: Out of memory\n", pn);
+	goto out;
     }
 
     if (strcmp(basename, ".") == 0
