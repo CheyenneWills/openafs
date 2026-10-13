@@ -29,22 +29,29 @@ While the use of AI tools is permitted, the use of an AI tool to create
 contributions must be disclosed.  Such contributions must include an
 `Assisted-by` Git trailer in the following format:
 
-    Assisted-by: AGENT_NAME:MODEL_VERSION [TOOL1] [TOOL2]
+```
+Assisted-by: [LLM] [TOOL1] [TOOL2]...
+```
 
 Where:
 
-    AGENT_NAME is the name of the AI tool or framework.
+* `LLM` is required if an AI tool was used, and is omitted otherwise.
+* `[TOOL1]` `[TOOL2]`... are optional specialized analysis tools used (e.g.,
+  coccinelle, sparse, smatch, clang-tidy).
 
-    MODEL_VERSION is the specific model version used.
+`TOOL<n>` must consist of non-whitespace printable ASCII characters.
 
-    [TOOL1] [TOOL2] are optional specialized analysis tools used (e.g., coccinelle, sparse, smatch, clang-tidy)
+Examples:
 
-`AGENT_NAME`, `MODEL_VERSION`, and `TOOL<n>` must consist of non-whitespace
-printable ASCII characters.
+```
+Assisted-by: LLM coccinelle sparse
 
-Example:
+Assisted-by: coccinelle sparse
+```
 
-    Assisted-by: Claude:claude-3-opus coccinelle sparse
+The 2nd example simply documents that some specialized analysis tools were used,
+without any AI tool. When no AI tool was used, the `Assisted-by` trailer is
+optional.
 
 Basic development tools (for example: git, gcc, make, editors, lint, GNU
 indent) should not be listed.
