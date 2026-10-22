@@ -57,14 +57,33 @@ indent) should not be listed.
 
 Disclosure is not required if an AI tool is only used to find or flag errors,
 such as finding spelling or coding mistakes. If any copyrightable output from
-an AI tool is used in the commit, then disclosure is required.
+an AI tool is used in the commit, then disclosure is required.  If you are
+unsure if your AI usage should be disclosed, just add the `Assisted-by: LLM` tag
+to the commit message.
 
 Example: You ask an AI tool to check the spelling of a paragraph. It tells you
 the word "alphanumberic" is misspelled and it suggests "alphanumeric". You
 replace that one word, and do not need to disclose AI usage.
 
+Example: You ask an AI tool to review some code and it flags some code in a
+for loop:
+
+```c
+    for(i = 0; i < 10; i++) {
+        printf("the counter is %d\n", l);
+        ...
+    }
+```
+asking if you meant to print the variable 'i'.  You fix the typo, and you
+do not need to disclose AI usage.
+
 Example: You give a paragraph to an AI tool and ask it to fix any spelling
-errors, and it gives you back a fixed paragraph of text. You check the
-paragraph still looks correct and copy it into your commit. You must disclose
-AI usage, since the contents of the paragraph are copied directly from an AI
-tool's output.
+errors, and in addition to fixing the spelling errors, it has rewritten portions
+of the text. You check the paragraph still looks correct and copy it into your
+commit. You must disclose AI usage, since the contents of the paragraph are
+copied directly from an AI tool's output.
+
+Example: You ask an AI tool to review some code and it refactors a set of nested
+for loops into separate functions, you verify that the code is functionally
+correct and copy it into a commit. You must disclose AI usage, since the AI
+performed the actual refactoring.
