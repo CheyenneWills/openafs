@@ -22,6 +22,21 @@ the OpenAFS coding standards.
 ## Licensing and Legal Requirements
 
 All contributions must comply with OpenAFS’s licensing requirements.
+Contributors are responsible for making sure AI output doesn't reproduce
+third-party code under incompatible licenses.
+
+## Using AI coding agents
+
+The OpenAFS source tree includes an AGENTS.md file with instructions for
+AI coding agents, covering this policy, the coding style, and commit
+message requirements. Most coding agents read it automatically when run
+in an OpenAFS checkout. If your tool does not (for example, a chat
+interface where you paste code), give it the contents of AGENTS.md or
+follow those instructions yourself. Agents do not always follow these
+instructions even when they read them, so check the result yourself,
+especially indentation, coding style, and the commit message trailers.
+Following AGENTS.md does not change your responsibility under this policy
+for every line you submit.
 
 ## Disclosure Requirements
 
